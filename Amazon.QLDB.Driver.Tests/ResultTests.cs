@@ -74,12 +74,13 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public void TestMoveNextWithNoNextPage()
         {
+            Mock<Session> session = new Mock<Session>(null, null, null, null);
             var ms = new MemoryStream();
-            var valuHolderList = new List<ValueHolder> { new ValueHolder { IonBinary = ms, IonText = "ionText" } };
-            var firstPage = new Page { NextPageToken = null, Values = valuHolderList };
+            var valueHolderList = new List<ValueHolder> { new ValueHolder { IonBinary = ms, IonText = "ionText" } };
+            var firstPage = new Page { NextPageToken = null, Values = valueHolderList };
 
-            result = new Result(mockSession.Object, "txnId", firstPage);
-            var results = result.GetEnumerator();
+            Result res = new Result(session.Object, "txnId", firstPage);
+            var results = res.GetEnumerator();
 
             int counter = 0;
             while (results.MoveNext())
@@ -88,7 +89,7 @@ namespace Amazon.QLDB.Driver.Tests
             }
 
             Assert.AreEqual(1, counter);
-            mockSession.Verify(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            session.Verify(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
         [TestMethod]
