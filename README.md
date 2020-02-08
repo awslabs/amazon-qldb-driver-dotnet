@@ -62,6 +62,10 @@ Right click the solution in the Solution Explorer and press "Restore NuGet Packa
 
 You can run the unit tests by right clicking the Amazon.QLDB.Driver.Tests project, that is a part of the solution file, and pressing "Run Tests".
 
+Alternatively you can run the unit tests on the command line with the following:
+
+```dotnet test```
+
 ### Documentation 
 
 DocFx is used for documentation. Download [Docfx](https://github.com/dotnet/docfx/releases) as docfx.zip, unzip and extract it to a local folder, and add it to PATH.

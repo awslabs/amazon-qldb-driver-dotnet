@@ -24,7 +24,7 @@ namespace Amazon.QLDB.Driver
     /// specified ledger in the parent driver of the instance of the QldbSession. In any given QldbSession, only one
     /// transaction can be active at a time. This object can have only one underlying session to QLDB, and therefore the
     /// lifespan of a QldbSession is tied to the underlying session, which is not indefinite, and on expiry this QldbSession
-    /// will become invalid, and a new QldbSession needs to be created from the parent driver in order to continue usage.</para>
+    /// will become invalid. A new <see cref="IQldbSession"/> needs to be created from the parent driver in order to continue usage.</para>
     ///
     /// <para>When a QldbSession is no longer needed, <see cref="Dispose"/> should be invoked in order to clean up any resources.</para>
     ///
