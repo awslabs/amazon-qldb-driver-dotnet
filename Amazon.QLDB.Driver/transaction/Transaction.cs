@@ -111,7 +111,7 @@ namespace Amazon.QLDB.Driver
             }
             catch (AmazonClientException ace)
             {
-                this.logger.LogWarning("Ignored error aborting transaction when calling dispose: {}", ace);
+                this.logger.LogWarning("Ignored AmazonClientException aborting transaction when calling dispose: {}", ace);
             }
         }
 
