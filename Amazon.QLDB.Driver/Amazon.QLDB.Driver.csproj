@@ -1,0 +1,52 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>Amazon.QLDB.Driver</RootNamespace>
+    <Company>Amazon.com, Inc.</Company>
+    <Authors>Amazon Web Services</Authors>
+    <Version>0.1.0-beta</Version>
+    <Description>A .NET implementation of the Amazon QLDB driver that can be used to programmatically access and interact with data in Amazon QLDB ledgers.</Description>
+    <Copyright>Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.</Copyright>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <RepositoryUrl>https://github.com/awslabs/amazon-qldb-driver-dotnet</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <ApplicationIcon />
+    <OutputType>Library</OutputType>
+    <StartupObject></StartupObject>
+    <PackageProjectUrl>https://aws.amazon.com/qldb/</PackageProjectUrl>
+    <Product>Amazon QLDB .NET Driver</Product>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageTags>amazon api aws database driver ledger qldb quantum</PackageTags>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DocumentationFile></DocumentationFile>
+    <OutputPath></OutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.QLDBSession" Version="3.3.100.32" />
+    <PackageReference Include="IonDotnet" Version="0.0.3-alpha" />
+    <PackageReference Include="IonHashDotnet" Version="0.1.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.1" />
+    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>$(AssemblyName).Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+</Project>
