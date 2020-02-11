@@ -38,12 +38,12 @@ namespace Amazon.QLDB.Driver
         private bool isClosed = false;
 
         /// <summary>
-        /// Transaction constructor.
+        /// Initializes a new instance of the <see cref="Transaction"/> class.
         /// </summary>
         ///
-        /// <param name="session">QLDB session.</param>
+        /// <param name="session">The parent session that represents the communication channel to QLDB.</param>
         /// <param name="txnId">Transaction identifier.</param>
-        /// <param name="logger">Logger for dependency injection</param>
+        /// <param name="logger">Logger to be used by this.</param>
         internal Transaction(Session session, string txnId, ILogger logger)
         {
             this.session = session;
@@ -121,6 +121,7 @@ namespace Amazon.QLDB.Driver
         ///
         /// <param name="statement">PartiQL statement.</param>
         /// <param name="parameters">Ion value parameters.</param>
+        ///
         /// <returns>Result from executed statement.</returns>
         public IResult Execute(string statement, List<IIonValue> parameters = null)
         {
@@ -142,9 +143,10 @@ namespace Amazon.QLDB.Driver
         /// Calculates the QLDB hash from statement and parameters.
         /// </summary>
         ///
-        /// <param name="seed">QLDB Hash</param>
+        /// <param name="seed">QLDB Hash.</param>
         /// <param name="statement">PartiQL statement.</param>
         /// <param name="parameters">Ion value parameters.</param>
+        ///
         /// <returns>QLDB hash.</returns>
         private static QldbHash Dot(QldbHash seed, string statement, List<IIonValue> parameters)
         {
@@ -161,12 +163,12 @@ namespace Amazon.QLDB.Driver
         /// Throws exception if the transaction is closed.
         /// </summary>
         ///
-        /// <exception cref="InvalidOperationException"></exception>
+        /// <exception cref="ObjectDisposedException">Transaction is closed.</exception>
         private void ThrowIfClosed()
         {
             if (this.isClosed)
             {
-                throw new InvalidOperationException(ExceptionMessages.TransactionClosed);
+                throw new ObjectDisposedException(ExceptionMessages.TransactionClosed);
             }
         }
     }

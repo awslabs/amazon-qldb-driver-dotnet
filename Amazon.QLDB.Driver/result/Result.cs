@@ -22,8 +22,6 @@ namespace Amazon.QLDB.Driver
 
     /// <summary>
     /// Result implementation which streams data from QLDB, discarding chunks as they are read.
-    /// The Result may be configured to asynchronously buffer chunks of data from QLDB before they are consumed by
-    /// the user of the Result by altering the read-ahead property.
     ///
     /// Note that due to the fact that a result can only be retrieved from QLDB once, the Result may only be iterated
     /// over once. Attempts to do so multiple times will result in an exception.
@@ -36,7 +34,7 @@ namespace Amazon.QLDB.Driver
         private bool isRetrieved = false;
 
         /// <summary>
-        /// Results supports streaming of Ion.
+        /// Initializes a new instance of the <see cref="Result"/> class.
         /// </summary>
         ///
         /// <param name="session">The parent session that represents the communication channel to QLDB.</param>
@@ -47,6 +45,7 @@ namespace Amazon.QLDB.Driver
             this.ionEnumerator = new IonEnumerator(session, txnId, firstPage);
         }
 
+        /// <inheritdoc/>
         public IEnumerator<IIonValue> GetEnumerator()
         {
             if (this.isRetrieved)
@@ -58,6 +57,7 @@ namespace Amazon.QLDB.Driver
             return this.ionEnumerator;
         }
 
+        /// <inheritdoc/>
         IEnumerator IEnumerable.GetEnumerator()
         {
             return this.GetEnumerator();
@@ -77,7 +77,7 @@ namespace Amazon.QLDB.Driver
             private string nextPageToken;
 
             /// <summary>
-            /// Constructor.
+            /// Initializes a new instance of the <see cref="IonEnumerator"/> class.
             /// </summary>
             ///
             /// <param name="session">The parent session that represents the communication channel to QLDB.</param>
@@ -92,10 +92,10 @@ namespace Amazon.QLDB.Driver
             }
 
             /// <summary>
-            /// Returns the current Ion binary.
+            /// Gets current IIonValue.
             /// </summary>
             ///
-            /// <returns>The current Ion value.</returns>
+            /// <returns>The current IIonValue.</returns>
             public IIonValue Current
             {
                 get
@@ -115,7 +115,7 @@ namespace Amazon.QLDB.Driver
             }
 
             /// <summary>
-            /// Get the next value in the enumerator.
+            /// Advance the enumerator to the next value within the page.
             /// </summary>
             ///
             /// <returns>True if there is another page token.</returns>
@@ -135,7 +135,7 @@ namespace Amazon.QLDB.Driver
             }
 
             /// <summary>
-            /// Reset. Not yet supported.
+            /// Reset. Not supported.
             /// </summary>
             public void Reset()
             {

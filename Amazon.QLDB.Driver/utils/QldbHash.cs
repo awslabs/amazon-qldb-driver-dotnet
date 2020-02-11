@@ -32,6 +32,11 @@ namespace Amazon.QLDB.Driver
         private static readonly IIonHasherProvider HasherProvider = new CryptoIonHasherProvider("SHA256");
         private static readonly IValueFactory ValueFactory = new ValueFactory();
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="QldbHash"/> class.
+        /// </summary>
+        ///
+        /// <param name="qldbHash">Byte array of hash code.</param>
         internal QldbHash(byte[] qldbHash)
         {
             if (qldbHash == null || !(qldbHash.Length == HashSize || qldbHash.Length == 0))
@@ -42,8 +47,12 @@ namespace Amazon.QLDB.Driver
             this.Hash = qldbHash;
         }
 
+        /// <summary>
+        /// Gets hash codes.
+        /// </summary>
         internal byte[] Hash { get; private set; }
 
+        /// <inheritdoc/>
         public override string ToString()
         {
             throw new NotImplementedException();
@@ -52,6 +61,10 @@ namespace Amazon.QLDB.Driver
         /// <summary>
         /// The QldbHash of an IonValue is just the IonHash of that value.
         /// </summary>
+        ///
+        /// <param name="value">Value to be hashed.</param>
+        ///
+        /// <returns>Hashed result.</returns>
         internal static QldbHash ToQldbHash(string value)
         {
             if (value == null)
@@ -62,6 +75,13 @@ namespace Amazon.QLDB.Driver
             return ToQldbHash(ValueFactory.NewString(value));
         }
 
+        /// <summary>
+        /// The QldbHash of an IonValue is just the IonHash of that value.
+        /// </summary>
+        ///
+        /// <param name="value">Ion Value to be hashed.</param>
+        ///
+        /// <returns>Hashed result.</returns>
         internal static QldbHash ToQldbHash(IIonValue value)
         {
             IIonReader reader = IonReaderBuilder.Build(value);
@@ -76,6 +96,13 @@ namespace Amazon.QLDB.Driver
             return new QldbHash(hashReader.Digest());
         }
 
+        /// <summary>
+        /// Calculates the QLDB hash.
+        /// </summary>
+        ///
+        /// <param name="that">Hashed PartiQL statement.</param>
+        ///
+        /// <returns>QldbHash.</returns>
         internal QldbHash Dot(QldbHash that)
         {
             byte[] concatenated = JoinHashesPairwise(this.Hash, that.Hash);

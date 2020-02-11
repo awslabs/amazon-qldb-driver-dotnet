@@ -42,6 +42,10 @@ namespace Amazon.QLDB.Driver.Tests
                 StartSession = new StartSessionResult
                 {
                     SessionToken = "testSessionToken"
+                },
+                ResponseMetadata = new ResponseMetadata
+                {
+                    RequestId = "testId"
                 }
             };
             SetResponse(testStartSessionResponse);

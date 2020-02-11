@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -26,7 +26,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.QLDBSession" Version="3.3.100.32" />
+    <PackageReference Include="AWSSDK.QLDBSession" Version="3.3.100.57" />
     <PackageReference Include="IonDotnet" Version="0.0.3-alpha" />
     <PackageReference Include="IonHashDotnet" Version="0.1.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.1" />

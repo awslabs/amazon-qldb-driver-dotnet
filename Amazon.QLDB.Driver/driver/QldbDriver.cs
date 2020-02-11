@@ -34,6 +34,13 @@ namespace Amazon.QLDB.Driver
         private readonly ILogger logger;
         private bool isClosed = false;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="QldbDriver"/> class.
+        /// </summary>
+        /// <param name="ledgerName">The ledger to create sessions to.</param>
+        /// <param name="sessionClient">QLDB session client.</param>
+        /// <param name="retryLimit">The amount of retries sessions created by this driver will attempt upon encountering a non-fatal error.</param>
+        /// <param name="logger">Logger to be used by this.</param>
         internal QldbDriver(string ledgerName, AmazonQLDBSessionClient sessionClient, int retryLimit, ILogger logger)
         {
             this.ledgerName = ledgerName;
@@ -61,20 +68,20 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <summary>
-        /// <para>Create and return a newly instantiated <see cref="QldbSession"/> object.</para>
+        /// <para>Create and return a newly instantiated <see cref="IQldbSession"/> object.</para>
         ///
         /// <para>This will implicitly start a new session with QLDB.</para>
         /// </summary>
         ///
         /// <returns>The newly active <see cref="IQldbSession"/> object.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when the session is already closed.</exception>
         ///
+        /// <exception cref="ObjectDisposedException">Thrown when this driver has been disposed.</exception>
         public IQldbSession GetSession()
         {
             if (this.isClosed)
             {
                 this.logger.LogError(ExceptionMessages.DriverClosed);
-                throw new InvalidOperationException(ExceptionMessages.DriverClosed);
+                throw new ObjectDisposedException(ExceptionMessages.DriverClosed);
             }
 
             this.logger.LogDebug("Creating new session.");
@@ -83,15 +90,20 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <summary>
-        /// Builder object for creating a QldbDriver.
+        /// Builder object for creating a <see cref="QldbDriver"/>, allowing for configuration of the parameters of
+        /// construction.
         /// </summary>
         public class QldbDriverBuilder : BaseQldbDriverBuilder<QldbDriverBuilder, QldbDriver>
         {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="QldbDriverBuilder"/> class.
+            /// </summary>
             internal QldbDriverBuilder()
                 : base()
             {
             }
 
+            /// <inheritdoc/>
             internal override QldbDriver ConstructDriver()
             {
                 return new QldbDriver(this.LedgerName, this.sessionClient, this.RetryLimit, this.Logger);

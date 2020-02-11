@@ -23,6 +23,7 @@ namespace Amazon.QLDB.Driver
         /// <summary>
         /// Retrieve a <see cref="IQldbSession"/> object.
         /// </summary>
+        ///
         /// <returns>The <see cref="IQldbSession"/> object.</returns>
         IQldbSession GetSession();
     }
