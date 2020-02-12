@@ -31,7 +31,7 @@ namespace Amazon.QLDB.Driver
     /// <para>See <see cref="PooledQldbDriver"/> for an example of session lifecycle management, allowing the re-use of sessions when
     /// possible. There should only be one thread interacting with a session at any given time.</para>
     ///
-    /// <para>There are three methods of execution, ranging from simple to complex; the first two are recommended for inbuilt
+    /// <para>There are three methods of execution, ranging from simple to complex; the first two are recommended for their inbuilt
     /// error handling:
     /// <list type="bullet">
     /// <item><description>Execute(string) and Execute(string, List) allow for a single statement to be executed within a

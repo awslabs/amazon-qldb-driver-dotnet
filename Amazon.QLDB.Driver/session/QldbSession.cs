@@ -31,7 +31,7 @@ namespace Amazon.QLDB.Driver
     /// occurs, including OCC conflicts, by starting a brand new transaction and re-executing the statement within the new
     /// transaction.</para>
     ///
-    /// <para>There are three methods of execution, ranging from simple to complex; the first two are recommended for inbuilt
+    /// <para>There are three methods of execution, ranging from simple to complex; the first two are recommended for their inbuilt
     /// error handling:
     /// <list type="bullet">
     /// <item><description>Execute(string) and Execute(string, List) allow for a single statement to be executed within a
