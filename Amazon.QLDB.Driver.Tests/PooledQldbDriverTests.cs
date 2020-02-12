@@ -174,11 +174,12 @@ namespace Amazon.QLDB.Driver.Tests
                     .Returns(Task.FromResult(sendCommandResponse))
                     .Returns(Task.FromResult(sendCommandResponse))
                     .Returns(Task.FromResult(sendCommandResponse))
+                    .Returns(Task.FromResult(sendCommandResponse))
                     .Throws(new AmazonClientException(""))
                     .Throws(new AmazonClientException(""))
                     .Throws(new AmazonClientException(""))
                     .Throws(new AmazonClientException(""))
-                    .Returns(Task.FromResult(sendCommandResponse));
+                    .Returns(Task.FromResult(new SendCommandResponse()));
             builder = PooledQldbDriver.Builder().WithLedger("testLedger");
 
             var driver = new PooledQldbDriver("ledgerName", mockClient.Object, 4, 6, 4, NullLogger.Instance);
@@ -186,17 +187,21 @@ namespace Amazon.QLDB.Driver.Tests
             var session2 = driver.GetSession();
             var session3 = driver.GetSession();
             var session4 = driver.GetSession();
+            var session5 = driver.GetSession();
 
             session1.Dispose();
             session2.Dispose();
             session3.Dispose();
             session4.Dispose();
+            session5.Dispose();
 
-            var session = driver.GetSession();
-            Assert.IsNotNull(session);
-            // Start 4 sessions, return them to pool and fail the abort.
+            IQldbSession session;
+            // Only way to differentiate between Abort and StartSession request is StartSession throws NullReferenceException.
+            // If a Session is retrieved from the pool, it will not throw.
+            Assert.ThrowsException<NullReferenceException>(() => session = driver.GetSession());
+            // Start 5 sessions, return them to pool and fail the abort.
             mockClient.Verify(x => x.SendCommandAsync(It.IsAny<SendCommandRequest>(), It.IsAny<CancellationToken>()),
-                Times.Exactly(9));
+                Times.Exactly(10));
         }
 
         [TestMethod]

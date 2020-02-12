@@ -267,7 +267,7 @@ namespace Amazon.QLDB.Driver
                 this.session.AbortTransaction();
                 return true;
             }
-            catch (Exception)
+            catch (AmazonClientException)
             {
                 this.isClosed = true;
                 return false;
