@@ -26,16 +26,16 @@ namespace Amazon.QLDB.Driver.Tests
     [TestClass]
     public class TransactionTests
     {
-        private const string tnxId = "My-transactionID-value";
+        private const string TxnId = "My-transactionID-value";
         private static Transaction transaction;
         private static Mock<Session> mockSession;
-        private static Mock<ILogger> mockLogger = new Mock<ILogger>();
+        private static readonly Mock<ILogger> mockLogger = new Mock<ILogger>();
 
         [TestInitialize]
         public void SetUp()
         {
-            mockSession = new Mock<Session>(null, null, null, null);
-            transaction = new Transaction(mockSession.Object, tnxId, mockLogger.Object);
+            mockSession = new Mock<Session>(null, null, null, null, null);
+            transaction = new Transaction(mockSession.Object, TxnId, mockLogger.Object);
         }
 
         [TestMethod]
@@ -66,7 +66,7 @@ namespace Amazon.QLDB.Driver.Tests
         public void TestCommit()
         {
             mockSession.Setup(m => m.CommitTransaction(It.IsAny<string>(), It.IsAny<MemoryStream>()))
-                .Returns(GetTransactionResult(tnxId));
+                .Returns(GetTransactionResult(TxnId));
 
             // We must not have any exceptions
             transaction.Commit();
@@ -78,7 +78,7 @@ namespace Amazon.QLDB.Driver.Tests
             // To have our transaction marked closed
             transaction.Abort();
 
-            Assert.ThrowsException<InvalidOperationException>(transaction.Commit);
+            Assert.ThrowsException<ObjectDisposedException>(transaction.Commit);
         }
 
         [TestMethod]
@@ -125,7 +125,7 @@ namespace Amazon.QLDB.Driver.Tests
 
             var result = transaction.Execute("statement");
 
-            mockSession.Verify(m => m.ExecuteStatement(tnxId, "statement", It.IsAny<List<IIonValue>>()));
+            mockSession.Verify(m => m.ExecuteStatement(TxnId, "statement", It.IsAny<List<IIonValue>>()));
             Assert.IsNotNull(result);
         }
 
@@ -141,7 +141,7 @@ namespace Amazon.QLDB.Driver.Tests
             // To have our transaction marked closed
             transaction.Abort();
 
-            Assert.ThrowsException<InvalidOperationException>(() => transaction.Execute("statement"));
+            Assert.ThrowsException<ObjectDisposedException>(() => transaction.Execute("statement"));
         }
 
 

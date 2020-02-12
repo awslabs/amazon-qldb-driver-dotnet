@@ -15,72 +15,147 @@ namespace Amazon.QLDB.Driver
 {
     using System;
     using System.Collections.Generic;
+    using Amazon.QLDBSession.Model;
+    using Amazon.Runtime;
     using IonDotnet.Tree;
+    using Microsoft.Extensions.Logging;
 
     /// <summary>
-    /// <para>The top-level interface for a QldbSession object for interacting with QLDB. A QldbSession is linked to the
-    /// specified ledger in the parent driver of the instance of the QldbSession. In any given QldbSession, only one
-    /// transaction can be active at a time. This object can have only one underlying session to QLDB, and therefore the
-    /// lifespan of a QldbSession is tied to the underlying session, which is not indefinite, and on expiry this QldbSession
-    /// will become invalid, and a new QldbSession needs to be created from the parent driver in order to continue usage.</para>
-    ///
-    /// <para>When a QldbSession is no longer needed, <see cref="Dispose"/> should be invoked in order to clean up any resources.</para>
-    ///
-    /// <para>See <see cref="PooledQldbDriver"/> for an example of session lifecycle management, allowing the re-use of sessions when
-    /// possible. There should only be one thread interacting with a session at any given time.</para>
-    ///
-    /// <para>There are three methods of execution, ranging from simple to complex; the first two are recommended for inbuilt
-    /// error handling:
-    /// <list type="bullet">
-    /// <item><description><see cref="Execute(String)"/> and <see cref="Execute(String, List)"/> allow for a single statement to be executed within a
-    /// transaction where the transaction is implicitly created and committed, and any recoverable errors are
-    /// transparently handled.</description></item>
-    /// <item><description><see cref="Execute(Executor, RetryIndicator)"/> and <see cref="Execute(ExecutorNoReturn, RetryIndicator)"/> allow for
-    /// more complex execution sequences where more than one execution can occur, as well as other method calls. The
-    /// transaction is implicitly created and committed, and any recoverable errors are transparently handled.</description></item>
-    /// <item><description><see cref="Execute(Executor)"/> and <see cref="Execute(ExecutorNoReturn)"/> are also available, providing the same
-    /// functionality as the former two functions, but without a lambda function to be invoked upon a retryable
-    /// error.</item></description>
-    /// <item><description><see cref="StartTransaction"/> allows for full control over when the transaction is committed and leaves the
-    /// responsibility of OCC conflict handling up to the user. Transactions methods cannot be automatically retried, as
-    /// the state of the transaction is ambiguous in the case of an unexpected error.</description></item>
-    /// </list>
-    /// </para>
+    /// Represents a pooled session object. See <see cref="QldbSession"/> for more details.
     /// </summary>
     internal class PooledQldbSession : IQldbSession
     {
-        internal PooledQldbSession(QldbSession qldbSession, Action<QldbSession> disposeDelegate)
+        private readonly QldbSession session;
+        private readonly Action<QldbSession> disposeDelegate;
+        private readonly ILogger logger;
+        private bool isClosed;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PooledQldbSession"/> class.
+        /// </summary>
+        ///
+        /// <param name="qldbSession">The QldbSession instance that this wraps.</param>
+        /// <param name="disposeDelegate">The delegate method to invoke upon disposal of this.</param>
+        /// <param name="logger">The logger to be used by this.</param>
+        internal PooledQldbSession(QldbSession qldbSession, Action<QldbSession> disposeDelegate, ILogger logger)
         {
+            this.session = qldbSession;
+            this.disposeDelegate = disposeDelegate;
+            this.logger = logger;
+            this.isClosed = false;
         }
 
+        /// <summary>
+        /// Close this session and return it to the pool. No-op if already closed.
+        /// </summary>
         public void Dispose()
         {
-            throw new NotImplementedException();
+            if (!this.isClosed)
+            {
+                this.isClosed = true;
+                this.disposeDelegate(this.session);
+            }
         }
 
+        /// <summary>
+        /// Execute the statement against QLDB and retrieve the result.
+        /// </summary>
+        ///
+        /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
+        /// <param name="parameters">Parameters to execute.</param>
+        /// <param name="retryAction">A lambda that which is invoked when the Executor lambda is about to be retried due to
+        /// a retriable error. Can be null if not applicable.</param>
+        ///
+        /// <returns>The result of executing the statement.</returns>
+        ///
+        /// <exception cref="AbortException">If the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
+        /// <exception cref="InvalidSessionException">Thrown when the session retry limit is reached.</exception>
+        /// <exception cref="ObjectDisposedException">Thrown when session is closed.</exception>
+        /// <exception cref="OccConflictException">If the number of retries has exceeded the limit and an OCC conflict occurs.</exception>
+        /// <exception cref="AmazonClientException">If there is an error communicating with QLDB.</exception>
         public IResult Execute(string statement, List<IIonValue> parameters = null, Action<int> retryAction = null)
         {
-            throw new NotImplementedException();
+            this.ThrowIfClosed();
+            return this.session.Execute(statement, parameters, retryAction);
         }
 
+        /// <summary>
+        /// Execute the Executor lambda against QLDB within a transaction where no result is expected.
+        /// </summary>
+        ///
+        /// <param name="action">A lambda with no return value representing the block of code to be executed within the transaction.
+        /// This cannot have any side effects as it may be invoked multiple times.</param>
+        /// <param name="retryAction">A lambda that which is invoked when the Executor lambda is about to be retried due to
+        /// a retriable error. Can be null if not applicable.</param>
+        ///
+        /// <exception cref="AbortException">If the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
+        /// <exception cref="InvalidSessionException">Thrown when the session retry limit is reached.</exception>
+        /// <exception cref="ObjectDisposedException">Thrown when session is closed.</exception>
+        /// <exception cref="OccConflictException">If the number of retries has exceeded the limit and an OCC conflict occurs.</exception>
+        /// <exception cref="AmazonClientException">If there is an error communicating with QLDB.</exception>
         public void Execute(Action<TransactionExecutor> action, Action<int> retryAction = null)
         {
-            throw new NotImplementedException();
+            this.ThrowIfClosed();
+            this.session.Execute(action, retryAction);
         }
 
+        /// <summary>
+        /// Execute the Executor lambda against QLDB and retrieve the result within a transaction.
+        /// </summary>
+        ///
+        /// <param name="func">
+        /// A lambda representing the block of code to be executed within the transaction. This cannot have any
+        /// side effects as it may be invoked multiple times, and the result cannot be trusted until the
+        /// transaction is committed.</param>
+        /// <param name="retryAction">A lambda that which is invoked when the Executor lambda is about to be retried due to
+        /// a retriable error. Can be null if not applicable.</param>
+        /// <typeparam name="T">The return type.</typeparam>
+        ///
+        /// <returns>The return value of executing the executor. Note that if you directly return a <see cref="IResult"/>, this will
+        /// be automatically buffered in memory before the implicit commit to allow reading, as the commit will close
+        /// any open results. Any other <see cref="IResult"/> instances created within the executor block will be
+        /// invalidated, including if the return value is an object which nests said <see cref="IResult"/> instances within it.</returns>
+        ///
+        /// <exception cref="AbortException">If the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
+        /// <exception cref="InvalidSessionException">Thrown when the session retry limit is reached.</exception>
+        /// <exception cref="ObjectDisposedException">Thrown when session is closed.</exception>
+        /// <exception cref="OccConflictException">If the number of retries has exceeded the limit and an OCC conflict occurs.</exception>
+        /// <exception cref="AmazonClientException">If there is an error communicating with QLDB.</exception>
         public T Execute<T>(Func<TransactionExecutor, T> func, Action<int> retryAction = null)
         {
-            throw new NotImplementedException();
+            this.ThrowIfClosed();
+            return this.session.Execute(func, retryAction);
         }
 
+        /// <summary>
+        /// Retrieve the table names that are available within the ledger.
+        /// </summary>
+        ///
+        /// <returns>The Enumerable over the table names in the ledger.</returns>
         public IEnumerable<string> ListTableNames()
         {
-            throw new NotImplementedException();
+            this.ThrowIfClosed();
+            return this.session.ListTableNames();
         }
 
+        /// <summary>
+        /// Create a transaction object which allows for granular control over when a transaction is aborted or committed.
+        /// </summary>
+        ///
+        /// <returns>The newly created transaction object.</returns>
         public ITransaction StartTransaction()
         {
-            throw new NotImplementedException();
+            this.ThrowIfClosed();
+            return this.session.StartTransaction();
+        }
+
+        private void ThrowIfClosed()
+        {
+            if (this.isClosed)
+            {
+                this.logger.LogError(ExceptionMessages.SessionClosed);
+                throw new ObjectDisposedException(ExceptionMessages.SessionClosed);
+            }
         }
     }
 }

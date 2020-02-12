@@ -27,8 +27,9 @@ namespace Amazon.QLDB.Driver
         private readonly List<IIonValue> values;
 
         /// <summary>
-        /// Private constructor for initializing Ion values to be buffered.
+        /// Prevents a default instance of the <see cref="BufferedResult"/> class from being created.
         /// </summary>
+        ///
         /// <param name="values">Buffer values.</param>
         private BufferedResult(List<IIonValue> values)
         {
@@ -38,7 +39,9 @@ namespace Amazon.QLDB.Driver
         /// <summary>
         /// Constructor for the result which buffers into the memory the supplied result before closing it.
         /// </summary>
+        ///
         /// <param name="result">The result which is to be buffered into memory and closed.</param>
+        ///
         /// <returns>The <see cref="BufferedResult"/> object.</returns>
         public static BufferedResult BufferResult(IResult result)
         {
@@ -51,11 +54,13 @@ namespace Amazon.QLDB.Driver
             return new BufferedResult(values);
         }
 
+        /// <inheritdoc/>
         public IEnumerator<IIonValue> GetEnumerator()
         {
             return this.values.GetEnumerator();
         }
 
+        /// <inheritdoc/>
         IEnumerator IEnumerable.GetEnumerator()
         {
             return this.GetEnumerator();

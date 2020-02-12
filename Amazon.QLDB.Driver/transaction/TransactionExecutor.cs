@@ -25,9 +25,10 @@ namespace Amazon.QLDB.Driver
         private readonly ITransaction transaction;
 
         /// <summary>
-        /// Constructor.
+        /// Initializes a new instance of the <see cref="TransactionExecutor"/> class.
         /// </summary>
-        /// <param name="transaction">The transaction object the TransactionExecutor wraps.</param>
+        ///
+        /// <param name="transaction">The <see cref="ITransaction"/> object the <see cref="TransactionExecutor"/> wraps.</param>
         internal TransactionExecutor(ITransaction transaction)
         {
             this.transaction = transaction;
@@ -44,6 +45,7 @@ namespace Amazon.QLDB.Driver
         /// <summary>
         /// Execute the statement using the specified parameters against QLDB and retrieve the result.
         /// </summary>
+        ///
         /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
         /// <param name="parameters">The parameters to be used with the PartiQL statement.</param>
         ///

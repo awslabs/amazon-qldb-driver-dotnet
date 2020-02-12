@@ -39,7 +39,7 @@ namespace Amazon.QLDB.Driver.Tests
         [TestInitialize]
         public void SetupTest()
         {
-            mockSession = new Mock<Session>(null, null, null, null);
+            mockSession = new Mock<Session>(null, null, null, null, null);
             qldbSession = new QldbSession(mockSession.Object, 2, NullLogger.Instance);
         }
 
@@ -53,7 +53,7 @@ namespace Amazon.QLDB.Driver.Tests
         public void TestDispose()
         {
             // Throw on second End() call
-            mockSession.SetupSequence(x => x.End()).Pass().Throws(new InvalidOperationException());
+            mockSession.SetupSequence(x => x.End()).Pass().Throws(new ObjectDisposedException(ExceptionMessages.SessionClosed));
 
             qldbSession.Dispose();
 
@@ -431,7 +431,7 @@ namespace Amazon.QLDB.Driver.Tests
             Assert.IsNotNull(transaction);
 
             qldbSession.Dispose();
-            Assert.ThrowsException<InvalidOperationException>(qldbSession.StartTransaction);
+            Assert.ThrowsException<ObjectDisposedException>(qldbSession.StartTransaction);
         }
     }
 }
