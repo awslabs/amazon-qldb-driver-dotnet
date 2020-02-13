@@ -25,7 +25,7 @@ namespace Amazon.QLDB.Driver.Tests
     public class ResultTests
     {
         private static Result result;
-        private static readonly Mock<Session> mockSession = new Mock<Session>(null, null, null, null);
+        private static readonly Mock<Session> mockSession = new Mock<Session>(null, null, null, null, null);
         private readonly MemoryStream memoryStream = new MemoryStream();
 
         public IIonValue IonDatagram { get; private set; }
@@ -74,10 +74,10 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public void TestMoveNextWithNoNextPage()
         {
-            Mock<Session> session = new Mock<Session>(null, null, null, null);
+            Mock<Session> session = new Mock<Session>(null, null, null, null, null);
             var ms = new MemoryStream();
-            var valueHolderList = new List<ValueHolder> { new ValueHolder { IonBinary = ms, IonText = "ionText" } };
-            var firstPage = new Page { NextPageToken = null, Values = valueHolderList };
+            var valuHolderList = new List<ValueHolder> { new ValueHolder { IonBinary = ms, IonText = "ionText" } };
+            var firstPage = new Page { NextPageToken = null, Values = valuHolderList };
 
             Result res = new Result(session.Object, "txnId", firstPage);
             var results = res.GetEnumerator();

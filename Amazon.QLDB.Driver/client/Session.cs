@@ -27,33 +27,46 @@ namespace Amazon.QLDB.Driver
     /// </summary>
     internal class Session
     {
+#pragma warning disable SA1600 // Elements should be documented
         internal readonly string LedgerName;
         internal readonly AmazonQLDBSessionClient SessionClient;
+        internal readonly string SessionId;
+#pragma warning restore SA1600 // Elements should be documented
         private readonly string sessionToken;
         private readonly ILogger logger;
 
         /// <summary>
-        /// Constructor for a session to a specific ledger.
+        /// Initializes a new instance of the <see cref="Session"/> class to a specific ledger.
         /// </summary>
+        ///
         /// <param name="ledgerName">The name of the ledger to create a session to.</param>
         /// <param name="sessionClient">The low-level session used for communication with QLDB.</param>
         /// <param name="sessionToken">The unique identifying token for this session to the QLDB.</param>
+        /// <param name="sessionId">The initial request ID for this session to QLDB.</param>
         /// <param name="logger">The logger to inject any logging framework.</param>
-        internal Session(string ledgerName, AmazonQLDBSessionClient sessionClient, string sessionToken, ILogger logger)
+        internal Session(
+            string ledgerName,
+            AmazonQLDBSessionClient sessionClient,
+            string sessionToken,
+            string sessionId,
+            ILogger logger)
         {
             this.LedgerName = ledgerName;
             this.SessionClient = sessionClient;
             this.sessionToken = sessionToken;
+            this.SessionId = sessionId;
             this.logger = logger;
         }
 
         /// <summary>
         /// Factory method for constructing a new Session, creating a new session to the QLDB on construction.
         /// </summary>
+        ///
         /// <param name="ledgerName">The name of the ledger to create a session to.</param>
         /// <param name="sessionClient">The low-level session used for communication with QLDB.</param>
         /// <param name="logger">The logger to inject any logging framework.</param>
-        /// <returns>A newly created <see cref="Session"/></returns>
+        ///
+        /// <returns>A newly created <see cref="Session"/>.</returns>
         internal static Session StartSession(string ledgerName, AmazonQLDBSessionClient sessionClient, ILogger logger)
         {
             var startSessionRequest = new StartSessionRequest
@@ -67,12 +80,18 @@ namespace Amazon.QLDB.Driver
 
             logger.LogDebug("Sending start session request: {}", request);
             var response = sessionClient.SendCommandAsync(request).GetAwaiter().GetResult();
-            return new Session(ledgerName, sessionClient, response.StartSession.SessionToken, logger);
+            return new Session(
+                ledgerName,
+                sessionClient,
+                response.StartSession.SessionToken,
+                response.ResponseMetadata.RequestId,
+                logger);
         }
 
         /// <summary>
         /// Send an abort request to QLDB, rolling back any active changes and closing any open results.
         /// </summary>
+        ///
         /// <returns>The result of the abort transaction request.</returns>
         internal virtual AbortTransactionResult AbortTransaction()
         {
@@ -86,7 +105,7 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <summary>
-        /// Send an end session to QLDB.
+        /// Send an end session request to QLDB and ignore exceptions.
         /// </summary>
         internal virtual void End()
         {
@@ -103,6 +122,7 @@ namespace Amazon.QLDB.Driver
         /// <summary>
         /// Send an end session request to QLDB, closing all open results and transactions.
         /// </summary>
+        ///
         /// <returns>The result of the end session request.</returns>
         internal virtual EndSessionResult EndSession()
         {
@@ -118,9 +138,12 @@ namespace Amazon.QLDB.Driver
         /// <summary>
         /// Send a commit request to QLDB, committing any active changes and closing any open results.
         /// </summary>
+        ///
         /// <param name="txnId">The unique ID of the transaction to commit.</param>
         /// <param name="commitDigest">The digest hash of the transaction to commit.</param>
+        ///
         /// <returns>The result of the commit transaction request.</returns>
+        ///
         /// <exception cref="OccConflictException">If an OCC conflict has been detected within the transaction.</exception>
         internal virtual CommitTransactionResult CommitTransaction(string txnId, MemoryStream commitDigest)
         {
@@ -140,9 +163,11 @@ namespace Amazon.QLDB.Driver
         /// <summary>
         /// Send an execute request with parameters to QLDB.
         /// </summary>
+        ///
+        /// <param name="txnId">The unique ID of the transaction to execute.</param>
         /// <param name="statement">The PartiQL statement to execute.</param>
         /// <param name="parameters">The parameters to use with the PartiQL statement for execution.</param>
-        /// <param name="txnId">The unique ID of the transaction to execute.</param>
+        ///
         /// <returns>The result of the execution, which contains a <see cref="Page"/> representing the first data chunk.</returns>
         internal virtual ExecuteStatementResult ExecuteStatement(string txnId, string statement, List<IIonValue> parameters)
         {
@@ -193,10 +218,12 @@ namespace Amazon.QLDB.Driver
 
         /// <summary>
         /// Send a fetch result request to QLDB, retrieving the next chunk of data for the result.
-        /// <summary>
+        /// </summary>
+        ///
         /// <param name="txnId">The unique ID of the transaction to execute.</param>
         /// <param name="nextPageToken">The token that indicates what the next expected page is.</param>
-        /// <returns>The result of the fetch page request.</returns>
+        ///
+        /// <returns>The result of the <see cref="FetchPageRequest"/>.</returns>
         internal virtual FetchPageResult FetchPage(string txnId, string nextPageToken)
         {
             var fetchPageRequest = new FetchPageRequest
@@ -215,6 +242,7 @@ namespace Amazon.QLDB.Driver
         /// <summary>
         /// Send a start transaction request to QLDB.
         /// </summary>
+        ///
         /// <returns>The result of the start transaction request.</returns>
         internal virtual StartTransactionResult StartTransaction()
         {
@@ -230,8 +258,11 @@ namespace Amazon.QLDB.Driver
         /// <summary>
         /// Send a request to QLDB.
         /// </summary>
+        ///
         /// <param name="request">The request to send.</param>
+        ///
         /// <returns>The result returned by QLDB for the request.</returns>
+        ///
         /// <exception cref="OccConflictException">If an OCC conflict was detected when committing a transaction.</exception>
         /// <exception cref="InvalidSessionException">When this session is invalid.</exception>
         private SendCommandResponse SendCommand(SendCommandRequest request)

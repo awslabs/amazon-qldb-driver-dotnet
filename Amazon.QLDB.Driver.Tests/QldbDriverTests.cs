@@ -41,6 +41,10 @@ namespace Amazon.QLDB.Driver.Tests
                 StartSession = new StartSessionResult
                 {
                     SessionToken = "testToken"
+                },
+                ResponseMetadata = new ResponseMetadata
+                {
+                    RequestId = "testId"
                 }
             };
             mockClient.Setup(x => x.SendCommandAsync(It.IsAny<SendCommandRequest>(), It.IsAny<CancellationToken>()))
@@ -148,16 +152,9 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public void TestDispose()
         {
-            try
-            {
-                var driver = new QldbDriver("ledgerName", mockClient.Object, 4, NullLogger.Instance);
-                driver.Dispose();
-                driver.Dispose();
-            }
-            catch (Exception)
-            {
-                Assert.Fail();
-            }
+            var driver = new QldbDriver("ledgerName", mockClient.Object, 4, NullLogger.Instance);
+            driver.Dispose();
+            driver.Dispose();
         }
 
         [TestMethod]
@@ -174,7 +171,7 @@ namespace Amazon.QLDB.Driver.Tests
             Assert.AreNotEqual(session1, session2);
 
             driver.Dispose();
-            Assert.ThrowsException<InvalidOperationException>(() => driver.GetSession());
+            Assert.ThrowsException<ObjectDisposedException>(() => driver.GetSession());
         }
     }
 }

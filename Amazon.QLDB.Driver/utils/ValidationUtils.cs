@@ -15,8 +15,17 @@ namespace Amazon.QLDB.Driver
 {
     using System;
 
+    /// <summary>
+    /// Static utility methods to use for basic validations.
+    /// </summary>
     internal static class ValidationUtils
     {
+        /// <summary>
+        /// Validates that the text is not Null nor empty.
+        /// </summary>
+        ///
+        /// <param name="str">The string to validate.</param>
+        /// <param name="fieldName">Name of the parameter.</param>
         internal static void AssertStringNotEmpty(string str, string fieldName)
         {
             if (string.IsNullOrEmpty(str))
@@ -25,6 +34,12 @@ namespace Amazon.QLDB.Driver
             }
         }
 
+        /// <summary>
+        /// Validates that the integer is not negative.
+        /// </summary>
+        ///
+        /// <param name="num">The integer to validate.</param>
+        /// <param name="fieldName">Name of the parameter.</param>
         internal static void AssertNotNegative(int num, string fieldName)
         {
             if (num < 0)
@@ -33,6 +48,12 @@ namespace Amazon.QLDB.Driver
             }
         }
 
+        /// <summary>
+        /// Validates that the input is not Null.
+        /// </summary>
+        ///
+        /// <param name="obj">The object to validate.</param>
+        /// <param name="fieldName">Name of the parameter.</param>
         internal static void AssertNotNull(object obj, string fieldName)
         {
             if (obj == null)
