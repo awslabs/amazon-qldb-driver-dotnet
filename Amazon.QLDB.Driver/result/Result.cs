@@ -100,7 +100,7 @@ namespace Amazon.QLDB.Driver
             {
                 get
                 {
-                    return IonLoader.Load(this.currentEnumerator.Current.IonBinary);
+                    return IonLoader.Load(this.currentEnumerator.Current.IonBinary).GetElementAt(0);
                 }
             }
 

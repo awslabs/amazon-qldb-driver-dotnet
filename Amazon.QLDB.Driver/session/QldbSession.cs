@@ -229,7 +229,7 @@ namespace Amazon.QLDB.Driver
             var tableNames = new List<string>();
             foreach (var ionValue in result)
             {
-                tableNames.Add(ionValue.GetElementAt(0).StringValue);
+                tableNames.Add(ionValue.StringValue);
             }
 
             return tableNames;
