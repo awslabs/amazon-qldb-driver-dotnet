@@ -83,6 +83,7 @@
             this.SessionConfig.MaxErrorRetry = 0;
             this.sessionClient = this.Credentials == null ? new AmazonQLDBSessionClient(this.SessionConfig)
                 : new AmazonQLDBSessionClient(this.Credentials, this.SessionConfig);
+            this.sessionClient.BeforeRequestEvent += SetUserAgent;
 
             ValidationUtils.AssertStringNotEmpty(this.LedgerName, "ledgerName");
             return this.ConstructDriver();
@@ -163,5 +164,25 @@
         ///
         /// <returns>The driver object.</returns>
         internal abstract TDriver ConstructDriver();
+
+        private static void SetUserAgent(object sender, RequestEventArgs eventArgs)
+        {
+            const string UserAgentHeader = "User-Agent";
+            const string Version = "0.1.0-beta";
+
+#pragma warning disable IDE0019 // Use pattern matching
+            var args = eventArgs as WebServiceRequestEventArgs;
+#pragma warning restore IDE0019 // Use pattern matching
+            if (args == null || !args.Headers.ContainsKey(UserAgentHeader))
+            {
+                return;
+            }
+
+            var metric = " QLDB Driver for .NET v" + Version;
+            if (!args.Headers[UserAgentHeader].Contains(metric))
+            {
+                args.Headers[UserAgentHeader] = args.Headers[UserAgentHeader] + metric;
+            }
+        }
     }
 }

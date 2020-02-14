@@ -97,8 +97,8 @@ namespace Amazon.QLDB.Driver.Tests
         {
             var results = result.GetEnumerator();
 
+            Assert.IsNotNull(results);
             Assert.IsTrue(results.MoveNext());
-            Assert.IsNotNull(results.Current);
         }
 
         [TestMethod]
