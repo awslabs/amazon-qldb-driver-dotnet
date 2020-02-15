@@ -14,34 +14,24 @@
 namespace Amazon.QLDB.Driver
 {
     using System.Collections.Generic;
-    using Amazon.Runtime;
     using IonDotnet.Tree;
 
     /// <summary>
-    /// Transaction object used within lambda executions to provide a reduced view that allows only the operations that are
-    /// valid within the context of an active managed transaction.
+    /// Interface for executions of a statement within an active transaction to QLDB.
     /// </summary>
-    public class TransactionExecutor : IExecutable
+    public interface IExecutable
     {
-        private readonly ITransaction transaction;
-
         /// <summary>
-        /// Initializes a new instance of the <see cref="TransactionExecutor"/> class.
+        /// Execute the statement using the specified parameters against QLDB and retrieve the result.
         /// </summary>
         ///
-        /// <param name="transaction">The <see cref="ITransaction"/> object the <see cref="TransactionExecutor"/> wraps.</param>
-        internal TransactionExecutor(ITransaction transaction)
-        {
-            this.transaction = transaction;
-        }
-
-        /// <summary>
-        /// Abort the transaction and roll back any changes.
-        /// </summary>
-        public void Abort()
-        {
-            throw new AbortException();
-        }
+        /// <param name="statement">PartiQL statement.</param>
+        /// <param name="parameters">Ion value parameters.</param>
+        ///
+        /// <returns>Result from executed statement.</returns>
+        ///
+        /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
+        IResult Execute(string statement, List<IIonValue> parameters = null);
 
         /// <summary>
         /// Execute the statement using the specified parameters against QLDB and retrieve the result.
@@ -53,24 +43,6 @@ namespace Amazon.QLDB.Driver
         /// <returns>Result from executed statement.</returns>
         ///
         /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
-        public IResult Execute(string statement, List<IIonValue> parameters = null)
-        {
-            return this.transaction.Execute(statement, parameters);
-        }
-
-        /// <summary>
-        /// Execute the statement using the specified parameters against QLDB and retrieve the result.
-        /// </summary>
-        ///
-        /// <param name="statement">PartiQL statement.</param>
-        /// <param name="parameters">Ion value parameters.</param>
-        ///
-        /// <returns>Result from executed statement.</returns>
-        ///
-        /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
-        public IResult Execute(string statement, params IIonValue[] parameters)
-        {
-            return this.transaction.Execute(statement, parameters);
-        }
+        IResult Execute(string statement, params IIonValue[] parameters);
     }
 }

@@ -107,7 +107,7 @@ namespace Amazon.QLDB.Driver
             object IEnumerator.Current => this.Current;
 
             /// <summary>
-            /// Clean up.
+            /// Dispose the enumerator. No-op.
             /// </summary>
             public void Dispose()
             {

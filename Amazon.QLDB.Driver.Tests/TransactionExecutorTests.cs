@@ -41,7 +41,7 @@
         public void TestExecuteNoParams()
         {
             IResult actualResult = transactionExecutor.Execute(query);
-            mockTransaction.Verify(transaction => transaction.Execute(query, null), Times.Exactly(1));
+            mockTransaction.Verify(transaction => transaction.Execute(query, It.IsAny<List<IIonValue>>()), Times.Exactly(1));
             Assert.AreEqual(mockResult.Object, actualResult);
         }
 

@@ -144,7 +144,7 @@ namespace Amazon.QLDB.Driver
         ///
         /// <returns>The result of the commit transaction request.</returns>
         ///
-        /// <exception cref="OccConflictException">If an OCC conflict has been detected within the transaction.</exception>
+        /// <exception cref="OccConflictException">Thrown if an OCC conflict has been detected within the transaction.</exception>
         internal virtual CommitTransactionResult CommitTransaction(string txnId, MemoryStream commitDigest)
         {
             var commitTransactionRequest = new CommitTransactionRequest
@@ -262,9 +262,6 @@ namespace Amazon.QLDB.Driver
         /// <param name="request">The request to send.</param>
         ///
         /// <returns>The result returned by QLDB for the request.</returns>
-        ///
-        /// <exception cref="OccConflictException">If an OCC conflict was detected when committing a transaction.</exception>
-        /// <exception cref="InvalidSessionException">When this session is invalid.</exception>
         private SendCommandResponse SendCommand(SendCommandRequest request)
         {
             request.SessionToken = this.sessionToken;

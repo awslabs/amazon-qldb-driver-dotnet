@@ -14,11 +14,14 @@
 namespace Amazon.QLDB.Driver.Tests
 {
     using System;
+    using System.Collections.Generic;
+    using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
     using Amazon.QLDBSession;
     using Amazon.QLDBSession.Model;
     using Amazon.Runtime;
+    using IonDotnet.Tree;
     using Microsoft.Extensions.Logging.Abstractions;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
@@ -30,6 +33,9 @@ namespace Amazon.QLDB.Driver.Tests
     {
         private static QldbDriverBuilder builder;
         private static readonly Mock<AmazonQLDBSessionClient> mockClient = new Mock<AmazonQLDBSessionClient>();
+        private static readonly byte[] digest = new byte[] { 89, 49, 253, 196, 209, 176, 42, 98, 35, 214, 6, 163, 93,
+            141, 170, 92, 75, 218, 111, 151, 173, 49, 57, 144, 227, 72, 215, 194, 186, 93, 85, 108,
+        };
 
         [ClassInitialize]
 #pragma warning disable IDE0060 // Remove unused parameter
@@ -41,6 +47,22 @@ namespace Amazon.QLDB.Driver.Tests
                 StartSession = new StartSessionResult
                 {
                     SessionToken = "testToken"
+                },
+                StartTransaction = new StartTransactionResult
+                {
+                    TransactionId = "testTransactionIdddddd"
+                },
+                ExecuteStatement = new ExecuteStatementResult
+                {
+                    FirstPage = new Page
+                    {
+                        NextPageToken = null,
+                        Values = new List<ValueHolder>()
+                    }
+                },
+                CommitTransaction = new CommitTransactionResult
+                {
+                    CommitDigest = new MemoryStream(digest)
                 },
                 ResponseMetadata = new ResponseMetadata
                 {
@@ -172,6 +194,85 @@ namespace Amazon.QLDB.Driver.Tests
 
             driver.Dispose();
             Assert.ThrowsException<ObjectDisposedException>(() => driver.GetSession());
+        }
+
+        [TestMethod]
+        public void TestExecuteStatement()
+        {
+            var driver = new QldbDriver("ledgerName", mockClient.Object, 4, NullLogger.Instance);
+            var result = driver.Execute("testStatement");
+
+            Assert.IsNotNull(result);
+        }
+
+        [TestMethod]
+        public void TestExecuteStatementDisposed()
+        {
+            var driver = new QldbDriver("ledgerName", mockClient.Object, 4, NullLogger.Instance);
+            driver.Dispose();
+            Assert.ThrowsException<ObjectDisposedException>(() => driver.Execute("testStatement"));
+        }
+
+        [TestMethod]
+        public void TestExecuteParams()
+        {
+            var driver = new QldbDriver("ledgerName", mockClient.Object, 4, NullLogger.Instance);
+            var result = driver.Execute("testStatement", null, new IIonValue[] { });
+
+            Assert.IsNotNull(result);
+        }
+
+        [TestMethod]
+        public void TestExecuteParamsDisposed()
+        {
+            var driver = new QldbDriver("ledgerName", mockClient.Object, 4, NullLogger.Instance);
+            driver.Dispose();
+            Assert.ThrowsException<ObjectDisposedException>(() => driver.Execute("testStatement", null, new IIonValue[] { }));
+        }
+
+        [TestMethod]
+        public void TestExecuteAction()
+        {
+            var driver = new QldbDriver("ledgerName", mockClient.Object, 4, NullLogger.Instance);
+            driver.Execute((txn) =>
+            {
+                txn.Execute("testStatement");
+            });
+        }
+
+        [TestMethod]
+        public void TestExecuteActionDisposed()
+        {
+            var driver = new QldbDriver("ledgerName", mockClient.Object, 4, NullLogger.Instance);
+            driver.Dispose();
+            Assert.ThrowsException<ObjectDisposedException>(() => driver.Execute((txn) =>
+            {
+                txn.Execute("testStatement");
+            }));
+        }
+
+        [TestMethod]
+        public void TestExecuteFunc()
+        {
+            var driver = new QldbDriver("ledgerName", mockClient.Object, 4, NullLogger.Instance);
+            var result = driver.Execute((txn) =>
+            {
+                txn.Execute("testStatement");
+                return "testReturnValue";
+            });
+            Assert.AreEqual("testReturnValue", result);
+        }
+
+        [TestMethod]
+        public void TestExecuteFuncDisposed()
+        {
+            var driver = new QldbDriver("ledgerName", mockClient.Object, 4, NullLogger.Instance);
+            driver.Dispose();
+            Assert.ThrowsException<ObjectDisposedException>(() => driver.Execute((txn) =>
+            {
+                txn.Execute("testStatement");
+                return "testReturnValue";
+            }));
         }
     }
 }

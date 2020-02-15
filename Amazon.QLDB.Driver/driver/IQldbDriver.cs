@@ -18,7 +18,7 @@ namespace Amazon.QLDB.Driver
     /// <summary>
     /// Interface for the QLDB driver.
     /// </summary>
-    public interface IQldbDriver : IDisposable
+    public interface IQldbDriver : IDisposable, IRetriableExecutable
     {
         /// <summary>
         /// Retrieve a <see cref="IQldbSession"/> object.

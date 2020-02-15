@@ -55,7 +55,7 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public void TestExecuteStatement()
         {
-            mockSession.Setup(x => x.Execute(It.IsAny<string>(), It.IsAny<List<IIonValue>>(), It.IsAny<Action<int>>()))
+            mockSession.Setup(x => x.Execute(It.IsAny<string>(), It.IsAny<Action<int>>(), It.IsAny<List<IIonValue>>()))
                 .Returns(mockResult.Object);
             var result = qldbSession.Execute("testStatement");
 
