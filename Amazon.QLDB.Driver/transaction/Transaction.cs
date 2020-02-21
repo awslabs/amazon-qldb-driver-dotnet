@@ -121,14 +121,29 @@ namespace Amazon.QLDB.Driver
         /// Execute the statement using the specified parameters against QLDB and retrieve the result.
         /// </summary>
         ///
-        /// <param name="statement">PartiQL statement.</param>
-        /// <param name="parameters">Ion value parameters.</param>
+        /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
         ///
         /// <returns>Result from executed statement.</returns>
         ///
         /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
         /// <exception cref="ObjectDisposedException">Thrown when this transaction has been disposed.</exception>
-        public IResult Execute(string statement, List<IIonValue> parameters = null)
+        public IResult Execute(string statement)
+        {
+            return this.Execute(statement, new List<IIonValue>());
+        }
+
+        /// <summary>
+        /// Execute the statement against QLDB and retrieve the result.
+        /// </summary>
+        ///
+        /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
+        /// <param name="parameters">Parameters to execute.</param>
+        ///
+        /// <returns>Result from executed statement.</returns>
+        ///
+        /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
+        /// <exception cref="ObjectDisposedException">Thrown when this transaction has been disposed.</exception>
+        public IResult Execute(string statement, List<IIonValue> parameters)
         {
             this.ThrowIfClosed();
             ValidationUtils.AssertStringNotEmpty(statement, "statement");
@@ -148,8 +163,8 @@ namespace Amazon.QLDB.Driver
         /// Execute the statement using the specified parameters against QLDB and retrieve the result.
         /// </summary>
         ///
-        /// <param name="statement">PartiQL statement.</param>
-        /// <param name="parameters">Ion value parameters.</param>
+        /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
+        /// <param name="parameters">Parameters to execute.</param>
         ///
         /// <returns>Result from executed statement.</returns>
         ///
@@ -166,7 +181,7 @@ namespace Amazon.QLDB.Driver
         ///
         /// <param name="seed">QLDB Hash.</param>
         /// <param name="statement">PartiQL statement.</param>
-        /// <param name="parameters">Ion value parameters.</param>
+        /// <param name="parameters">Parameters to execute.</param>
         ///
         /// <returns>QLDB hash.</returns>
         private static QldbHash Dot(QldbHash seed, string statement, List<IIonValue> parameters)

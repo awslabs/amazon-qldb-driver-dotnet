@@ -33,10 +33,12 @@ namespace Amazon.QLDB.Driver
     /// <list type="bullet">
     /// <item><description>Execute(string, Action), Execute(string, Action, List), and Execute(string, Action, params IIonValue[])
     /// allow for a single statement to be executed within a transaction where the transaction is implicitly created
-    /// and committed, and any recoverable errors are transparently handled.</description></item>
+    /// and committed, and any recoverable errors are transparently handled. Each parameter besides the statement string
+    /// have overloaded method variants where they are not necessary.</description></item>
     /// <item><description>Execute(Action, Action) and Execute(Func, Action) allow for more complex execution sequences where
     /// more than one execution can occur, as well as other method calls. The transaction is implicitly created and committed, and any
-    /// recoverable errors are transparently handled.</description></item>
+    /// recoverable errors are transparently handled. The second Action parameter has overloaded variants where it is not
+    /// necessary.</description></item>
     /// <item><description><see cref="StartTransaction"/> allows for full control over when the transaction is committed and leaves the
     /// responsibility of OCC conflict handling up to the user. Transaction methods cannot be automatically retried, as
     /// the state of the transaction is ambiguous in the case of an unexpected error.</description></item>

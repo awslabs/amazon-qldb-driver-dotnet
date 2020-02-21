@@ -15,11 +15,9 @@ namespace Amazon.QLDB.Driver
 {
     using System;
     using System.Collections.Concurrent;
-    using System.Collections.Generic;
     using System.Threading;
     using Amazon.QLDBSession;
     using Amazon.Runtime;
-    using IonDotnet.Tree;
     using Microsoft.Extensions.Logging;
 
     /// <summary>
@@ -38,21 +36,17 @@ namespace Amazon.QLDB.Driver
     /// amount of connections the session client allows set in the <see cref="ClientConfig"/>. <see cref="Dispose"/>
     /// should be called when this factory is no longer needed in order to clean up resources, ending all sessions in the pool.</para>
     /// </summary>
-    public class PooledQldbDriver : IQldbDriver
+    public class PooledQldbDriver : BaseQldbDriver
     {
-        private readonly string ledgerName;
-        private readonly AmazonQLDBSessionClient sessionClient;
-        private readonly int retryLimit;
         private readonly int timeout;
-        private readonly ILogger logger;
 
         private readonly SemaphoreSlim poolPermits;
         private readonly BlockingCollection<QldbSession> sessionPool;
-        private bool isClosed = false;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PooledQldbDriver"/> class.
         /// </summary>
+        ///
         /// <param name="ledgerName">The ledger to create sessions to.</param>
         /// <param name="sessionClient">QLDB session client.</param>
         /// <param name="retryLimit">The amount of retries sessions created by this driver will attempt upon encountering a non-fatal error.</param>
@@ -66,12 +60,9 @@ namespace Amazon.QLDB.Driver
             int poolLimit,
             int timeout,
             ILogger logger)
+            : base(ledgerName, sessionClient, retryLimit, logger)
         {
-            this.ledgerName = ledgerName;
-            this.sessionClient = sessionClient;
-            this.retryLimit = retryLimit;
             this.timeout = timeout;
-            this.logger = logger;
 
             this.poolPermits = new SemaphoreSlim(poolLimit, poolLimit);
             this.sessionPool = new BlockingCollection<QldbSession>(poolLimit);
@@ -80,6 +71,7 @@ namespace Amazon.QLDB.Driver
         /// <summary>
         /// Retrieve a builder object for creating a <see cref="PooledQldbDriver"/>.
         /// </summary>
+        ///
         /// <returns>The builder object for creating a <see cref="PooledQldbDriver"/>.</returns>.
         public static PooledQldbDriverBuilder Builder()
         {
@@ -89,7 +81,7 @@ namespace Amazon.QLDB.Driver
         /// <summary>
         /// Close this driver and end all sessions in the current pool. No-op if already closed.
         /// </summary>
-        public void Dispose()
+        public override void Dispose()
         {
             if (!this.isClosed)
             {
@@ -98,102 +90,6 @@ namespace Amazon.QLDB.Driver
                 {
                     this.sessionPool.Take().Dispose();
                 }
-            }
-        }
-
-        /// <summary>
-        /// Get a session, then execute the statement against QLDB and retrieve the result, and return the session to the pool.
-        /// </summary>
-        ///
-        /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
-        /// <param name="retryAction">A lambda that is invoked when the statement execution is about to be retried due to
-        /// a retriable error. Can be null if not applicable.</param>
-        /// <param name="parameters">Parameters to execute.</param>
-        ///
-        /// <returns>The result of executing the statement.</returns>
-        ///
-        /// <exception cref="ObjectDisposedException">Thrown when called on a disposed instance.</exception>
-        /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
-        /// <exception cref="TimeoutException">Thrown when no sessions were made available before the timeout.</exception>
-        public IResult Execute(string statement, Action<int> retryAction = null, List<IIonValue> parameters = null)
-        {
-            using (var session = this.GetSession())
-            {
-                return session.Execute(statement, retryAction, parameters);
-            }
-        }
-
-        /// <summary>
-        /// Get a session, then execute the statement against QLDB and retrieve the result, and return the session to the pool.
-        /// </summary>
-        ///
-        /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
-        /// <param name="retryAction">A lambda that is invoked when the statement execution is about to be retried due to
-        /// a retriable error. Can be null if not applicable.</param>
-        /// <param name="parameters">Parameters to execute.</param>
-        ///
-        /// <returns>The result of executing the statement.</returns>
-        ///
-        /// <exception cref="ObjectDisposedException">Thrown when called on a disposed instance.</exception>
-        /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
-        /// <exception cref="TimeoutException">Thrown when no sessions were made available before the timeout.</exception>
-        public IResult Execute(string statement, Action<int> retryAction = null, params IIonValue[] parameters)
-        {
-            using (var session = this.GetSession())
-            {
-                return session.Execute(statement, retryAction, parameters);
-            }
-        }
-
-        /// <summary>
-        /// Get a session, then execute the Executor lambda against QLDB within a transaction where no result is expected,
-        /// and return the session to the pool.
-        /// </summary>
-        ///
-        /// <param name="action">The Executor lambda with no return value representing the block of code to be executed within the transaction.
-        /// This cannot have any side effects as it may be invoked multiple times.</param>
-        /// <param name="retryAction">A lambda that is invoked when the Executor lambda is about to be retried due to
-        /// a retriable error. Can be null if not applicable.</param>
-        ///
-        /// <exception cref="AbortException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
-        /// <exception cref="ObjectDisposedException">Thrown when called on a disposed instance.</exception>
-        /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
-        /// <exception cref="TimeoutException">Thrown when no sessions were made available before the timeout.</exception>
-        public void Execute(Action<TransactionExecutor> action, Action<int> retryAction = null)
-        {
-            using (var session = this.GetSession())
-            {
-                session.Execute(action, retryAction);
-            }
-        }
-
-        /// <summary>
-        /// Get a session, then execute the Executor lambda against QLDB and retrieve the result within a transaction,
-        /// and return the session to the pool.
-        /// </summary>
-        ///
-        /// <param name="func">The Executor lambda representing the block of code to be executed within the transaction. This cannot have any
-        /// side effects as it may be invoked multiple times, and the result cannot be trusted until the
-        /// transaction is committed.</param>
-        /// <param name="retryAction">A lambda that is invoked when the Executor lambda is about to be retried due to
-        /// a retriable error. Can be null if not applicable.</param>
-        /// <typeparam name="T">The return type.</typeparam>
-        ///
-        /// <returns>The return value of executing the executor. Note that if you directly return a <see cref="IResult"/>, this will
-        /// be automatically buffered in memory before the implicit commit to allow reading, as the commit will close
-        /// any open results. Any other <see cref="IResult"/> instances created within the executor block will be
-        /// invalidated, including if the return value is an object which nests said <see cref="IResult"/> instances within it.
-        /// </returns>
-        ///
-        /// <exception cref="AbortException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
-        /// <exception cref="ObjectDisposedException">Thrown when called on a disposed instance.</exception>
-        /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
-        /// <exception cref="TimeoutException">Thrown when no sessions were made available before the timeout.</exception>
-        public T Execute<T>(Func<TransactionExecutor, T> func, Action<int> retryAction = null)
-        {
-            using (var session = this.GetSession())
-            {
-                return session.Execute(func, retryAction);
             }
         }
 
@@ -208,7 +104,7 @@ namespace Amazon.QLDB.Driver
         ///
         /// <exception cref="ObjectDisposedException">Thrown when this driver has been disposed.</exception>
         /// <exception cref="TimeoutException">Thrown when no sessions were made available before the timeout.</exception>
-        public IQldbSession GetSession()
+        public override IQldbSession GetSession()
         {
             if (this.isClosed)
             {
@@ -330,6 +226,7 @@ namespace Amazon.QLDB.Driver
             /// <summary>
             /// Creates the pooled driver.
             /// </summary>
+            ///
             /// <returns>The driver object.</returns>
             internal override PooledQldbDriver ConstructDriver()
             {

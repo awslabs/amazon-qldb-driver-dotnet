@@ -55,8 +55,7 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public void TestExecuteStatement()
         {
-            mockSession.Setup(x => x.Execute(It.IsAny<string>(), It.IsAny<Action<int>>(), It.IsAny<List<IIonValue>>()))
-                .Returns(mockResult.Object);
+            mockSession.Setup(x => x.Execute(It.IsAny<string>())).Returns(mockResult.Object);
             var result = qldbSession.Execute("testStatement");
 
             Assert.AreEqual(mockResult.Object, result);
@@ -71,8 +70,7 @@ namespace Amazon.QLDB.Driver.Tests
             static void testAction(TransactionExecutor executor) => executor.GetType();
             qldbSession.Execute(testAction);
 
-            mockSession.Verify(x => x.Execute(It.IsAny<Action<TransactionExecutor>>(), It.IsAny<Action<int>>()),
-                Times.Exactly(1));
+            mockSession.Verify(x => x.Execute(It.IsAny<Action<TransactionExecutor>>()), Times.Exactly(1));
 
             qldbSession.Dispose();
             Assert.ThrowsException<ObjectDisposedException>(() => qldbSession.Execute(testAction));
@@ -82,8 +80,7 @@ namespace Amazon.QLDB.Driver.Tests
         public void TestExecuteFunc()
         {
             static int testFunc(TransactionExecutor executor) { return 1; }
-            mockSession.Setup(x => x.Execute(It.IsAny<Func<TransactionExecutor, int>>(), It.IsAny<Action<int>>()))
-                .Returns(1);
+            mockSession.Setup(x => x.Execute(It.IsAny<Func<TransactionExecutor, int>>())).Returns(1);
             var result = qldbSession.Execute(testFunc);
 
             Assert.AreEqual(1, result);

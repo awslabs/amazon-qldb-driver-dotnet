@@ -44,16 +44,30 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <summary>
-        /// Execute the statement using the specified parameters against QLDB and retrieve the result.
+        /// Execute the statement against QLDB and retrieve the result.
         /// </summary>
         ///
-        /// <param name="statement">PartiQL statement.</param>
-        /// <param name="parameters">Ion value parameters.</param>
+        /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
         ///
         /// <returns>Result from executed statement.</returns>
         ///
         /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
-        public IResult Execute(string statement, List<IIonValue> parameters = null)
+        public IResult Execute(string statement)
+        {
+            return this.transaction.Execute(statement);
+        }
+
+        /// <summary>
+        /// Execute the statement using the specified parameters against QLDB and retrieve the result.
+        /// </summary>
+        ///
+        /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
+        /// <param name="parameters">Parameters to execute.</param>
+        ///
+        /// <returns>Result from executed statement.</returns>
+        ///
+        /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
+        public IResult Execute(string statement, List<IIonValue> parameters)
         {
             return this.transaction.Execute(statement, parameters);
         }
@@ -62,8 +76,8 @@ namespace Amazon.QLDB.Driver
         /// Execute the statement using the specified parameters against QLDB and retrieve the result.
         /// </summary>
         ///
-        /// <param name="statement">PartiQL statement.</param>
-        /// <param name="parameters">Ion value parameters.</param>
+        /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
+        /// <param name="parameters">Parameters to execute.</param>
         ///
         /// <returns>Result from executed statement.</returns>
         ///

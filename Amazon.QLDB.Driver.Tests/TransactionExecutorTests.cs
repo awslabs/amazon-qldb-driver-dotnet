@@ -21,7 +21,10 @@
         {
             mockResult = new Mock<IResult>();
             mockTransaction = new Mock<ITransaction>();
+            mockTransaction.Setup(transaction => transaction.Execute(It.IsAny<string>())).Returns(mockResult.Object);
             mockTransaction.Setup(transaction => transaction.Execute(It.IsAny<string>(), It.IsAny<List<IIonValue>>()))
+                .Returns(mockResult.Object);
+            mockTransaction.Setup(transaction => transaction.Execute(It.IsAny<string>(), It.IsAny<IIonValue[]>()))
                 .Returns(mockResult.Object);
         }
 
@@ -38,15 +41,15 @@
         }
 
         [TestMethod]
-        public void TestExecuteNoParams()
+        public void TestExecute()
         {
             IResult actualResult = transactionExecutor.Execute(query);
-            mockTransaction.Verify(transaction => transaction.Execute(query, It.IsAny<List<IIonValue>>()), Times.Exactly(1));
+            mockTransaction.Verify(transaction => transaction.Execute(query), Times.Exactly(1));
             Assert.AreEqual(mockResult.Object, actualResult);
         }
 
         [TestMethod]
-        public void TestExecuteEmptyParams()
+        public void TestExecuteWithEmptyParamsList()
         {
             List<IIonValue> emptyParams = new List<IIonValue>();
             IResult actualResult = transactionExecutor.Execute(query, emptyParams);
@@ -55,11 +58,31 @@
         }
 
         [TestMethod]
-        public void TestExecuteOneParam()
+        public void TestExecuteWithNullParamsList()
+        {
+            List<IIonValue> nullParams = null;
+            IResult actualResult = transactionExecutor.Execute(query, nullParams);
+            mockTransaction.Verify(transaction => transaction.Execute(query, (List<IIonValue>)null), Times.Exactly(1));
+            Assert.AreEqual(mockResult.Object, actualResult);
+        }
+
+        [TestMethod]
+        public void TestExecuteWithOneParamInList()
         {
             List<IIonValue> oneParam = new List<IIonValue> { new ValueFactory().NewInt(1) };
             IResult actualResult = transactionExecutor.Execute(query, oneParam);
             mockTransaction.Verify(transaction => transaction.Execute(query, oneParam), Times.Exactly(1));
+            Assert.AreEqual(mockResult.Object, actualResult);
+        }
+
+        [TestMethod]
+        public void TestExecuteWithVarargs()
+        {
+            var ionFactory = new ValueFactory();
+            IIonValue one = ionFactory.NewInt(1);
+            IIonValue two = ionFactory.NewInt(2);
+            IResult actualResult = transactionExecutor.Execute(query, one, two);
+            mockTransaction.Verify(transaction => transaction.Execute(query, one, two), Times.Exactly(1));
             Assert.AreEqual(mockResult.Object, actualResult);
         }
     }
