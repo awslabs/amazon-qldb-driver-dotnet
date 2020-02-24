@@ -76,7 +76,7 @@ You can generate the docstring HTML locally by running the following in the root
 
 ## Release Notes
 
-### Release 0.1.0-beta (February 05, 2020)
+### Release 0.1.0-beta
 
 * Initial preview release of the Amazon QLDB Driver for .NET.
 
