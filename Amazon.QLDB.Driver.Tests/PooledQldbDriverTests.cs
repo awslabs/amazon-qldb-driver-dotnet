@@ -155,56 +155,6 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestGetSessionExceedPollLimit()
-        {
-            var sendCommandResponse = new SendCommandResponse
-            {
-                StartSession = new StartSessionResult
-                {
-                    SessionToken = "testToken"
-                },
-                ResponseMetadata = new ResponseMetadata
-                {
-                    RequestId = "testId"
-                }
-            };
-            var SendCommandResponseEmpty = new SendCommandResponse();
-            mockClient.SetupSequence(x => x.SendCommandAsync(It.IsAny<SendCommandRequest>(), It.IsAny<CancellationToken>()))
-                    .Returns(Task.FromResult(sendCommandResponse))
-                    .Returns(Task.FromResult(sendCommandResponse))
-                    .Returns(Task.FromResult(sendCommandResponse))
-                    .Returns(Task.FromResult(sendCommandResponse))
-                    .Returns(Task.FromResult(sendCommandResponse))
-                    .Throws(new AmazonClientException(""))
-                    .Throws(new AmazonClientException(""))
-                    .Throws(new AmazonClientException(""))
-                    .Throws(new AmazonClientException(""))
-                    .Returns(Task.FromResult(new SendCommandResponse()));
-            builder = PooledQldbDriver.Builder().WithLedger("testLedger");
-
-            var driver = new PooledQldbDriver("ledgerName", mockClient.Object, 4, 6, 4, NullLogger.Instance);
-            var session1 = driver.GetSession();
-            var session2 = driver.GetSession();
-            var session3 = driver.GetSession();
-            var session4 = driver.GetSession();
-            var session5 = driver.GetSession();
-
-            session1.Dispose();
-            session2.Dispose();
-            session3.Dispose();
-            session4.Dispose();
-            session5.Dispose();
-
-            IQldbSession session;
-            // Only way to differentiate between Abort and StartSession request is StartSession throws NullReferenceException.
-            // If a Session is retrieved from the pool, it will not throw.
-            Assert.ThrowsException<NullReferenceException>(() => session = driver.GetSession());
-            // Start 5 sessions, return them to pool and fail the abort.
-            mockClient.Verify(x => x.SendCommandAsync(It.IsAny<SendCommandRequest>(), It.IsAny<CancellationToken>()),
-                Times.Exactly(10));
-        }
-
-        [TestMethod]
         public void TestGetSessionTimeout()
         {
             var driver = new PooledQldbDriver("ledgerName", mockClient.Object, 4, 1, 10, NullLogger.Instance);

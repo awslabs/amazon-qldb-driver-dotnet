@@ -126,9 +126,7 @@ namespace Amazon.QLDB.Driver
             {
                 try
                 {
-                    int currentPoolPolls = 0;
-                    int maxPoolPolls = 4;
-                    while (this.sessionPool.Count > 0 && currentPoolPolls < maxPoolPolls)
+                    while (this.sessionPool.Count > 0)
                     {
                         var session = this.sessionPool.Take();
                         if (session.AbortOrClose())
@@ -136,8 +134,6 @@ namespace Amazon.QLDB.Driver
                             this.logger.LogDebug("Reusing session with ID {} from pool.", session.GetSessionId());
                             return this.WrapSession(session);
                         }
-
-                        currentPoolPolls++;
                     }
 
                     var newSession = this.StartNewSession();
