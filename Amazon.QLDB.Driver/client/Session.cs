@@ -23,7 +23,7 @@ namespace Amazon.QLDB.Driver
     using Microsoft.Extensions.Logging;
 
     /// <summary>
-    /// Session object representing a communication channel with QLDB.
+    /// Session object representing a connection with QLDB.
     /// </summary>
     internal class Session
     {
@@ -41,7 +41,7 @@ namespace Amazon.QLDB.Driver
         ///
         /// <param name="ledgerName">The name of the ledger to create a session to.</param>
         /// <param name="sessionClient">The low-level session used for communication with QLDB.</param>
-        /// <param name="sessionToken">The unique identifying token for this session to the QLDB.</param>
+        /// <param name="sessionToken">The unique identifying token for this session to QLDB.</param>
         /// <param name="sessionId">The initial request ID for this session to QLDB.</param>
         /// <param name="logger">The logger to inject any logging framework.</param>
         internal Session(
@@ -59,7 +59,7 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <summary>
-        /// Factory method for constructing a new Session, creating a new session to the QLDB on construction.
+        /// Factory method for constructing a new Session, creating a new session to QLDB on construction.
         /// </summary>
         ///
         /// <param name="ledgerName">The name of the ledger to create a session to.</param>
