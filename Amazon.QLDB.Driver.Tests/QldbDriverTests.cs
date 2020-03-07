@@ -21,7 +21,6 @@ namespace Amazon.QLDB.Driver.Tests
     using Amazon.QLDBSession;
     using Amazon.QLDBSession.Model;
     using Amazon.Runtime;
-    using IonDotnet.Tree;
     using Microsoft.Extensions.Logging.Abstractions;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
@@ -194,104 +193,6 @@ namespace Amazon.QLDB.Driver.Tests
 
             driver.Dispose();
             Assert.ThrowsException<ObjectDisposedException>(() => driver.GetSession());
-        }
-
-        [TestMethod]
-        public void TestExecuteWithStatementString()
-        {
-            var driver = new QldbDriver("ledgerName", mockClient.Object, 4, NullLogger.Instance);
-            var result = driver.Execute("testStatement");
-
-            Assert.IsNotNull(result);
-        }
-
-        [TestMethod]
-        public void TestExecuteWithStatementStringAndRetryAction()
-        {
-            var driver = new QldbDriver("ledgerName", mockClient.Object, 4, NullLogger.Instance);
-            var result = driver.Execute("testStatement", (int k) => { return; });
-
-            Assert.IsNotNull(result);
-        }
-
-        [TestMethod]
-        public void TestExecuteWithParams()
-        {
-            var driver = new QldbDriver("ledgerName", mockClient.Object, 4, NullLogger.Instance);
-            var result = driver.Execute("testStatement", new List<IIonValue>());
-
-            Assert.IsNotNull(result);
-        }
-
-        [TestMethod]
-        public void TestExecuteWithParamsAndRetryAction()
-        {
-            var driver = new QldbDriver("ledgerName", mockClient.Object, 4, NullLogger.Instance);
-            var result = driver.Execute("testStatement", (int k) => { return; }, new List<IIonValue>());
-
-            Assert.IsNotNull(result);
-        }
-
-        [TestMethod]
-        public void TestExecuteWithVarargs()
-        {
-            var driver = new QldbDriver("ledgerName", mockClient.Object, 4, NullLogger.Instance);
-            var result = driver.Execute("testStatement", new IIonValue[] { });
-
-            Assert.IsNotNull(result);
-        }
-
-        [TestMethod]
-        public void TestExecuteWithVarargsAndRetryAction()
-        {
-            var driver = new QldbDriver("ledgerName", mockClient.Object, 4, NullLogger.Instance);
-            var result = driver.Execute("testStatement", (int k) => { return; }, new IIonValue[] { });
-
-            Assert.IsNotNull(result);
-        }
-
-        [TestMethod]
-        public void TestExecuteWithActionLambda()
-        {
-            var driver = new QldbDriver("ledgerName", mockClient.Object, 4, NullLogger.Instance);
-            driver.Execute((txn) =>
-            {
-                txn.Execute("testStatement");
-            });
-        }
-
-        [TestMethod]
-        public void TestExecuteWithActionLambdaAndRetryAction()
-        {
-            var driver = new QldbDriver("ledgerName", mockClient.Object, 4, NullLogger.Instance);
-            driver.Execute((txn) =>
-            {
-                txn.Execute("testStatement");
-            }, (int k) => { return; });
-        }
-
-        [TestMethod]
-        public void TestExecuteWithFuncLambda()
-        {
-            var driver = new QldbDriver("ledgerName", mockClient.Object, 4, NullLogger.Instance);
-            var result = driver.Execute((txn) =>
-            {
-                txn.Execute("testStatement");
-                return "testReturnValue";
-            });
-            Assert.AreEqual("testReturnValue", result);
-        }
-
-        [TestMethod]
-        public void TestExecuteWithFuncLambdaAndRetryAction()
-        {
-            var driver = new QldbDriver("ledgerName", mockClient.Object, 4, NullLogger.Instance);
-            driver.Dispose();
-            Assert.ThrowsException<ObjectDisposedException>(() => driver.Execute((txn) =>
-            {
-                txn.Execute("testStatement");
-                return "testReturnValue";
-            }, (int k) => { return; }));
         }
     }
 }
