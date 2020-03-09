@@ -17,9 +17,9 @@ namespace Amazon.QLDB.Driver.Tests
     using System.Collections.Generic;
     using System.IO;
     using System.Net;
+    using Amazon.IonDotnet.Tree;
     using Amazon.QLDBSession;
     using Amazon.QLDBSession.Model;
-    using IonDotnet.Tree;
     using Microsoft.Extensions.Logging.Abstractions;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
