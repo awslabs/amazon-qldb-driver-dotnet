@@ -17,10 +17,10 @@ namespace Amazon.QLDB.Driver
     using System.Collections.Generic;
     using System.Net;
     using System.Threading;
+    using Amazon.IonDotnet.Tree;
     using Amazon.QLDBSession;
     using Amazon.QLDBSession.Model;
     using Amazon.Runtime;
-    using IonDotnet.Tree;
     using Microsoft.Extensions.Logging;
 
     /// <summary>

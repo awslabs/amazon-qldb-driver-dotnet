@@ -15,7 +15,7 @@ namespace Amazon.QLDB.Driver
 {
     using System.Collections;
     using System.Collections.Generic;
-    using IonDotnet.Tree;
+    using Amazon.IonDotnet.Tree;
 
     /// <summary>
     /// Implementation of a result which buffers all values in memory, rather than stream them from QLDB during retrieval.

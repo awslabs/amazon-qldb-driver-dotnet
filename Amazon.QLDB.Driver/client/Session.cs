@@ -15,11 +15,11 @@ namespace Amazon.QLDB.Driver
 {
     using System.Collections.Generic;
     using System.IO;
+    using Amazon.IonDotnet.Builders;
+    using Amazon.IonDotnet.Tree;
     using Amazon.QLDBSession;
     using Amazon.QLDBSession.Model;
     using Amazon.Runtime;
-    using IonDotnet.Builders;
-    using IonDotnet.Tree;
     using Microsoft.Extensions.Logging;
 
     /// <summary>

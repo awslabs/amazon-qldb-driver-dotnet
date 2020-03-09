@@ -14,7 +14,7 @@
 namespace Amazon.QLDB.Driver
 {
     using System.Collections.Generic;
-    using IonDotnet.Tree;
+    using Amazon.IonDotnet.Tree;
 
     /// <summary>
     /// Interface for the result of executing a statement in QLDB.
