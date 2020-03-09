@@ -14,7 +14,7 @@
 namespace Amazon.QLDB.Driver
 {
     using System.Collections.Generic;
-    using IonDotnet.Tree;
+    using Amazon.IonDotnet.Tree;
 
     /// <summary>
     /// Transaction object used within lambda executions to provide a reduced view that allows only the operations that are

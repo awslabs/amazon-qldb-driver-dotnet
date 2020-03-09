@@ -6,6 +6,7 @@
     <Company>Amazon.com, Inc.</Company>
     <Authors>Amazon Web Services</Authors>
     <Version>0.1.0-beta</Version>
+    <PackageId>Amazon.QLDB.Driver</PackageId>
     <Description>A .NET implementation of the Amazon QLDB driver that can be used to programmatically access and interact with data in Amazon QLDB ledgers.</Description>
     <Copyright>Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.</Copyright>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
@@ -27,8 +28,8 @@
 
   <ItemGroup>
     <PackageReference Include="AWSSDK.QLDBSession" Version="3.3.100.57" />
-    <PackageReference Include="IonDotnet" Version="0.0.3-alpha" />
-    <PackageReference Include="IonHashDotnet" Version="0.1.0" />
+    <PackageReference Include="Amazon.IonDotnet" Version="0.9.0" />
+    <PackageReference Include="Amazon.IonHashDotnet" Version="0.9.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.1" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
       <PrivateAssets>all</PrivateAssets>

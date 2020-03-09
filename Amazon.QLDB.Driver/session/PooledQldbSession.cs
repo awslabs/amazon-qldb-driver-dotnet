@@ -15,9 +15,9 @@ namespace Amazon.QLDB.Driver
 {
     using System;
     using System.Collections.Generic;
+    using Amazon.IonDotnet.Tree;
     using Amazon.QLDBSession.Model;
     using Amazon.Runtime;
-    using IonDotnet.Tree;
     using Microsoft.Extensions.Logging;
 
     /// <summary>

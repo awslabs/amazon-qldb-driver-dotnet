@@ -16,9 +16,9 @@ namespace Amazon.QLDB.Driver
     using System;
     using System.Collections;
     using System.Collections.Generic;
+    using Amazon.IonDotnet.Builders;
+    using Amazon.IonDotnet.Tree;
     using Amazon.QLDBSession.Model;
-    using IonDotnet.Builders;
-    using IonDotnet.Tree;
 
     /// <summary>
     /// Result implementation which streams data from QLDB, discarding chunks as they are read.

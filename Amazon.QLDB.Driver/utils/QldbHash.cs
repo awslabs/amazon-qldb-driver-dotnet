@@ -17,11 +17,11 @@ namespace Amazon.QLDB.Driver
     using System.Collections.Generic;
     using System.Linq;
     using System.Security.Cryptography;
-    using IonDotnet;
-    using IonDotnet.Builders;
-    using IonDotnet.Tree;
-    using IonDotnet.Tree.Impl;
-    using IonHashDotnet;
+    using Amazon.IonDotnet;
+    using Amazon.IonDotnet.Builders;
+    using Amazon.IonDotnet.Tree;
+    using Amazon.IonDotnet.Tree.Impl;
+    using Amazon.IonHashDotnet;
 
     /// <summary>
     /// A QLDB hash is either a 256 bit number or a special empty hash.
