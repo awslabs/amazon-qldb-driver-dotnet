@@ -17,11 +17,11 @@ namespace Amazon.QLDB.Driver.Tests
     using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
+    using Amazon.IonDotnet.Tree;
+    using Amazon.IonDotnet.Tree.Impl;
     using Amazon.QLDBSession;
     using Amazon.QLDBSession.Model;
     using Amazon.Runtime;
-    using IonDotnet.Tree;
-    using IonDotnet.Tree.Impl;
     using Microsoft.Extensions.Logging.Abstractions;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;

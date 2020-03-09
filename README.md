@@ -29,18 +29,18 @@ Then, using the driver's namespace, you can now use the driver in your applicati
 using Amazon.QLDB.Driver
 
 public void Example()
+    {
+        var builder = PooledQldbDriver.Builder();
+        var driver = builder
+            .WithLedger("testLedger")
+            .Build();
+        var session = driver.GetSession();
+        var tableNames = session.ListTableNames();
+        foreach (var table in tableNames)
         {
-            var builder = QldbDriver.Builder();
-            var driver = builder
-                .WithLedger("testLedger")
-                .Build();
-            var session = driver.GetSession();
-            var tableNames = session.ListTableNames();
-            foreach (var table in tableNames)
-            {
-                Console.WriteLine(table);
-            }
+            Console.WriteLine(table);
         }
+    }
 ```
 
 ### See Also
