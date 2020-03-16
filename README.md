@@ -26,21 +26,56 @@ To use the driver, it can be installed using NuGet package manager. The driver p
 Then, using the driver's namespace, you can now use the driver in your application:
 
 ```c#
-using Amazon.QLDB.Driver
+using System;
 
-public void Example()
+namespace Hello
+{
+    using Amazon.QLDB.Driver;
+    using Amazon.QLDBSession;
+    using Amazon.QLDBSession.Model;
+    using Amazon.Runtime;
+    using System.Threading;
+    using System.Text;
+
+    class Program
     {
-        var builder = PooledQldbDriver.Builder();
-        var driver = builder
-            .WithLedger("testLedger")
-            .Build();
-        var session = driver.GetSession();
-        var tableNames = session.ListTableNames();
-        foreach (var table in tableNames)
+        static void Main(string[] args)
         {
-            Console.WriteLine(table);
+            // Assuming the ledger is already created
+            string ledgerName= "my-ledger";
+
+            AmazonQLDBSessionConfig amazonQldbSessionConfig = new AmazonQLDBSessionConfig();
+
+            Console.WriteLine($"Create the QLDB Driver");
+            IQldbDriver driver = PooledQldbDriver.Builder()
+                .WithQLDBSessionConfig(amazonQldbSessionConfig)
+                .WithLedger(ledgerName)
+                .Build();
+
+            using (IQldbSession qldbSession = driver.GetSession())
+            {
+                int tablesCreated = 0;
+                tablesCreated = qldbSession.Execute((txn) =>
+                {
+                    string tableName = "MyTable";
+                    Console.WriteLine($"Creating the '{ tableName }' table...");
+                    string query = $"CREATE TABLE {tableName}";
+                    IResult result = txn.Execute(query);
+                    Console.WriteLine($"'{ tableName }' table created sucessfully.");
+
+                    int count = 0;
+                    foreach (var row in result)
+                    {
+                        count++;
+                    }
+                    return count;
+                });
+                Console.WriteLine($"Tables created '{ tablesCreated }'");
+            }
         }
     }
+}
+
 ```
 
 ### See Also
