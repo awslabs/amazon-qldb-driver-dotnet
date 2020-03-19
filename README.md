@@ -23,8 +23,6 @@ To use the driver, it can be installed using NuGet package manager. The driver p
 
 ```Amazon.QLDB.Driver```
 
-You will also need to add the Amazon
-
 Then, using the driver's namespace, you can now use the driver in your application:
 
 ```c#
