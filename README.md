@@ -26,21 +26,69 @@ To use the driver, it can be installed using NuGet package manager. The driver p
 Then, using the driver's namespace, you can now use the driver in your application:
 
 ```c#
-using Amazon.QLDB.Driver
+using System;
 
-public void Example()
+namespace Hello
+{
+    using Amazon.QLDB.Driver;
+    using Amazon.QLDB;
+    using Amazon.QLDB.Model;    
+    using Amazon.QLDBSession;
+    using Amazon.QLDBSession.Model;
+    using Amazon.Runtime;
+    using System.Threading;
+    using System.Text;
+
+    class Program
     {
-        var builder = PooledQldbDriver.Builder();
-        var driver = builder
-            .WithLedger("testLedger")
-            .Build();
-        var session = driver.GetSession();
-        var tableNames = session.ListTableNames();
-        foreach (var table in tableNames)
+        static void Main(string[] args)
         {
-            Console.WriteLine(table);
+            string ledgerName= "my-ledger";
+
+            Console.WriteLine($"Create the ledger '{ledgerName}'");
+            AmazonQLDBClient qldbClient = new AmazonQLDBClient();            
+            CreateLedgerRequest createLedgerRequest = new CreateLedgerRequest
+            {
+                Name = ledgerName,
+                PermissionsMode = PermissionsMode.ALLOW_ALL
+            };
+            qldbClient.CreateLedgerAsync(createLedgerRequest).GetAwaiter().GetResult();
+
+            Console.WriteLine($"Waiting for ledger to be active");
+            DescribeLedgerRequest describeLedgerRequest = new DescribeLedgerRequest {
+                Name = ledgerName
+            };
+            while (true)
+            {
+                DescribeLedgerResponse describeLedgerResponse = qldbClient.DescribeLedgerAsync(describeLedgerRequest).GetAwaiter().GetResult();
+
+                if (describeLedgerResponse.State.Equals(LedgerState.ACTIVE.Value))
+                {
+                    Console.WriteLine($"'{ ledgerName }' ledger created sucessfully.");
+                    break;
+                }
+                Console.WriteLine($"Creating the '{ ledgerName }' ledger...");
+                Thread.Sleep(1000);
+            }
+
+            AmazonQLDBSessionConfig amazonQldbSessionConfig = new AmazonQLDBSessionConfig();
+            Console.WriteLine($"Create the QLDB Driver");
+            IQldbDriver driver = PooledQldbDriver.Builder()
+                .WithQLDBSessionConfig(amazonQldbSessionConfig)
+                .WithLedger(ledgerName)
+                .Build();
+
+            string tableName = "MyTable1";
+            using (IQldbSession qldbSession = driver.GetSession())
+            {
+                // qldbSession.Execute will start a transaction and commit it.
+                IResult result = qldbSession.Execute($"CREATE TABLE {tableName}");
+                Console.WriteLine($"Table '{tableName}' created");
+            }
         }
     }
+}
+
 ```
 
 ### See Also
