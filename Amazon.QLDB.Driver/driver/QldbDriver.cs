@@ -26,27 +26,19 @@ namespace Amazon.QLDB.Driver
     /// <para>This factory does not attempt to re-use or manage sessions in any way. It is recommended to use
     /// <see cref="PooledQldbDriver"/> for both less resource usage and lower latency.</para>
     /// </summary>
-    public class QldbDriver : IQldbDriver
+    public class QldbDriver : BaseQldbDriver
     {
-        private readonly string ledgerName;
-        private readonly AmazonQLDBSessionClient sessionClient;
-        private readonly int retryLimit;
-        private readonly ILogger logger;
-        private bool isClosed = false;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="QldbDriver"/> class.
         /// </summary>
+        ///
         /// <param name="ledgerName">The ledger to create sessions to.</param>
         /// <param name="sessionClient">QLDB session client.</param>
         /// <param name="retryLimit">The amount of retries sessions created by this driver will attempt upon encountering a non-fatal error.</param>
         /// <param name="logger">Logger to be used by this.</param>
         internal QldbDriver(string ledgerName, AmazonQLDBSessionClient sessionClient, int retryLimit, ILogger logger)
+            : base(ledgerName, sessionClient, retryLimit, logger)
         {
-            this.ledgerName = ledgerName;
-            this.sessionClient = sessionClient;
-            this.retryLimit = retryLimit;
-            this.logger = logger;
         }
 
         /// <summary>
@@ -60,9 +52,9 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <summary>
-        /// Close the session.
+        /// Close this driver. No-op if already closed.
         /// </summary>
-        public void Dispose()
+        public override void Dispose()
         {
             this.isClosed = true;
         }
@@ -76,7 +68,7 @@ namespace Amazon.QLDB.Driver
         /// <returns>The newly active <see cref="IQldbSession"/> object.</returns>
         ///
         /// <exception cref="ObjectDisposedException">Thrown when this driver has been disposed.</exception>
-        public IQldbSession GetSession()
+        public override IQldbSession GetSession()
         {
             if (this.isClosed)
             {

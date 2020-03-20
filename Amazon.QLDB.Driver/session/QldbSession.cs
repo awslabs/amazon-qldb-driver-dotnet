@@ -34,13 +34,14 @@ namespace Amazon.QLDB.Driver
     /// <para>There are three methods of execution, ranging from simple to complex; the first two are recommended for their inbuilt
     /// error handling:
     /// <list type="bullet">
-    /// <item><description>Execute(string) and Execute(string, List) allow for a single statement to be executed within a
-    /// transaction where the transaction is implicitly created and committed, and any recoverable errors are transparently handled.</description></item>
+    /// <item><description>Execute(string, Action), Execute(string, Action, List), and Execute(string, Action, params IIonValue[])
+    /// allow for a single statement to be executed within a transaction where the transaction is implicitly created
+    /// and committed, and any recoverable errors are transparently handled. Each parameter besides the statement string
+    /// have overloaded method variants where they are not necessary.</description></item>
     /// <item><description>Execute(Action, Action) and Execute(Func, Action) allow for more complex execution sequences where
     /// more than one execution can occur, as well as other method calls. The transaction is implicitly created and committed, and any
-    /// recoverable errors are transparently handled.</description></item>
-    /// <item><description>Execute(Action) and Execute(Func) are also available, providing the same functionality as the former
-    /// two functions, but without a lambda function to be invoked upon a retriable error.</description></item>
+    /// recoverable errors are transparently handled. The second Action parameter has overloaded variants where it is not
+    /// necessary.</description></item>
     /// <item><description><see cref="StartTransaction"/> allows for full control over when the transaction is committed and leaves the
     /// responsibility of OCC conflict handling up to the user. Transaction methods cannot be automatically retried, as
     /// the state of the transaction is ambiguous in the case of an unexpected error.</description></item>
@@ -69,7 +70,7 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <summary>
-        /// Close this session. No-op if already closed.
+        /// End this session. No-op if already closed.
         /// </summary>
         public void Dispose()
         {
@@ -85,18 +86,97 @@ namespace Amazon.QLDB.Driver
         /// </summary>
         ///
         /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
-        /// <param name="parameters">Parameters to execute.</param>
-        /// <param name="retryAction">A lambda that which is invoked when the Executor lambda is about to be retried due to
+        ///
+        /// <returns>The result of executing the statement.</returns>
+        ///
+        /// <exception cref="ObjectDisposedException">Thrown when called on a disposed instance.</exception>
+        /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
+        public virtual IResult Execute(string statement)
+        {
+            return this.Execute(txn => { return txn.Execute(statement); }, null);
+        }
+
+        /// <summary>
+        /// Execute the statement against QLDB and retrieve the result.
+        /// </summary>
+        ///
+        /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
+        /// <param name="retryAction">A lambda that is invoked when the statement execution is about to be retried due to
         /// a retriable error. Can be null if not applicable.</param>
         ///
         /// <returns>The result of executing the statement.</returns>
         ///
-        /// <exception cref="AbortException">If the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
-        /// <exception cref="InvalidSessionException">Thrown when the session retry limit is reached.</exception>
-        /// <exception cref="ObjectDisposedException">Thrown when session is closed.</exception>
-        /// <exception cref="OccConflictException">If the number of retries has exceeded the limit and an OCC conflict occurs.</exception>
-        /// <exception cref="AmazonClientException">If there is an error communicating with QLDB.</exception>
-        public virtual IResult Execute(string statement, List<IIonValue> parameters = null, Action<int> retryAction = null)
+        /// <exception cref="ObjectDisposedException">Thrown when called on a disposed instance.</exception>
+        /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
+        public virtual IResult Execute(string statement, Action<int> retryAction)
+        {
+            return this.Execute(txn => { return txn.Execute(statement); }, retryAction);
+        }
+
+        /// <summary>
+        /// Execute the statement using the specified parameters against QLDB and retrieve the result.
+        /// </summary>
+        ///
+        /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
+        /// <param name="parameters">Parameters to execute.</param>
+        ///
+        /// <returns>The result of executing the statement.</returns>
+        ///
+        /// <exception cref="ObjectDisposedException">Thrown when called on a disposed instance.</exception>
+        /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
+        public virtual IResult Execute(string statement, List<IIonValue> parameters)
+        {
+            return this.Execute(txn => { return txn.Execute(statement, parameters); }, null);
+        }
+
+        /// <summary>
+        /// Execute the statement using the specified parameters against QLDB and retrieve the result.
+        /// </summary>
+        ///
+        /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
+        /// <param name="parameters">Parameters to execute.</param>
+        ///
+        /// <returns>The result of executing the statement.</returns>
+        ///
+        /// <exception cref="ObjectDisposedException">Thrown when called on a disposed instance.</exception>
+        /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
+        public virtual IResult Execute(string statement, params IIonValue[] parameters)
+        {
+            return this.Execute(txn => { return txn.Execute(statement, parameters); }, null);
+        }
+
+        /// <summary>
+        /// Execute the statement using the specified parameters against QLDB and retrieve the result.
+        /// </summary>
+        ///
+        /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
+        /// <param name="retryAction">A lambda that is invoked when the statement execution is about to be retried due to
+        /// a retriable error. Can be null if not applicable.</param>
+        /// <param name="parameters">Parameters to execute.</param>
+        ///
+        /// <returns>The result of executing the statement.</returns>
+        ///
+        /// <exception cref="ObjectDisposedException">Thrown when called on a disposed instance.</exception>
+        /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
+        public virtual IResult Execute(string statement, Action<int> retryAction, List<IIonValue> parameters)
+        {
+            return this.Execute(txn => { return txn.Execute(statement, parameters); }, retryAction);
+        }
+
+        /// <summary>
+        /// Execute the statement using the specified parameters against QLDB and retrieve the result.
+        /// </summary>
+        ///
+        /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
+        /// <param name="retryAction">A lambda that is invoked when the statement execution is about to be retried due to
+        /// a retriable error. Can be null if not applicable.</param>
+        /// <param name="parameters">Parameters to execute.</param>
+        ///
+        /// <returns>The result of executing the statement.</returns>
+        ///
+        /// <exception cref="ObjectDisposedException">Thrown when called on a disposed instance.</exception>
+        /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
+        public virtual IResult Execute(string statement, Action<int> retryAction, params IIonValue[] parameters)
         {
             return this.Execute(txn => { return txn.Execute(statement, parameters); }, retryAction);
         }
@@ -105,17 +185,30 @@ namespace Amazon.QLDB.Driver
         /// Execute the Executor lambda against QLDB within a transaction where no result is expected.
         /// </summary>
         ///
-        /// <param name="action">A lambda with no return value representing the block of code to be executed within the transaction.
+        /// <param name="action">The Executor lambda with no return value representing the block of code to be executed within the transaction.
         /// This cannot have any side effects as it may be invoked multiple times.</param>
-        /// <param name="retryAction">A lambda that which is invoked when the Executor lambda is about to be retried due to
+        ///
+        /// <exception cref="AbortException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
+        /// <exception cref="ObjectDisposedException">Thrown when called on a disposed instance.</exception>
+        /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
+        public virtual void Execute(Action<TransactionExecutor> action)
+        {
+            this.Execute(action, null);
+        }
+
+        /// <summary>
+        /// Execute the Executor lambda against QLDB within a transaction where no result is expected.
+        /// </summary>
+        ///
+        /// <param name="action">The Executor lambda with no return value representing the block of code to be executed within the transaction.
+        /// This cannot have any side effects as it may be invoked multiple times.</param>
+        /// <param name="retryAction">A lambda that is invoked when the Executor lambda is about to be retried due to
         /// a retriable error. Can be null if not applicable.</param>
         ///
-        /// <exception cref="AbortException">If the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
-        /// <exception cref="InvalidSessionException">Thrown when the session retry limit is reached.</exception>
-        /// <exception cref="ObjectDisposedException">Thrown when session is closed.</exception>
-        /// <exception cref="OccConflictException">If the number of retries has exceeded the limit and an OCC conflict occurs.</exception>
-        /// <exception cref="AmazonClientException">If there is an error communicating with QLDB.</exception>
-        public virtual void Execute(Action<TransactionExecutor> action, Action<int> retryAction = null)
+        /// <exception cref="AbortException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
+        /// <exception cref="ObjectDisposedException">Thrown when called on a disposed instance.</exception>
+        /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
+        public virtual void Execute(Action<TransactionExecutor> action, Action<int> retryAction)
         {
             ValidationUtils.AssertNotNull(action, "action");
             this.Execute(
@@ -130,25 +223,46 @@ namespace Amazon.QLDB.Driver
         /// Execute the Executor lambda against QLDB and retrieve the result within a transaction.
         /// </summary>
         ///
-        /// <param name="func">
-        /// A lambda representing the block of code to be executed within the transaction. This cannot have any
+        /// <param name="func">The Executor lambda representing the block of code to be executed within the transaction. This cannot have any
         /// side effects as it may be invoked multiple times, and the result cannot be trusted until the
         /// transaction is committed.</param>
-        /// <param name="retryAction">A lambda that which is invoked when the Executor lambda is about to be retried due to
+        /// <typeparam name="T">The return type.</typeparam>
+        ///
+        /// <returns>The return value of executing the executor. Note that if you directly return a <see cref="IResult"/>, this will
+        /// be automatically buffered in memory before the implicit commit to allow reading, as the commit will close
+        /// any open results. Any other <see cref="IResult"/> instances created within the executor block will be
+        /// invalidated, including if the return value is an object which nests said <see cref="IResult"/> instances within it.
+        /// </returns>
+        ///
+        /// <exception cref="AbortException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
+        /// <exception cref="ObjectDisposedException">Thrown when called on a disposed instance.</exception>
+        /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
+        public virtual T Execute<T>(Func<TransactionExecutor, T> func)
+        {
+            return this.Execute(func, null);
+        }
+
+        /// <summary>
+        /// Execute the Executor lambda against QLDB and retrieve the result within a transaction.
+        /// </summary>
+        ///
+        /// <param name="func">The Executor lambda representing the block of code to be executed within the transaction. This cannot have any
+        /// side effects as it may be invoked multiple times, and the result cannot be trusted until the
+        /// transaction is committed.</param>
+        /// <param name="retryAction">A lambda that is invoked when the Executor lambda is about to be retried due to
         /// a retriable error. Can be null if not applicable.</param>
         /// <typeparam name="T">The return type.</typeparam>
         ///
         /// <returns>The return value of executing the executor. Note that if you directly return a <see cref="IResult"/>, this will
         /// be automatically buffered in memory before the implicit commit to allow reading, as the commit will close
         /// any open results. Any other <see cref="IResult"/> instances created within the executor block will be
-        /// invalidated, including if the return value is an object which nests said <see cref="IResult"/> instances within it.</returns>
+        /// invalidated, including if the return value is an object which nests said <see cref="IResult"/> instances within it.
+        /// </returns>
         ///
-        /// <exception cref="AbortException">If the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
-        /// <exception cref="InvalidSessionException">Thrown when the session retry limit is reached.</exception>
-        /// <exception cref="ObjectDisposedException">Thrown when session is closed.</exception>
-        /// <exception cref="OccConflictException">If the number of retries has exceeded the limit and an OCC conflict occurs.</exception>
-        /// <exception cref="AmazonClientException">If there is an error communicating with QLDB.</exception>
-        public virtual T Execute<T>(Func<TransactionExecutor, T> func, Action<int> retryAction = null)
+        /// <exception cref="AbortException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
+        /// <exception cref="ObjectDisposedException">Thrown when called on a disposed instance.</exception>
+        /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
+        public virtual T Execute<T>(Func<TransactionExecutor, T> func, Action<int> retryAction)
         {
             ValidationUtils.AssertNotNull(func, "func");
             this.ThrowIfClosed();

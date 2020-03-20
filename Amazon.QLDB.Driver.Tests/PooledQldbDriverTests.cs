@@ -14,11 +14,14 @@
 namespace Amazon.QLDB.Driver.Tests
 {
     using System;
+    using System.Collections.Generic;
+    using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
     using Amazon.QLDBSession;
     using Amazon.QLDBSession.Model;
     using Amazon.Runtime;
+    using Amazon.IonDotnet.Tree;
     using Microsoft.Extensions.Logging.Abstractions;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
@@ -30,6 +33,9 @@ namespace Amazon.QLDB.Driver.Tests
     {
         private static PooledQldbDriverBuilder builder;
         private static Mock<AmazonQLDBSessionClient> mockClient;
+        private static readonly byte[] digest = new byte[] { 89, 49, 253, 196, 209, 176, 42, 98, 35, 214, 6, 163, 93,
+            141, 170, 92, 75, 218, 111, 151, 173, 49, 57, 144, 227, 72, 215, 194, 186, 93, 85, 108,
+        };
 
         [TestInitialize]
         public void SetupTest()
@@ -40,6 +46,22 @@ namespace Amazon.QLDB.Driver.Tests
                 StartSession = new StartSessionResult
                 {
                     SessionToken = "testToken"
+                },
+                StartTransaction = new StartTransactionResult
+                {
+                    TransactionId = "testTransactionIdddddd"
+                },
+                ExecuteStatement = new ExecuteStatementResult
+                {
+                    FirstPage = new Page
+                    {
+                        NextPageToken = null,
+                        Values = new List<ValueHolder>()
+                    }
+                },
+                CommitTransaction = new CommitTransactionResult
+                {
+                    CommitDigest = new MemoryStream(digest)
                 },
                 ResponseMetadata = new ResponseMetadata
                 {
@@ -189,6 +211,105 @@ namespace Amazon.QLDB.Driver.Tests
             session.Dispose();
             // Pool limit is 1 so will throw TimeoutException if semaphore was not released upon dispose.
             session = driver.GetSession();
+            Assert.IsNotNull(session);
+        }
+
+        [TestMethod]
+        public void TestExecuteWithStatementString()
+        {
+            var driver = new PooledQldbDriver("ledgerName", mockClient.Object, 4, 1, 10, NullLogger.Instance);
+            var result = driver.Execute("testStatement");
+
+            Assert.IsNotNull(result);
+        }
+
+        [TestMethod]
+        public void TestExecuteWithStatementStringAndRetryAction()
+        {
+            var driver = new PooledQldbDriver("ledgerName", mockClient.Object, 4, 1, 10, NullLogger.Instance);
+            var result = driver.Execute("testStatement", (int k) => { return; });
+
+            Assert.IsNotNull(result);
+        }
+
+        [TestMethod]
+        public void TestExecuteWithParams()
+        {
+            var driver = new PooledQldbDriver("ledgerName", mockClient.Object, 4, 1, 10, NullLogger.Instance);
+            var result = driver.Execute("testStatement", new List<IIonValue>());
+
+            Assert.IsNotNull(result);
+        }
+
+        [TestMethod]
+        public void TestExecuteWithParamsAndRetryAction()
+        {
+            var driver = new PooledQldbDriver("ledgerName", mockClient.Object, 4, 1, 10, NullLogger.Instance);
+            var result = driver.Execute("testStatement", (int k) => { return; }, new List<IIonValue>());
+
+            Assert.IsNotNull(result);
+        }
+
+        [TestMethod]
+        public void TestExecuteWithVarargs()
+        {
+            var driver = new PooledQldbDriver("ledgerName", mockClient.Object, 4, 1, 10, NullLogger.Instance);
+            var result = driver.Execute("testStatement", new IIonValue[] { });
+
+            Assert.IsNotNull(result);
+        }
+
+        [TestMethod]
+        public void TestExecuteWithVarargsAndRetryAction()
+        {
+            var driver = new PooledQldbDriver("ledgerName", mockClient.Object, 4, 1, 10, NullLogger.Instance);
+            var result = driver.Execute("testStatement", (int k) => { return; }, new IIonValue[] { });
+
+            Assert.IsNotNull(result);
+        }
+
+        [TestMethod]
+        public void TestExecuteWithActionLambda()
+        {
+            var driver = new PooledQldbDriver("ledgerName", mockClient.Object, 4, 1, 10, NullLogger.Instance);
+            driver.Execute((txn) =>
+            {
+                txn.Execute("testStatement");
+            });
+        }
+
+        [TestMethod]
+        public void TestExecuteWithActionLambdaAndRetryAction()
+        {
+            var driver = new PooledQldbDriver("ledgerName", mockClient.Object, 4, 1, 10, NullLogger.Instance);
+            driver.Execute((txn) =>
+            {
+                txn.Execute("testStatement");
+            }, (int k) => { return; });
+        }
+
+        [TestMethod]
+        public void TestExecuteWithFuncLambda()
+        {
+            var driver = new PooledQldbDriver("ledgerName", mockClient.Object, 4, 1, 10, NullLogger.Instance);
+            var result = driver.Execute((txn) =>
+            {
+                txn.Execute("testStatement");
+                return "testReturnValue";
+            });
+            Assert.AreEqual("testReturnValue", result);
+        }
+
+        [TestMethod]
+        public void TestExecuteWithFuncLambdaAndRetryAction()
+        {
+            var driver = new PooledQldbDriver("ledgerName", mockClient.Object, 4, 1, 10, NullLogger.Instance);
+            driver.Dispose();
+            Assert.ThrowsException<ObjectDisposedException>(() => driver.Execute((txn) =>
+            {
+                txn.Execute("testStatement");
+                return "testReturnValue";
+            }, (int k) => { return; }));
         }
     }
 }

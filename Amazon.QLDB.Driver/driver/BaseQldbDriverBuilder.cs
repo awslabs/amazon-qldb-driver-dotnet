@@ -159,7 +159,7 @@
         }
 
         /// <summary>
-        /// Creates the driver.
+        /// Create the driver.
         /// </summary>
         ///
         /// <returns>The driver object.</returns>

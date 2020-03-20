@@ -91,7 +91,6 @@ namespace Amazon.QLDB.Driver.Tests
 
             var result = qldbSession.Execute(
                 "testStatement",
-                null,
                 (int retry) => retryCount = retry);
             Assert.AreEqual(1, txnCount);
             Assert.AreEqual(1, executeCount);

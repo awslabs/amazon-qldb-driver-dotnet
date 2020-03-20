@@ -16,63 +16,13 @@ namespace Amazon.QLDB.Driver
     using System;
     using System.Collections.Generic;
     using Amazon.IonDotnet.Tree;
-    using Amazon.QLDBSession.Model;
     using Amazon.Runtime;
-    using Microsoft.Extensions.Logging;
 
     /// <summary>
-    /// Represents a pooled session object. See <see cref="QldbSession"/> for more details.
+    /// Interface for execution against QLDB, that may be retried in the case of a non-fatal error.
     /// </summary>
-    internal class PooledQldbSession : IQldbSession
+    public interface IRetriableExecutable : IExecutable
     {
-        private readonly QldbSession session;
-        private readonly Action<QldbSession> disposeDelegate;
-        private readonly ILogger logger;
-        private bool isClosed;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="PooledQldbSession"/> class.
-        /// </summary>
-        ///
-        /// <param name="qldbSession">The QldbSession instance that this wraps.</param>
-        /// <param name="disposeDelegate">The delegate method to invoke upon disposal of this.</param>
-        /// <param name="logger">The logger to be used by this.</param>
-        internal PooledQldbSession(QldbSession qldbSession, Action<QldbSession> disposeDelegate, ILogger logger)
-        {
-            this.session = qldbSession;
-            this.disposeDelegate = disposeDelegate;
-            this.logger = logger;
-            this.isClosed = false;
-        }
-
-        /// <summary>
-        /// Close this session and return it to the pool. No-op if already closed.
-        /// </summary>
-        public void Dispose()
-        {
-            if (!this.isClosed)
-            {
-                this.isClosed = true;
-                this.disposeDelegate(this.session);
-            }
-        }
-
-        /// <summary>
-        /// Execute the statement against QLDB and retrieve the result.
-        /// </summary>
-        ///
-        /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
-        ///
-        /// <returns>The result of executing the statement.</returns>
-        ///
-        /// <exception cref="ObjectDisposedException">Thrown when called on a disposed instance.</exception>
-        /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
-        public virtual IResult Execute(string statement)
-        {
-            this.ThrowIfClosed();
-            return this.session.Execute(statement);
-        }
-
         /// <summary>
         /// Execute the statement against QLDB and retrieve the result.
         /// </summary>
@@ -85,28 +35,7 @@ namespace Amazon.QLDB.Driver
         ///
         /// <exception cref="ObjectDisposedException">Thrown when called on a disposed instance.</exception>
         /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
-        public virtual IResult Execute(string statement, Action<int> retryAction)
-        {
-            this.ThrowIfClosed();
-            return this.session.Execute(statement, retryAction);
-        }
-
-        /// <summary>
-        /// Execute the statement using the specified parameters against QLDB and retrieve the result.
-        /// </summary>
-        ///
-        /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
-        /// <param name="parameters">Parameters to execute.</param>
-        ///
-        /// <returns>The result of executing the statement.</returns>
-        ///
-        /// <exception cref="ObjectDisposedException">Thrown when called on a disposed instance.</exception>
-        /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
-        public IResult Execute(string statement, List<IIonValue> parameters)
-        {
-            this.ThrowIfClosed();
-            return this.session.Execute(statement, parameters);
-        }
+        IResult Execute(string statement, Action<int> retryAction);
 
         /// <summary>
         /// Execute the statement using the specified parameters against QLDB and retrieve the result.
@@ -121,28 +50,7 @@ namespace Amazon.QLDB.Driver
         ///
         /// <exception cref="ObjectDisposedException">Thrown when called on a disposed instance.</exception>
         /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
-        public IResult Execute(string statement, Action<int> retryAction, List<IIonValue> parameters)
-        {
-            this.ThrowIfClosed();
-            return this.session.Execute(statement, retryAction, parameters);
-        }
-
-        /// <summary>
-        /// Execute the statement using the specified parameters against QLDB and retrieve the result.
-        /// </summary>
-        ///
-        /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
-        /// <param name="parameters">Parameters to execute.</param>
-        ///
-        /// <returns>The result of executing the statement.</returns>
-        ///
-        /// <exception cref="ObjectDisposedException">Thrown when called on a disposed instance.</exception>
-        /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
-        public IResult Execute(string statement, params IIonValue[] parameters)
-        {
-            this.ThrowIfClosed();
-            return this.session.Execute(statement, parameters);
-        }
+        IResult Execute(string statement, Action<int> retryAction, List<IIonValue> parameters);
 
         /// <summary>
         /// Execute the statement using the specified parameters against QLDB and retrieve the result.
@@ -157,11 +65,7 @@ namespace Amazon.QLDB.Driver
         ///
         /// <exception cref="ObjectDisposedException">Thrown when called on a disposed instance.</exception>
         /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
-        public IResult Execute(string statement, Action<int> retryAction, params IIonValue[] parameters)
-        {
-            this.ThrowIfClosed();
-            return this.session.Execute(statement, retryAction, parameters);
-        }
+        IResult Execute(string statement, Action<int> retryAction, params IIonValue[] parameters);
 
         /// <summary>
         /// Execute the Executor lambda against QLDB within a transaction where no result is expected.
@@ -173,11 +77,7 @@ namespace Amazon.QLDB.Driver
         /// <exception cref="AbortException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
         /// <exception cref="ObjectDisposedException">Thrown when called on a disposed instance.</exception>
         /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
-        public void Execute(Action<TransactionExecutor> action)
-        {
-            this.ThrowIfClosed();
-            this.session.Execute(action);
-        }
+        void Execute(Action<TransactionExecutor> action);
 
         /// <summary>
         /// Execute the Executor lambda against QLDB within a transaction where no result is expected.
@@ -191,11 +91,7 @@ namespace Amazon.QLDB.Driver
         /// <exception cref="AbortException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
         /// <exception cref="ObjectDisposedException">Thrown when called on a disposed instance.</exception>
         /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
-        public void Execute(Action<TransactionExecutor> action, Action<int> retryAction)
-        {
-            this.ThrowIfClosed();
-            this.session.Execute(action, retryAction);
-        }
+        void Execute(Action<TransactionExecutor> action, Action<int> retryAction);
 
         /// <summary>
         /// Execute the Executor lambda against QLDB and retrieve the result within a transaction.
@@ -215,11 +111,7 @@ namespace Amazon.QLDB.Driver
         /// <exception cref="AbortException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
         /// <exception cref="ObjectDisposedException">Thrown when called on a disposed instance.</exception>
         /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
-        public T Execute<T>(Func<TransactionExecutor, T> func)
-        {
-            this.ThrowIfClosed();
-            return this.session.Execute(func);
-        }
+        T Execute<T>(Func<TransactionExecutor, T> func);
 
         /// <summary>
         /// Execute the Executor lambda against QLDB and retrieve the result within a transaction.
@@ -241,41 +133,6 @@ namespace Amazon.QLDB.Driver
         /// <exception cref="AbortException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
         /// <exception cref="ObjectDisposedException">Thrown when called on a disposed instance.</exception>
         /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
-        public T Execute<T>(Func<TransactionExecutor, T> func, Action<int> retryAction)
-        {
-            this.ThrowIfClosed();
-            return this.session.Execute(func, retryAction);
-        }
-
-        /// <summary>
-        /// Retrieve the table names that are available within the ledger.
-        /// </summary>
-        ///
-        /// <returns>The Enumerable over the table names in the ledger.</returns>
-        public IEnumerable<string> ListTableNames()
-        {
-            this.ThrowIfClosed();
-            return this.session.ListTableNames();
-        }
-
-        /// <summary>
-        /// Create a transaction object which allows for granular control over when a transaction is aborted or committed.
-        /// </summary>
-        ///
-        /// <returns>The newly created transaction object.</returns>
-        public ITransaction StartTransaction()
-        {
-            this.ThrowIfClosed();
-            return this.session.StartTransaction();
-        }
-
-        private void ThrowIfClosed()
-        {
-            if (this.isClosed)
-            {
-                this.logger.LogError(ExceptionMessages.SessionClosed);
-                throw new ObjectDisposedException(ExceptionMessages.SessionClosed);
-            }
-        }
+        T Execute<T>(Func<TransactionExecutor, T> func, Action<int> retryAction);
     }
 }

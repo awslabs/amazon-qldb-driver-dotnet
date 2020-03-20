@@ -53,7 +53,8 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <summary>
-        /// Aborts the transaction.
+        /// Abort the transaction and roll back any changes. No-op if closed.
+        /// Any open <see cref="IResult"/> created by the transaction will be invalidated.
         /// </summary>
         public void Abort()
         {
@@ -65,12 +66,13 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <summary>
-        /// Commit transaction.
+        /// Commit the transaction. Any open <see cref="IResult"/> created by the transaction will be invalidated.
         /// </summary>
         ///
-        /// <exception cref="InvalidOperationException">Hash digest not equal.</exception>
-        /// <exception cref="OccConflictException">OCC conflict.</exception>
-        /// <exception cref="AmazonClientException">Communication issue with QLDB.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when Hash returned from QLDB is not equal.</exception>
+        /// <exception cref="OccConflictException">Thrown if an OCC conflict has been detected within the transaction.</exception>
+        /// <exception cref="AmazonClientException">Thrown when there is an error committing this transaction against QLDB.</exception>
+        /// <exception cref="ObjectDisposedException">Thrown when this transaction has been disposed.</exception>
         public void Commit()
         {
             this.ThrowIfClosed();
@@ -101,7 +103,7 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <summary>
-        /// Dispose transaction.
+        /// Abort the transaction and close it. No-op if already closed.
         /// </summary>
         public void Dispose()
         {
@@ -116,14 +118,32 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <summary>
-        /// Executes PartiQL statement.
+        /// Execute the statement using the specified parameters against QLDB and retrieve the result.
         /// </summary>
         ///
-        /// <param name="statement">PartiQL statement.</param>
-        /// <param name="parameters">Ion value parameters.</param>
+        /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
         ///
         /// <returns>Result from executed statement.</returns>
-        public IResult Execute(string statement, List<IIonValue> parameters = null)
+        ///
+        /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
+        /// <exception cref="ObjectDisposedException">Thrown when this transaction has been disposed.</exception>
+        public IResult Execute(string statement)
+        {
+            return this.Execute(statement, new List<IIonValue>());
+        }
+
+        /// <summary>
+        /// Execute the statement against QLDB and retrieve the result.
+        /// </summary>
+        ///
+        /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
+        /// <param name="parameters">Parameters to execute.</param>
+        ///
+        /// <returns>Result from executed statement.</returns>
+        ///
+        /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
+        /// <exception cref="ObjectDisposedException">Thrown when this transaction has been disposed.</exception>
+        public IResult Execute(string statement, List<IIonValue> parameters)
         {
             this.ThrowIfClosed();
             ValidationUtils.AssertStringNotEmpty(statement, "statement");
@@ -140,12 +160,28 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <summary>
-        /// Calculates the QLDB hash from statement and parameters.
+        /// Execute the statement using the specified parameters against QLDB and retrieve the result.
+        /// </summary>
+        ///
+        /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
+        /// <param name="parameters">Parameters to execute.</param>
+        ///
+        /// <returns>Result from executed statement.</returns>
+        ///
+        /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
+        /// <exception cref="ObjectDisposedException">Thrown when this transaction has been disposed.</exception>
+        public IResult Execute(string statement, params IIonValue[] parameters)
+        {
+            return this.Execute(statement, new List<IIonValue>(parameters));
+        }
+
+        /// <summary>
+        /// Calculate the QLDB hash from statement and parameters.
         /// </summary>
         ///
         /// <param name="seed">QLDB Hash.</param>
         /// <param name="statement">PartiQL statement.</param>
-        /// <param name="parameters">Ion value parameters.</param>
+        /// <param name="parameters">Parameters to execute.</param>
         ///
         /// <returns>QLDB hash.</returns>
         private static QldbHash Dot(QldbHash seed, string statement, List<IIonValue> parameters)
@@ -160,10 +196,10 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <summary>
-        /// Throws exception if the transaction is closed.
+        /// If the transaction is closed throw an <see cref="ObjectDisposedException"/>.
         /// </summary>
         ///
-        /// <exception cref="ObjectDisposedException">Transaction is closed.</exception>
+        /// <exception cref="ObjectDisposedException">Thrown when this transaction has been closed.</exception>
         private void ThrowIfClosed()
         {
             if (this.isClosed)

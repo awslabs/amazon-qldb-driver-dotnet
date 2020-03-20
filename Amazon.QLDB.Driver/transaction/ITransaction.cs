@@ -14,8 +14,6 @@
 namespace Amazon.QLDB.Driver
 {
     using System;
-    using System.Collections.Generic;
-    using Amazon.IonDotnet.Tree;
     using Amazon.QLDBSession.Model;
     using Amazon.Runtime;
 
@@ -35,30 +33,22 @@ namespace Amazon.QLDB.Driver
     ///
     /// <para>Child Result objects will be closed when the transaction is aborted or committed.</para>
     /// </summary>
-    public interface ITransaction : IDisposable
+    public interface ITransaction : IDisposable, IExecutable
     {
         /// <summary>
-        /// Aborts the transaction and roll back any changes. Any open <see cref="IResult"/> created by the transaction will be closed.
+        /// Abort the transaction and roll back any changes. No-op if closed.
+        /// Any open <see cref="IResult"/> created by the transaction will be invalidated.
         /// </summary>
         void Abort();
 
         /// <summary>
-        /// Commits the transaction. Any open <see cref="IResult"/> created by the transaction will be closed.
+        /// Commit the transaction. Any open <see cref="IResult"/> created by the transaction will be invalidated.
         /// </summary>
         ///
-        /// <exception cref="InvalidOperationException">Hash digest not equal.</exception>
-        /// <exception cref="OccConflictException">OCC conflict.</exception>
-        /// <exception cref="AmazonClientException">Communication issue with QLDB.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when Hash returned from QLDB is not equal.</exception>
+        /// <exception cref="OccConflictException">Thrown if an OCC conflict has been detected within the transaction.</exception>
+        /// <exception cref="AmazonClientException">Thrown when there is an error committing this transaction against QLDB.</exception>
+        /// <exception cref="ObjectDisposedException">Thrown when this transaction has been disposed.</exception>
         void Commit();
-
-        /// <summary>
-        /// Executes the statement using the specified parameters against QLDB and retrieve the result.
-        /// </summary>
-        ///
-        /// <param name="statement">PartiQL statement.</param>
-        /// <param name="parameters">Ion value parameters.</param>
-        ///
-        /// <returns>Result from executed statement.</returns>
-        IResult Execute(string statement, List<IIonValue> parameters = null);
     }
 }

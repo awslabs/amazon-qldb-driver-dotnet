@@ -22,7 +22,7 @@ namespace Amazon.QLDB.Driver.Tests
     [TestClass]
     public class BufferedResultTests
     {
-        private static IValueFactory valueFactory = new ValueFactory();
+        private static readonly IValueFactory valueFactory = new ValueFactory();
         private static Mock<IResult> mockResult;
         private static List<IIonValue> testList;
         private static BufferedResult result;

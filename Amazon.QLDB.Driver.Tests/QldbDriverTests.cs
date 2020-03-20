@@ -14,6 +14,8 @@
 namespace Amazon.QLDB.Driver.Tests
 {
     using System;
+    using System.Collections.Generic;
+    using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
     using Amazon.QLDBSession;
@@ -30,6 +32,9 @@ namespace Amazon.QLDB.Driver.Tests
     {
         private static QldbDriverBuilder builder;
         private static readonly Mock<AmazonQLDBSessionClient> mockClient = new Mock<AmazonQLDBSessionClient>();
+        private static readonly byte[] digest = new byte[] { 89, 49, 253, 196, 209, 176, 42, 98, 35, 214, 6, 163, 93,
+            141, 170, 92, 75, 218, 111, 151, 173, 49, 57, 144, 227, 72, 215, 194, 186, 93, 85, 108,
+        };
 
         [ClassInitialize]
 #pragma warning disable IDE0060 // Remove unused parameter
@@ -41,6 +46,22 @@ namespace Amazon.QLDB.Driver.Tests
                 StartSession = new StartSessionResult
                 {
                     SessionToken = "testToken"
+                },
+                StartTransaction = new StartTransactionResult
+                {
+                    TransactionId = "testTransactionIdddddd"
+                },
+                ExecuteStatement = new ExecuteStatementResult
+                {
+                    FirstPage = new Page
+                    {
+                        NextPageToken = null,
+                        Values = new List<ValueHolder>()
+                    }
+                },
+                CommitTransaction = new CommitTransactionResult
+                {
+                    CommitDigest = new MemoryStream(digest)
                 },
                 ResponseMetadata = new ResponseMetadata
                 {
