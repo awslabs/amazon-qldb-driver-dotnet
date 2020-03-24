@@ -54,14 +54,14 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestStartSession()
+        public void TestStartSessionReturnsSessionWithMatchingParameters()
         {
             Assert.AreEqual(mockClient.Object, session.SessionClient);
             Assert.AreEqual("testLedgerName", session.LedgerName);
         }
 
         [TestMethod]
-        public void TestAbortTransaction()
+        public void TestAbortTransactionReturnsResponse()
         {
             var testAbortTransactionResult = new AbortTransactionResult();
             var testAbortTransactionResponse = new SendCommandResponse
@@ -74,7 +74,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestEndSession()
+        public void TestEndSessionReturnsResponse()
         {
             var testEndSessionResult = new EndSessionResult();
             var testEndSessionResponse = new SendCommandResponse
@@ -87,7 +87,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestEnd()
+        public void TestEndSendsEndSessionAndIgnoresExceptions()
         {
             mockClient.Setup(x => x.SendCommandAsync(It.IsAny<SendCommandRequest>(), It.IsAny<CancellationToken>()))
                 .Throws(new AmazonServiceException());
@@ -96,7 +96,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestCommitTransaction()
+        public void TestCommitTransactionReturnsResponse()
         {
             var testCommitTransactionResult = new CommitTransactionResult
             {
@@ -113,7 +113,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestExecuteStatement()
+        public void TestExecuteStatementReturnsResponse()
         {
             var testExecuteStatementResult = new ExecuteStatementResult
             {
@@ -140,7 +140,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestFetchPage()
+        public void TestFetchPageReturnsResponse()
         {
             var testFetchPageResult = new FetchPageResult
             {
@@ -156,7 +156,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestStartTransaction()
+        public void TestStartTransactionReturnsResponse()
         {
             var testStartTransactionResult = new StartTransactionResult
             {

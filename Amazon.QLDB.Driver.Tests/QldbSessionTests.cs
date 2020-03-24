@@ -44,13 +44,13 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestQldbSession()
+        public void TestQldbSessionConstrcutorReturnsValidObject()
         {
             Assert.IsNotNull(qldbSession);
         }
 
         [TestMethod]
-        public void TestDispose()
+        public void TestDisposeCanBeInvokedMultipleTimesButNotEndSession()
         {
             // Throw on second End() call
             mockSession.SetupSequence(x => x.End()).Pass().Throws(new ObjectDisposedException(ExceptionMessages.SessionClosed));
@@ -62,7 +62,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestExecuteStatement()
+        public void TestExecuteStatementUsesTransactionLifecyle()
         {
             int txnCount = 0;
             int executeCount = 0;
@@ -99,7 +99,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestExecuteAction()
+        public void TestExecuteActionUsesTransactionLifecycle()
         {
             int txnCount = 0;
             int executeCount = 0;
@@ -136,7 +136,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestExecuteFunc()
+        public void TestExecuteFuncUsesTransactionLifecycle()
         {
             int txnCount = 0;
             int executeCount = 0;
@@ -179,7 +179,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestExecuteAbortException()
+        public void TestExecuteAbortExceptionAbortsTransactionAndRethrowsException()
         {
             int txnCount = 0;
             int executeCount = 0;
@@ -220,7 +220,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestExecuteInvalidSessionException()
+        public void TestExecuteInvalidSessionExceptionThrowsIfExceedRetryLimit()
         {
             int txnCount = 0;
             int commitCount = 0;
@@ -251,7 +251,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestExecuteOccConflictException()
+        public void TestExecuteOccConflictExceptionThrowsIfExceedRetryLimit()
         {
             int txnCount = 0;
             int executeCount = 0;
@@ -283,7 +283,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestExecuteAmazonQLDBSessionException()
+        public void TestExecuteAmazonQLDBSessionExceptionThrowsIfRetryLimitExceeded()
         {
             int txnCount = 0;
             int commitCount = 0;
@@ -314,7 +314,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestExecuteAmazonQLDBSessionExceptionNoRetry()
+        public void TestExecuteAmazonQLDBSessionExceptionDoesNotRetryIfNotRetriable()
         {
             int txnCount = 0;
             int executeCount = 0;
@@ -346,7 +346,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestExecuteOccConflictExceptionRetry()
+        public void TestExecuteOccConflictExceptionRetriesExecution()
         {
             int txnCount = 0;
             int commitCount = 0;
@@ -383,7 +383,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestListTableNames()
+        public void TestListTableNamesCallsExecute()
         {
             int txnCount = 0;
             int executeCount = 0;
@@ -419,7 +419,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestStartTransaction()
+        public void TestStartTransactionReturnsANewTransaction()
         {
             mockSession.Setup(x => x.StartTransaction()).Returns(new StartTransactionResult
             {

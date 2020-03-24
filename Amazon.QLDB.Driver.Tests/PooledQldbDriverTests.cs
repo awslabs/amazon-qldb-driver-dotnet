@@ -74,13 +74,13 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestBuilder()
+        public void TestBuilderGetsANotNullObject()
         {
             Assert.IsNotNull(builder);
         }
 
         [TestMethod]
-        public void TestWithPoolLimit()
+        public void TestWithPoolLimitArgumentBounds()
         {
             PooledQldbDriver driver;
 
@@ -98,7 +98,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestWithTimeout()
+        public void TestWithTimeoutArgumentBounds()
         {
             PooledQldbDriver driver;
 
@@ -116,14 +116,14 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestPooledQldbDriver()
+        public void TestPooledQldbDriverConstructorReturnsValidObject()
         {
             var driver = new PooledQldbDriver("ledgerName", mockClient.Object, 4, 4, 4, NullLogger.Instance);
             Assert.IsNotNull(driver);
         }
 
         [TestMethod]
-        public void TestDispose()
+        public void TestDisposeEndsPooledSessions()
         {
             var driver = new PooledQldbDriver("ledgerName", mockClient.Object, 4, 4, 4, NullLogger.Instance);
             var session = driver.GetSession();
@@ -136,7 +136,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestGetSession()
+        public void TestGetSessionReturnsValidSession()
         {
             var driver = new PooledQldbDriver("ledgerName", mockClient.Object, 4, 4, 4, NullLogger.Instance);
             var session = driver.GetSession();
@@ -147,7 +147,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestGetSessionReturnedToPool()
+        public void TestGetSessionFromDriverWithSessionReturnedToPool()
         {
             var sendCommandResponseWithStartSession = new SendCommandResponse
             {
@@ -177,7 +177,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestGetSessionTimeout()
+        public void TestGetSessionWithNoneInPoolAndTimeoutReached()
         {
             var driver = new PooledQldbDriver("ledgerName", mockClient.Object, 4, 1, 10, NullLogger.Instance);
             var session = driver.GetSession();
@@ -189,7 +189,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestGetSessionNewSessionException()
+        public void TestGetSessionWhenMakingNewSessionThrowsException()
         {
             var testException = new AmazonClientException("");
             mockClient.Setup(x => x.SendCommandAsync(It.IsAny<SendCommandRequest>(), It.IsAny<CancellationToken>()))
@@ -215,7 +215,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestExecuteWithStatementString()
+        public void TestExecuteWithStatementStringReturnsValidResult()
         {
             var driver = new PooledQldbDriver("ledgerName", mockClient.Object, 4, 1, 10, NullLogger.Instance);
             var result = driver.Execute("testStatement");
@@ -224,7 +224,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestExecuteWithStatementStringAndRetryAction()
+        public void TestExecuteWithStatementStringAndRetryActionReturnsValidResult()
         {
             var driver = new PooledQldbDriver("ledgerName", mockClient.Object, 4, 1, 10, NullLogger.Instance);
             var result = driver.Execute("testStatement", (int k) => { return; });
@@ -233,7 +233,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestExecuteWithParams()
+        public void TestExecuteWithParamsReturnsValidResult()
         {
             var driver = new PooledQldbDriver("ledgerName", mockClient.Object, 4, 1, 10, NullLogger.Instance);
             var result = driver.Execute("testStatement", new List<IIonValue>());
@@ -242,7 +242,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestExecuteWithParamsAndRetryAction()
+        public void TestExecuteWithParamsAndRetryActionReturnsValidResult()
         {
             var driver = new PooledQldbDriver("ledgerName", mockClient.Object, 4, 1, 10, NullLogger.Instance);
             var result = driver.Execute("testStatement", (int k) => { return; }, new List<IIonValue>());
@@ -251,7 +251,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestExecuteWithVarargs()
+        public void TestExecuteWithVarargsReturnsValidResult()
         {
             var driver = new PooledQldbDriver("ledgerName", mockClient.Object, 4, 1, 10, NullLogger.Instance);
             var result = driver.Execute("testStatement", new IIonValue[] { });
@@ -260,7 +260,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestExecuteWithVarargsAndRetryAction()
+        public void TestExecuteWithVarargsAndRetryActionReturnsValidResult()
         {
             var driver = new PooledQldbDriver("ledgerName", mockClient.Object, 4, 1, 10, NullLogger.Instance);
             var result = driver.Execute("testStatement", (int k) => { return; }, new IIonValue[] { });
@@ -269,7 +269,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestExecuteWithActionLambda()
+        public void TestExecuteWithActionLambdaCanInvokeSuccessfully()
         {
             var driver = new PooledQldbDriver("ledgerName", mockClient.Object, 4, 1, 10, NullLogger.Instance);
             driver.Execute((txn) =>
@@ -279,7 +279,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestExecuteWithActionLambdaAndRetryAction()
+        public void TestExecuteWithActionLambdaAndRetryActionCanInvokeSuccessfully()
         {
             var driver = new PooledQldbDriver("ledgerName", mockClient.Object, 4, 1, 10, NullLogger.Instance);
             driver.Execute((txn) =>
@@ -289,7 +289,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestExecuteWithFuncLambda()
+        public void TestExecuteWithFuncLambdaReturnsFuncOutput()
         {
             var driver = new PooledQldbDriver("ledgerName", mockClient.Object, 4, 1, 10, NullLogger.Instance);
             var result = driver.Execute((txn) =>
@@ -301,7 +301,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestExecuteWithFuncLambdaAndRetryAction()
+        public void TestExecuteWithFuncLambdaAndRetryActionReturnsFuncOutput()
         {
             var driver = new PooledQldbDriver("ledgerName", mockClient.Object, 4, 1, 10, NullLogger.Instance);
             driver.Dispose();

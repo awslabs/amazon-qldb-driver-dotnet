@@ -15,7 +15,6 @@ namespace Amazon.QLDB.Driver.Tests
 {
     using System;
     using System.Collections.Generic;
-    using Amazon.IonDotnet.Tree;
     using Microsoft.Extensions.Logging;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
@@ -39,13 +38,13 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestConstructor()
+        public void TestConstructorReturnsValidSession()
         {
             Assert.IsNotNull(qldbSession);
         }
 
         [TestMethod]
-        public void TestDispose()
+        public void TestDisposeCallsDisposeDelegate()
         {
             qldbSession.Dispose();
             qldbSession.Dispose();
@@ -53,7 +52,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestExecuteStatement()
+        public void TestExecuteStatementReturnsResultOrThrowsWhenDisposed()
         {
             mockSession.Setup(x => x.Execute(It.IsAny<string>())).Returns(mockResult.Object);
             var result = qldbSession.Execute("testStatement");
@@ -65,7 +64,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestExecuteAction()
+        public void TestExecuteActionInvokesActionOrThrowsWhenDisposed()
         {
             static void testAction(TransactionExecutor executor) => executor.GetType();
             qldbSession.Execute(testAction);
@@ -77,7 +76,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestExecuteFunc()
+        public void TestExecuteFuncInvokesFuncOrThrowsWhenDisposed()
         {
             static int testFunc(TransactionExecutor executor) { return 1; }
             mockSession.Setup(x => x.Execute(It.IsAny<Func<TransactionExecutor, int>>())).Returns(1);
@@ -90,7 +89,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestListTableNames()
+        public void TestListTableNamesListsTableNamesOrThrowsWhenDisposed()
         {
             var testList = new List<string>();
             mockSession.Setup(x => x.ListTableNames()).Returns(testList);
@@ -102,7 +101,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestStartTransaction()
+        public void TestStartTransactionGetsNewTransactionOrThrowsWhenDisposed()
         {
             var mockTransaction = new Mock<ITransaction>();
             mockSession.Setup(x => x.StartTransaction()).Returns(mockTransaction.Object);

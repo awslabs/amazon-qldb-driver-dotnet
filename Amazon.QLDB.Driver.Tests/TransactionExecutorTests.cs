@@ -35,13 +35,13 @@
         }
 
         [TestMethod]
-        public void TestAbort()
+        public void TestAbortThrowsAbortException()
         {
             Assert.ThrowsException<AbortException>(transactionExecutor.Abort);
         }
 
         [TestMethod]
-        public void TestExecute()
+        public void TestExecuteNoParamsDelegatesCallToTransaction()
         {
             IResult actualResult = transactionExecutor.Execute(query);
             mockTransaction.Verify(transaction => transaction.Execute(query), Times.Exactly(1));
@@ -49,7 +49,7 @@
         }
 
         [TestMethod]
-        public void TestExecuteWithEmptyParamsList()
+        public void TestExecuteEmptyParamsDelegatesCallToTransaction()
         {
             List<IIonValue> emptyParams = new List<IIonValue>();
             IResult actualResult = transactionExecutor.Execute(query, emptyParams);
@@ -67,7 +67,7 @@
         }
 
         [TestMethod]
-        public void TestExecuteWithOneParamInList()
+        public void TestExecuteOneParamDelegatesCallToTransaction()
         {
             List<IIonValue> oneParam = new List<IIonValue> { new ValueFactory().NewInt(1) };
             IResult actualResult = transactionExecutor.Execute(query, oneParam);
