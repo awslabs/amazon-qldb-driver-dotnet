@@ -52,13 +52,13 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestBuilder()
+        public void TestBuilderGetsANotNullObject()
         {
             Assert.IsNotNull(builder);
         }
 
         [TestMethod]
-        public void TestWithPoolLimit()
+        public void TestWithPoolLimitArgumentBounds()
         {
             PooledQldbDriver driver;
 
@@ -76,7 +76,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestWithTimeout()
+        public void TestWithTimeoutArgumentBounds()
         {
             PooledQldbDriver driver;
 
@@ -101,7 +101,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestDispose()
+        public void TestDisposeEndsPooledSessions()
         {
             var driver = new PooledQldbDriver("ledgerName", mockClient.Object, 4, 4, 4, NullLogger.Instance);
             var session = driver.GetSession();
@@ -114,7 +114,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestGetSession()
+        public void TestGetSessionReturnsValidSession()
         {
             var driver = new PooledQldbDriver("ledgerName", mockClient.Object, 4, 4, 4, NullLogger.Instance);
             var session = driver.GetSession();
@@ -125,7 +125,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestGetSessionReturnedToPool()
+        public void TestGetSessionFromDriverWithSessionReturnedToPool()
         {
             var sendCommandResponseWithStartSession = new SendCommandResponse
             {
@@ -155,7 +155,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestGetSessionTimeout()
+        public void TestGetSessionWithNoneInPoolAndTimeoutReached()
         {
             var driver = new PooledQldbDriver("ledgerName", mockClient.Object, 4, 1, 10, NullLogger.Instance);
             var session = driver.GetSession();
@@ -167,7 +167,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestGetSessionNewSessionException()
+        public void TestGetSessionWhenMakingNewSessionThrowsException()
         {
             var testException = new AmazonClientException("");
             mockClient.Setup(x => x.SendCommandAsync(It.IsAny<SendCommandRequest>(), It.IsAny<CancellationToken>()))

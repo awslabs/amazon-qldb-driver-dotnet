@@ -39,21 +39,21 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestAbort()
+        public void TestAbortCallsAbortTransaction()
         {
             transaction.Abort();
             mockSession.Verify(m => m.AbortTransaction(), Times.Exactly(1));
         }
 
         [TestMethod]
-        public void TestDispose()
+        public void TestDisposeCallsAbortException()
         {
             transaction.Dispose();
             mockSession.Verify(m => m.AbortTransaction(), Times.Exactly(1));
         }
 
         [TestMethod]
-        public void TestDisposeWhenException()
+        public void TestDisposeWhenExceptionIsProperlyIgnored()
         {
             mockSession.Setup(m => m.AbortTransaction()).Throws(new AmazonClientException(It.IsAny<string>()));
 
@@ -63,7 +63,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestCommit()
+        public void TestCommitCallsCommitTransaction()
         {
             mockSession.Setup(m => m.CommitTransaction(It.IsAny<string>(), It.IsAny<MemoryStream>()))
                 .Returns(GetTransactionResult(TxnId));
@@ -73,7 +73,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestCommitWhenClosed()
+        public void TestCommitWhenClosedShouldThrowException()
         {
             // To have our transaction marked closed
             transaction.Abort();
@@ -82,7 +82,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestCommitWhenOCC()
+        public void TestCommitWhenOCCShouldThrowException()
         {
             mockSession.Setup(m => m.CommitTransaction(It.IsAny<string>(), It.IsAny<MemoryStream>()))
                 .Throws(new OccConflictException(It.IsAny<string>()));
@@ -91,7 +91,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestCommitWhenAmazonClientException()
+        public void TestCommitWhenAmazonClientExceptionShouldThrowException()
         {
             mockSession.Setup(m => m.CommitTransaction(It.IsAny<string>(), It.IsAny<MemoryStream>()))
                 .Throws(new AmazonClientException(It.IsAny<string>()));
@@ -100,7 +100,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestCommitWhenDifferentTxnID()
+        public void TestCommitWhenDifferentTxnIDThrowsException()
         {
             mockSession.Setup(m => m.CommitTransaction(It.IsAny<string>(), It.IsAny<MemoryStream>()))
                 .Returns(GetTransactionResult("differentTnxIdFromThis"));
@@ -109,7 +109,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestExecute()
+        public void TestExecuteCallsExecuteStatement()
         {
             mockSession.Setup(m => m.ExecuteStatement(It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<List<IIonValue>>()))
@@ -130,13 +130,13 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestExecuteWhenStatementEmpty()
+        public void TestExecuteWhenStatementEmptyThrowsException()
         {
             Assert.ThrowsException<ArgumentException>(() => transaction.Execute(""));
         }
 
         [TestMethod]
-        public void TestExecuteWhenClosed()
+        public void TestExecuteWhenClosedThrowsException()
         {
             // To have our transaction marked closed
             transaction.Abort();

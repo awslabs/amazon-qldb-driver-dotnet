@@ -58,13 +58,13 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestBuilder()
+        public void TestBuilderReturnsValidBuilder()
         {
             Assert.IsNotNull(builder);
         }
 
         [TestMethod]
-        public void TestWithLedger()
+        public void TestWithLedgerValidAndInvalidInputs()
         {
             var testBuilder = QldbDriver.Builder();
             QldbDriver driver;
@@ -81,7 +81,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestWithAWSCredentials()
+        public void TestWithAWSCredentialsValidAndInvalidInputs()
         {
             QldbDriver driver;
             AWSCredentials credentials = new BasicAWSCredentials("accessKey", "secretKey");
@@ -95,7 +95,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestWithLogger()
+        public void TestWithLoggerValidAndInvalidInputs()
         {
             QldbDriver driver;
 
@@ -111,7 +111,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestWithQLDBSessionConfig()
+        public void TestWithQLDBSessionConfigValidAndInvalidInputs()
         {
             QldbDriver driver;
             var config = new AmazonQLDBSessionConfig();
@@ -125,7 +125,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestWithRetryLimit()
+        public void TestWithRetryLimitParameterBounds()
         {
             QldbDriver driver;
 
@@ -143,14 +143,14 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestQldbDriver()
+        public void TestQldbDriverConstructorReturnsValidObject()
         {
             var driver = new QldbDriver("ledgerName", mockClient.Object, 4, NullLogger.Instance);
             Assert.IsNotNull(driver);
         }
 
         [TestMethod]
-        public void TestDispose()
+        public void TestDisposeWithRepeatCalls()
         {
             var driver = new QldbDriver("ledgerName", mockClient.Object, 4, NullLogger.Instance);
             driver.Dispose();
@@ -158,7 +158,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestGetSession()
+        public void TestGetSessionGetsANewSession()
         {
             var driver = new QldbDriver("ledgerName", mockClient.Object, 4, NullLogger.Instance);
 
