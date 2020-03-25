@@ -6,7 +6,7 @@ to write software that makes use of AmazonQLDB.
 This is a preview release of the Amazon QLDB Driver for .NET, and we do not recommend that it be used for production purposes.
 
 [![nuget](https://img.shields.io/nuget/v/Amazon.QLDB.Driver.svg)](https://www.nuget.org/packages/Amazon.QLDB.Driver/)
-[![License](https://github.com/awslabs/amazon-qldb-driver-dotnet/blob/master/LICENSE)](https://img.shields.io/github/license/awslabs/amazon-qldb-driver-dotnet)
+[![License](https://img.shields.io/github/license/awslabs/amazon-qldb-driver-dotnet)](https://github.com/awslabs/amazon-qldb-driver-dotnet/blob/doc/badge_and_doc_link/LICENSE)
 
 ## Requirements
 
