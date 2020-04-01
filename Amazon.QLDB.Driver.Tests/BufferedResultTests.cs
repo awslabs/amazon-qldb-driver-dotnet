@@ -22,7 +22,7 @@ namespace Amazon.QLDB.Driver.Tests
     [TestClass]
     public class BufferedResultTests
     {
-        private static IValueFactory valueFactory = new ValueFactory();
+        private static readonly IValueFactory valueFactory = new ValueFactory();
         private static Mock<IResult> mockResult;
         private static List<IIonValue> testList;
         private static BufferedResult result;
@@ -46,14 +46,14 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestBufferResult()
+        public void TestBufferResultEnumeratesInput()
         {
             Assert.IsNotNull(result);
             mockResult.Verify(x => x.GetEnumerator(), Times.Exactly(1));
         }
 
         [TestMethod]
-        public void TestGetEnumerator()
+        public void TestGetEnumeratorGetsAllInputEnumerableValues()
         {
             int count = 0;
             var enumerator = result.GetEnumerator();

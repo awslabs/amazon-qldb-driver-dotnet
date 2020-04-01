@@ -41,7 +41,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestGetEnumeratorWhenRetrieved()
+        public void TestGetEnumeratorAndThrowsExceptionWhenAlreadyRetrieved()
         {
             // First time is fine - sets a flag
             result.GetEnumerator();
@@ -93,7 +93,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestIonEnumeratorCurrent()
+        public void TestIonEnumeratorCurrentReturnsTrueWhenResultsExist()
         {
             var results = result.GetEnumerator();
 
@@ -102,7 +102,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestIonEnumeratorReset()
+        public void TestIonEnumeratorResetIsNotSupported()
         {
             var results = result.GetEnumerator();
 
