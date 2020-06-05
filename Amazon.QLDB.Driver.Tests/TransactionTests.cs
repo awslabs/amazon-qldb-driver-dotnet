@@ -55,7 +55,7 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public void TestDisposeWhenExceptionIsProperlyIgnored()
         {
-            mockSession.Setup(m => m.AbortTransaction()).Throws(new AmazonClientException(It.IsAny<string>()));
+            mockSession.Setup(m => m.AbortTransaction()).Throws(new AmazonServiceException(It.IsAny<string>()));
 
             // Dispose should not throw exception
             transaction.Dispose();
@@ -73,12 +73,13 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestCommitWhenClosedShouldThrowException()
+        public void Commit_InvalidSessionException_ShouldNotDisposeTransaction()
         {
-            // To have our transaction marked closed
-            transaction.Abort();
+            mockSession.Setup(m => m.CommitTransaction(It.IsAny<string>(), It.IsAny<MemoryStream>()))
+                .Throws(new InvalidSessionException("Invalid!"));
 
-            Assert.ThrowsException<ObjectDisposedException>(transaction.Commit);
+            Assert.ThrowsException<InvalidSessionException>(transaction.Commit);
+            mockSession.Verify(s => s.AbortTransaction(), Times.Exactly(0));
         }
 
         [TestMethod]
@@ -88,15 +89,17 @@ namespace Amazon.QLDB.Driver.Tests
                 .Throws(new OccConflictException(It.IsAny<string>()));
 
             Assert.ThrowsException<OccConflictException>(transaction.Commit);
+            mockSession.Verify(s => s.AbortTransaction(), Times.Exactly(0));
         }
 
         [TestMethod]
-        public void TestCommitWhenAmazonClientExceptionShouldThrowException()
+        public void TestCommitWhenAmazonServiceExceptionShouldThrowException()
         {
             mockSession.Setup(m => m.CommitTransaction(It.IsAny<string>(), It.IsAny<MemoryStream>()))
-                .Throws(new AmazonClientException(It.IsAny<string>()));
+                .Throws(new AmazonServiceException(It.IsAny<string>()));
 
-            Assert.ThrowsException<AmazonClientException>(transaction.Commit);
+            Assert.ThrowsException<AmazonServiceException>(transaction.Commit);
+            mockSession.Verify(s => s.AbortTransaction(), Times.Exactly(1));
         }
 
         [TestMethod]
@@ -133,15 +136,6 @@ namespace Amazon.QLDB.Driver.Tests
         public void TestExecuteWhenStatementEmptyThrowsException()
         {
             Assert.ThrowsException<ArgumentException>(() => transaction.Execute(""));
-        }
-
-        [TestMethod]
-        public void TestExecuteWhenClosedThrowsException()
-        {
-            // To have our transaction marked closed
-            transaction.Abort();
-
-            Assert.ThrowsException<ObjectDisposedException>(() => transaction.Execute("statement"));
         }
 
         private CommitTransactionResult GetTransactionResult(string txnId)

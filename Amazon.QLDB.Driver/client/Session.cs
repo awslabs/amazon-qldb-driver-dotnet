@@ -27,11 +27,9 @@ namespace Amazon.QLDB.Driver
     /// </summary>
     internal class Session
     {
-#pragma warning disable SA1600 // Elements should be documented
         internal readonly string LedgerName;
         internal readonly AmazonQLDBSessionClient SessionClient;
         internal readonly string SessionId;
-#pragma warning restore SA1600 // Elements should be documented
         private readonly string sessionToken;
         private readonly ILogger logger;
 
@@ -203,6 +201,10 @@ namespace Amazon.QLDB.Driver
                 };
                 var response = this.SendCommand(request);
                 return response.ExecuteStatement;
+            }
+            catch (IOException e)
+            {
+                throw new QldbDriverException(ExceptionMessages.FailedToSerializeParameter + e.Message, e);
             }
             finally
             {
