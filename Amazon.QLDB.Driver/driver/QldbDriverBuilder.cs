@@ -180,7 +180,7 @@
                 () => Session.StartSession(this.LedgerName, this.sessionClient, this.Logger),
                 this.RetryLimit,
                 this.maxConcurrentTransactions,
-                this.Logger));
+                this.Logger), this.Logger);
         }
 
         private static void SetUserAgent(object sender, RequestEventArgs eventArgs)

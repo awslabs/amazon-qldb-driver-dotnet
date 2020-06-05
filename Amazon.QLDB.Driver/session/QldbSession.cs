@@ -149,7 +149,8 @@ namespace Amazon.QLDB.Driver
                 }
                 catch (InvalidSessionException ise)
                 {
-                    this.isClosed = true;
+                    this.isDisposed = true;
+                    this.Destroy();
                     throw ise;
                 }
                 catch (TransactionAbortedException ae)

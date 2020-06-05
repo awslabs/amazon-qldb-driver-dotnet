@@ -16,7 +16,9 @@ namespace Amazon.QLDB.Driver
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using Amazon.QLDBSession.Model;
     using Amazon.Runtime;
+    using Microsoft.Extensions.Logging;
 
     /// <summary>
     /// <para>Represents a factory for accessing a specific ledger within QLDB. This class or
@@ -33,15 +35,18 @@ namespace Amazon.QLDB.Driver
                 "SELECT VALUE name FROM information_schema.user_tables WHERE status = 'ACTIVE'";
 
         private readonly SessionPool sessionPool;
+        private readonly ILogger logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="QldbDriver"/> class.
         /// </summary>
         ///
         /// <param name="sessionPool">The ledger to create sessions to.</param>
-        internal QldbDriver(SessionPool sessionPool)
+        /// <param name="logger">The logger of the class.</param>
+        internal QldbDriver(SessionPool sessionPool, ILogger logger)
         {
             this.sessionPool = sessionPool;
+            this.logger = logger;
         }
 
         /// <summary>
@@ -141,9 +146,23 @@ namespace Amazon.QLDB.Driver
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
         public T Execute<T>(Func<TransactionExecutor, T> func, Action<int> retryAction)
         {
-            using (var session = this.sessionPool.GetSession())
+            while (true)
             {
-                return session.Execute(func, retryAction);
+                try
+                {
+                    using (var session = this.sessionPool.GetSession())
+                    {
+                        return session.Execute(func, retryAction);
+                    }
+                }
+                catch (InvalidSessionException ise)
+                {
+                    this.logger.LogDebug("Retrying with another session. Error {Msg}", ise.Message);
+                }
+                catch (TransactionAlreadyOpenException taoe)
+                {
+                    this.logger.LogDebug("Retrying with another session. Error {Msg}", taoe.Message);
+                }
             }
         }
 
