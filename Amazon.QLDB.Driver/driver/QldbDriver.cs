@@ -42,7 +42,7 @@ namespace Amazon.QLDB.Driver
         /// </summary>
         ///
         /// <param name="sessionPool">The ledger to create sessions to.</param>
-        /// <param name="logger">The logger of the class.</param>
+        /// <param name="logger">The logger to be used by the driver.</param>
         internal QldbDriver(SessionPool sessionPool, ILogger logger)
         {
             this.sessionPool = sessionPool;
