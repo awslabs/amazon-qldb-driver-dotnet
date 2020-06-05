@@ -19,7 +19,7 @@ namespace Amazon.QLDB.Driver
     using Amazon.Runtime;
 
     /// <summary>
-    /// <para>Represents a factory for accessing pooled sessions to a specific ledger within QLDB. This class or
+    /// <para>Represents a factory for accessing a specific ledger within QLDB. This class or
     /// <see cref="QldbDriver"/> should be the main entry points to any interaction with QLDB.
     ///
     /// <para>This factory pools sessions and attempts to return unused but available sessions when getting new sessions.

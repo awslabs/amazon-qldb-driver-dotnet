@@ -101,7 +101,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestPooledQldbDriverConstructorReturnsValidObject()
+        public void TestQldbDriverConstructorReturnsValidObject()
         {
             var driver = new QldbDriver(
                 new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance), 4, 4, NullLogger.Instance));
