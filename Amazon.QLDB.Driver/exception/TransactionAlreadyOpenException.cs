@@ -16,10 +16,18 @@ namespace Amazon.QLDB.Driver
     using System;
 
     /// <summary>
-    /// Exception type representing the abort of a transaction within a lambda execution block. Signals that the lambda
-    /// should cease to execute and the current transaction should be aborted.
+    /// Exception thrown when an attempt is made to start another transaction on the same session
+    /// while the previous transaction was still open.
     /// </summary>
-    public class AbortException : Exception
+    public class TransactionAlreadyOpenException : Exception
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TransactionAlreadyOpenException"/> class.
+        /// </summary>
+        /// <param name="innerException">The inner exception.</param>
+        public TransactionAlreadyOpenException(Exception innerException)
+            : base(ExceptionMessages.TransactionAlreadyOpened, innerException)
+        {
+        }
     }
 }

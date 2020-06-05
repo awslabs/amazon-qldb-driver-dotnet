@@ -15,6 +15,7 @@ namespace Amazon.QLDB.Driver
 {
     using System.Collections.Generic;
     using Amazon.IonDotnet.Tree;
+    using Amazon.Runtime;
 
     /// <summary>
     /// Interface for executions of a statement within an active transaction to QLDB.
@@ -28,8 +29,7 @@ namespace Amazon.QLDB.Driver
         /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
         ///
         /// <returns>Result from executed statement.</returns>
-        ///
-        /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
+        /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
         IResult Execute(string statement);
 
         /// <summary>
@@ -40,8 +40,7 @@ namespace Amazon.QLDB.Driver
         /// <param name="parameters">Parameters to execute.</param>
         ///
         /// <returns>Result from executed statement.</returns>
-        ///
-        /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
+        /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
         IResult Execute(string statement, List<IIonValue> parameters);
 
         /// <summary>
@@ -52,8 +51,7 @@ namespace Amazon.QLDB.Driver
         /// <param name="parameters">Parameters to execute.</param>
         ///
         /// <returns>Result from executed statement.</returns>
-        ///
-        /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
+        /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
         IResult Execute(string statement, params IIonValue[] parameters);
     }
 }

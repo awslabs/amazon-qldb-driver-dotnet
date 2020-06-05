@@ -1,0 +1,18 @@
+﻿# Do not change version. This is the version of aws buildspec, not the version of your buldspec file.
+version: 0.2
+
+env:
+  git-credential-helper: yes
+
+phases:
+  install:
+    runtime-versions:
+      dotnet: 3.1
+  build:
+    commands:
+      - echo Unit Test execution started on `date`
+      - dotnet test Amazon.QLDB.Driver.Tests
+      - echo Unit Test execution completed on `date`
+      - echo Integration Test execution started on `date`
+      - dotnet test Amazon.QLDB.Driver.IntegrationTests --settings Amazon.QLDB.Driver.IntegrationTests/.runsettings
+      - echo Integration Test execution completed on `date`
