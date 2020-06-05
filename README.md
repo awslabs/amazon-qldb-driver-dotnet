@@ -3,8 +3,6 @@
 This is the .NET driver for [Amazon Quantum Ledger Database (QLDB)](https://aws.amazon.com/qldb/), which allows .NET developers
 to write software that makes use of AmazonQLDB.
 
-This is a preview release of the Amazon QLDB Driver for .NET, and we do not recommend that it be used for production purposes.
-
 [![nuget](https://img.shields.io/nuget/v/Amazon.QLDB.Driver.svg)](https://www.nuget.org/packages/Amazon.QLDB.Driver/)
 [![License](https://img.shields.io/github/license/awslabs/amazon-qldb-driver-dotnet)](https://github.com/awslabs/amazon-qldb-driver-dotnet/blob/doc/badge_and_doc_link/LICENSE)
 
@@ -20,79 +18,14 @@ The driver targets .NET Standard 2.0. Please see the link below for more informa
 
 * [.NET Standard](https://docs.microsoft.com/en-us/dotnet/standard/net-standard)
 
+The driver targets .NET Core 2.1. Please see the link below for more information on compatibility:
+
+* [.NET Core](https://dotnet.microsoft.com/download/dotnet-core)
+
 ## Getting Started
 
-To use the driver, it can be installed using NuGet package manager. The driver package is named:
+Please see the [Quickstart guide for the Amazon QLDB Driver for .Net](https://docs.aws.amazon.com/qldb/latest/developerguide/driver-quickstart-dotnet.html).
 
-```Amazon.QLDB.Driver```
-
-Then, using the driver's namespace, you can now use the driver in your application:
-
-```c#
-using System;
-
-namespace Hello
-{
-    using Amazon.QLDB.Driver;
-    using Amazon.QLDB;
-    using Amazon.QLDB.Model;    
-    using Amazon.QLDBSession;
-    using Amazon.QLDBSession.Model;
-    using Amazon.Runtime;
-    using System.Threading;
-    using System.Text;
-
-    class Program
-    {
-        static void Main(string[] args)
-        {
-            string ledgerName= "my-ledger";
-
-            Console.WriteLine($"Create the ledger '{ledgerName}'");
-            AmazonQLDBClient qldbClient = new AmazonQLDBClient();            
-            CreateLedgerRequest createLedgerRequest = new CreateLedgerRequest
-            {
-                Name = ledgerName,
-                PermissionsMode = PermissionsMode.ALLOW_ALL
-            };
-            qldbClient.CreateLedgerAsync(createLedgerRequest).GetAwaiter().GetResult();
-
-            Console.WriteLine($"Waiting for ledger to be active");
-            DescribeLedgerRequest describeLedgerRequest = new DescribeLedgerRequest {
-                Name = ledgerName
-            };
-            while (true)
-            {
-                DescribeLedgerResponse describeLedgerResponse = qldbClient.DescribeLedgerAsync(describeLedgerRequest).GetAwaiter().GetResult();
-
-                if (describeLedgerResponse.State.Equals(LedgerState.ACTIVE.Value))
-                {
-                    Console.WriteLine($"'{ ledgerName }' ledger created sucessfully.");
-                    break;
-                }
-                Console.WriteLine($"Creating the '{ ledgerName }' ledger...");
-                Thread.Sleep(1000);
-            }
-
-            AmazonQLDBSessionConfig amazonQldbSessionConfig = new AmazonQLDBSessionConfig();
-            Console.WriteLine($"Create the QLDB Driver");
-            IQldbDriver driver = PooledQldbDriver.Builder()
-                .WithQLDBSessionConfig(amazonQldbSessionConfig)
-                .WithLedger(ledgerName)
-                .Build();
-
-            string tableName = "MyTable1";
-            using (IQldbSession qldbSession = driver.GetSession())
-            {
-                // qldbSession.Execute will start a transaction and commit it.
-                IResult result = qldbSession.Execute($"CREATE TABLE {tableName}");
-                Console.WriteLine($"Table '{tableName}' created");
-            }
-        }
-    }
-}
-
-```
 
 ### See Also
 
@@ -116,7 +49,11 @@ You can run the unit tests by right clicking the Amazon.QLDB.Driver.Tests projec
 
 Alternatively you can run the unit tests on the command line with the following:
 
-```dotnet test```
+```dotnet test Amazon.QLDB.Driver.Tests```
+
+To run the integration tests, you must run it on the command line with the following:
+
+```dotnet test Amazon.QLDB.Driver.IntegrationTests --settings Amazon.QLDB.Driver.IntegrationTests/.runsettings```
 
 ### Documentation 
 
@@ -126,11 +63,6 @@ You can generate the docstring HTML locally by running the following in the root
 
 ```docfx docs/docfx.json --serve```
 
-## Release Notes
-
-### Release 0.1.0-beta
-
-* Initial preview release of the Amazon QLDB Driver for .NET.
 
 ## License
 

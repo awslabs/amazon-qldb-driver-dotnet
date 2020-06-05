@@ -71,12 +71,10 @@ namespace Amazon.QLDB.Driver
         ///
         /// <exception cref="InvalidOperationException">Thrown when Hash returned from QLDB is not equal.</exception>
         /// <exception cref="OccConflictException">Thrown if an OCC conflict has been detected within the transaction.</exception>
-        /// <exception cref="AmazonClientException">Thrown when there is an error committing this transaction against QLDB.</exception>
-        /// <exception cref="ObjectDisposedException">Thrown when this transaction has been disposed.</exception>
+        /// <exception cref="AmazonServiceException">Thrown when there is an error committing this transaction against QLDB.</exception>
+        /// <exception cref="QldbDriverException">Thrown when this transaction has been disposed.</exception>
         public void Commit()
         {
-            this.ThrowIfClosed();
-
             try
             {
                 byte[] hashBytes = this.qldbHash.Hash;
@@ -91,10 +89,14 @@ namespace Amazon.QLDB.Driver
             {
                 throw oce;
             }
-            catch (AmazonClientException ace)
+            catch (InvalidSessionException ise)
+            {
+                throw ise;
+            }
+            catch (AmazonServiceException ase)
             {
                 this.Dispose();
-                throw ace;
+                throw ase;
             }
             finally
             {
@@ -111,9 +113,9 @@ namespace Amazon.QLDB.Driver
             {
                 this.Abort();
             }
-            catch (AmazonClientException ace)
+            catch (AmazonServiceException ase)
             {
-                this.logger.LogWarning("Ignored AmazonClientException aborting transaction when calling dispose: {}", ace);
+                this.logger.LogWarning("Ignored AmazonServiceException aborting transaction when calling dispose: {}", ase);
             }
         }
 
@@ -125,8 +127,8 @@ namespace Amazon.QLDB.Driver
         ///
         /// <returns>Result from executed statement.</returns>
         ///
-        /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
-        /// <exception cref="ObjectDisposedException">Thrown when this transaction has been disposed.</exception>
+        /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
+        /// <exception cref="QldbDriverException">Thrown when this transaction has been disposed.</exception>
         public IResult Execute(string statement)
         {
             return this.Execute(statement, new List<IIonValue>());
@@ -141,11 +143,10 @@ namespace Amazon.QLDB.Driver
         ///
         /// <returns>Result from executed statement.</returns>
         ///
-        /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
-        /// <exception cref="ObjectDisposedException">Thrown when this transaction has been disposed.</exception>
+        /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
+        /// <exception cref="QldbDriverException">Thrown when this transaction has been disposed.</exception>
         public IResult Execute(string statement, List<IIonValue> parameters)
         {
-            this.ThrowIfClosed();
             ValidationUtils.AssertStringNotEmpty(statement, "statement");
 
             if (parameters == null)
@@ -168,8 +169,8 @@ namespace Amazon.QLDB.Driver
         ///
         /// <returns>Result from executed statement.</returns>
         ///
-        /// <exception cref="AmazonClientException">Thrown when there is an error executing against QLDB.</exception>
-        /// <exception cref="ObjectDisposedException">Thrown when this transaction has been disposed.</exception>
+        /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
+        /// <exception cref="QldbDriverException">Thrown when this transaction has been disposed.</exception>
         public IResult Execute(string statement, params IIonValue[] parameters)
         {
             return this.Execute(statement, new List<IIonValue>(parameters));
@@ -184,7 +185,7 @@ namespace Amazon.QLDB.Driver
         /// <param name="parameters">Parameters to execute.</param>
         ///
         /// <returns>QLDB hash.</returns>
-        private static QldbHash Dot(QldbHash seed, string statement, List<IIonValue> parameters)
+        internal static QldbHash Dot(QldbHash seed, string statement, List<IIonValue> parameters)
         {
             QldbHash statementHash = QldbHash.ToQldbHash(statement);
             foreach (var ionValue in parameters)
@@ -193,19 +194,6 @@ namespace Amazon.QLDB.Driver
             }
 
             return seed.Dot(statementHash);
-        }
-
-        /// <summary>
-        /// If the transaction is closed throw an <see cref="ObjectDisposedException"/>.
-        /// </summary>
-        ///
-        /// <exception cref="ObjectDisposedException">Thrown when this transaction has been closed.</exception>
-        private void ThrowIfClosed()
-        {
-            if (this.isClosed)
-            {
-                throw new ObjectDisposedException(ExceptionMessages.TransactionClosed);
-            }
         }
     }
 }

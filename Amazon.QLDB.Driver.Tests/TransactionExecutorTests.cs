@@ -37,7 +37,7 @@
         [TestMethod]
         public void TestAbortThrowsAbortException()
         {
-            Assert.ThrowsException<AbortException>(transactionExecutor.Abort);
+            Assert.ThrowsException<TransactionAbortedException>(transactionExecutor.Abort);
         }
 
         [TestMethod]

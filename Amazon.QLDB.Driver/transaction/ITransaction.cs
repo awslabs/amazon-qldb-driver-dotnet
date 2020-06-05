@@ -33,7 +33,7 @@ namespace Amazon.QLDB.Driver
     ///
     /// <para>Child Result objects will be closed when the transaction is aborted or committed.</para>
     /// </summary>
-    public interface ITransaction : IDisposable, IExecutable
+    internal interface ITransaction : IDisposable, IExecutable
     {
         /// <summary>
         /// Abort the transaction and roll back any changes. No-op if closed.
@@ -47,8 +47,8 @@ namespace Amazon.QLDB.Driver
         ///
         /// <exception cref="InvalidOperationException">Thrown when Hash returned from QLDB is not equal.</exception>
         /// <exception cref="OccConflictException">Thrown if an OCC conflict has been detected within the transaction.</exception>
-        /// <exception cref="AmazonClientException">Thrown when there is an error committing this transaction against QLDB.</exception>
-        /// <exception cref="ObjectDisposedException">Thrown when this transaction has been disposed.</exception>
+        /// <exception cref="AmazonServiceException">Thrown when there is an error committing this transaction against QLDB.</exception>
+        /// <exception cref="QldbDriverException">Thrown when this transaction has been disposed.</exception>
         void Commit();
     }
 }
