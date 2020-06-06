@@ -79,6 +79,7 @@ namespace Amazon.QLDB.Driver
             if (!this.isClosed)
             {
                 this.isClosed = true;
+                this.disposeDelegate(null);
                 this.session.End();
                 return;
             }
@@ -153,9 +154,9 @@ namespace Amazon.QLDB.Driver
                     this.Destroy();
                     throw ise;
                 }
-                catch (TransactionAbortedException ae)
+                catch (TransactionAbortedException tae)
                 {
-                    throw ae;
+                    throw tae;
                 }
                 catch (OccConflictException oce)
                 {
