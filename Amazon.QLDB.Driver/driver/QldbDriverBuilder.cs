@@ -13,8 +13,11 @@
 
  namespace Amazon.QLDB.Driver
 {
+    using System;
+    using System.Collections.Generic;
     using System.Runtime.CompilerServices;
     using Amazon.QLDBSession;
+    using Amazon.QLDBSession.Model;
     using Amazon.Runtime;
     using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Logging.Abstractions;
@@ -58,7 +61,7 @@
         private protected AmazonQLDBSessionConfig SessionConfig { get; set; } = null;
 
         /// <summary>
-        /// Gets or sets the number of retry attempts to be made by the session.
+        /// Gets or sets the number of retry attempts to be made by the driver.
         /// </summary>
         private protected int RetryLimit { get; set; } = DefaultRetryLimit;
 
@@ -177,10 +180,30 @@
 
             return new QldbDriver(
                 new SessionPool(
-                () => Session.StartSession(this.LedgerName, this.sessionClient, this.Logger),
-                this.RetryLimit,
-                this.maxConcurrentTransactions,
-                this.Logger));
+                    () => Session.StartSession(this.LedgerName, this.sessionClient, this.Logger),
+                    CreateDefaultRetryHandler(this.RetryLimit),
+                    this.maxConcurrentTransactions,
+                    this.Logger));
+        }
+
+        /// <summary>
+        /// Create the IRetryHandler object with the defautl set of retriable exceptions.
+        /// </summary>
+        /// <param name="retryLimit">The number of retry attempts to be made by the driver.</param>
+        /// <returns>The constructed IRetryHanlder instance.</returns>
+        internal static IRetryHandler CreateDefaultRetryHandler(int retryLimit)
+        {
+            return CreateRetryHandler(
+                retryLimit,
+                new Type[] { typeof(RetriableException), typeof(OccConflictException), typeof(TransactionAlreadyOpenException), typeof(InvalidSessionException) });
+        }
+
+        private static IRetryHandler CreateRetryHandler(int retryLimit, IEnumerable<Type> retryExceptions)
+        {
+            return new RetryHandler(
+                retryLimit,
+                retryExceptions,
+                new Type[] { typeof(TransactionAlreadyOpenException), typeof(InvalidSessionException) });
         }
 
         private static void SetUserAgent(object sender, RequestEventArgs eventArgs)
@@ -188,10 +211,7 @@
             const string UserAgentHeader = "User-Agent";
             const string Version = "1.0.0-rc.1";
 
-#pragma warning disable IDE0019 // Use pattern matching
-            var args = eventArgs as WebServiceRequestEventArgs;
-#pragma warning restore IDE0019 // Use pattern matching
-            if (args == null || !args.Headers.ContainsKey(UserAgentHeader))
+            if (!(eventArgs is WebServiceRequestEventArgs args) || !args.Headers.ContainsKey(UserAgentHeader))
             {
                 return;
             }

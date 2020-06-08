@@ -26,6 +26,7 @@ namespace Amazon.QLDB.Driver.Tests
     using Amazon.IonDotnet.Tree;
     using Amazon.QLDBSession;
     using Amazon.QLDBSession.Model;
+    using Amazon.Runtime;
     using Microsoft.Extensions.Logging.Abstractions;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
@@ -48,7 +49,7 @@ namespace Amazon.QLDB.Driver.Tests
         {
             mockAction = new Mock<MockDisposeDelegate>();
             mockSession = new Mock<Session>(null, null, null, null, null);
-            qldbSession = new QldbSession(mockSession.Object, 2, mockAction.Object.DisposeDelegate, NullLogger.Instance);
+            qldbSession = new QldbSession(mockSession.Object, mockAction.Object.DisposeDelegate, NullLogger.Instance);
         }
 
         [TestMethod]
@@ -128,9 +129,7 @@ namespace Amazon.QLDB.Driver.Tests
                 txn.Execute("testStatement");
                 return "test";
             }
-            var result = qldbSession.Execute(
-                testFunc,
-                (int retry) => retryCount = retry);
+            var result = qldbSession.Execute(testFunc);
             Assert.AreEqual(1, txnCount);
             Assert.AreEqual(1, executeCount);
             Assert.AreEqual(1, commitCount);
@@ -172,8 +171,7 @@ namespace Amazon.QLDB.Driver.Tests
                     txn.Execute("testStatement");
                     txn.Abort();
                     return true;
-                },
-                (int retry) => retryCount = retry));
+                }));
             Assert.AreEqual(1, txnCount);
             Assert.AreEqual(1, executeCount);
             Assert.AreEqual(0, commitCount);
@@ -181,166 +179,72 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestExecuteInvalidSessionExceptionThrowsIfExceedRetryLimit()
+        public void Execute_ThrowInvalidSessionException_ThrowAndEndSession()
         {
-            int txnCount = 0;
-            int commitCount = 0;
-            int retryCount = 0;
             mockSession.Setup(x => x.StartTransaction()).Returns(new StartTransactionResult
             {
                 TransactionId = "testTransactionIdddddd"
-            }).Callback(() => txnCount++);
+            });
             mockSession.SetupSequence(x => x.ExecuteStatement(
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<List<IIonValue>>()))
-                .Throws(new OccConflictException(""))
-                .Throws(new OccConflictException(""))
                 .Throws(new InvalidSessionException(""));
             mockSession.Setup(x => x.CommitTransaction(It.IsAny<string>(), It.IsAny<MemoryStream>()))
                 .Returns(new CommitTransactionResult
                 {
                     CommitDigest = new MemoryStream(digest)
-                }).Callback(() => commitCount++);
+                });
 
             Assert.ThrowsException<InvalidSessionException>(() => qldbSession.Execute(
-                (TransactionExecutor txn) => { txn.Execute("testStatement"); return true; },
-                (int retry) => retryCount = retry));
-            Assert.AreEqual(3, txnCount);
-            Assert.AreEqual(0, commitCount);
-            Assert.AreEqual(2, retryCount);
+                (TransactionExecutor txn) => { txn.Execute("testStatement"); return true; }));
+
+            mockSession.Verify(s => s.End(), Times.Once);
         }
 
-        [TestMethod]
-        public void TestExecuteOccConflictExceptionThrowsIfExceedRetryLimit()
+        [DataTestMethod]
+        [DynamicData(nameof(CreateExceptionTestData), DynamicDataSourceType.Method)]
+        public void Execute_ThrowException_ThrowExpectedException(Exception exception, Type expectedExceptionType)
         {
-            int txnCount = 0;
-            int executeCount = 0;
-            int commitCount = 0;
-            int retryCount = 0;
             mockSession.Setup(x => x.StartTransaction()).Returns(new StartTransactionResult
             {
                 TransactionId = "testTransactionIdddddd"
-            }).Callback(() => txnCount++);
+            });
             mockSession.Setup(x => x.ExecuteStatement(
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<List<IIonValue>>()))
-                .Callback(() => executeCount++)
-                .Throws(new OccConflictException(""));
-            mockSession.Setup(x => x.CommitTransaction(It.IsAny<string>(), It.IsAny<MemoryStream>()))
-                .Returns(new CommitTransactionResult
-                {
-                    CommitDigest = new MemoryStream(digest)
-                }).Callback(() => commitCount++);
+                .Throws(exception)
+                ;
 
-            Assert.ThrowsException<OccConflictException>(() => qldbSession.Execute(
-                (TransactionExecutor txn) => { txn.Execute("testStatement"); return true; },
-                (int retry) => retryCount = retry));
-            Assert.AreEqual(3, txnCount);
-            Assert.AreEqual(3, executeCount);
-            Assert.AreEqual(0, commitCount);
-            Assert.AreEqual(2, retryCount);
+            try
+            {
+                qldbSession.Execute(
+                    (TransactionExecutor txn) => { txn.Execute("testStatement"); return true; });
+            }
+            catch (Exception e)
+            {
+                Assert.AreEqual(expectedExceptionType, e.GetType());
+                mockSession.Verify(s => s.End(), Times.Never);
+                return;
+            }
+            Assert.Fail();
         }
 
-        [TestMethod]
-        public void TestExecuteAmazonQLDBSessionExceptionThrowsIfRetryLimitExceeded()
+        public static IEnumerable<object[]> CreateExceptionTestData()
         {
-            int txnCount = 0;
-            int commitCount = 0;
-            int retryCount = 0;
-            mockSession.Setup(x => x.StartTransaction()).Returns(new StartTransactionResult
-            {
-                TransactionId = "testTransactionIdddddd"
-            }).Callback(() => txnCount++);
-            mockSession.SetupSequence(x => x.ExecuteStatement(
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<List<IIonValue>>()))
-                .Throws(new AmazonQLDBSessionException("", 0, "", "", HttpStatusCode.InternalServerError))
-                .Throws(new AmazonQLDBSessionException("", 0, "", "", HttpStatusCode.ServiceUnavailable))
-                .Throws(new AmazonQLDBSessionException("", 0, "", "", HttpStatusCode.ServiceUnavailable));
-            mockSession.Setup(x => x.CommitTransaction(It.IsAny<string>(), It.IsAny<MemoryStream>()))
-                .Returns(new CommitTransactionResult
-                {
-                    CommitDigest = new MemoryStream(digest)
-                }).Callback(() => commitCount++);
-
-            Assert.ThrowsException<AmazonQLDBSessionException>(() => qldbSession.Execute(
-                (TransactionExecutor txn) => { txn.Execute("testStatement"); return true; },
-                (int retry) => retryCount = retry));
-            Assert.AreEqual(3, txnCount);
-            Assert.AreEqual(0, commitCount);
-            Assert.AreEqual(2, retryCount);
-        }
-
-        [TestMethod]
-        public void TestExecuteAmazonQLDBSessionExceptionDoesNotRetryIfNotRetriable()
-        {
-            int txnCount = 0;
-            int executeCount = 0;
-            int commitCount = 0;
-            int retryCount = 0;
-            mockSession.Setup(x => x.StartTransaction()).Returns(new StartTransactionResult
-            {
-                TransactionId = "testTransactionIdddddd"
-            }).Callback(() => txnCount++);
-            mockSession.Setup(x => x.ExecuteStatement(
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<List<IIonValue>>()))
-                .Callback(() => executeCount++)
-                .Throws(new AmazonQLDBSessionException("", 0, "", "", HttpStatusCode.NotFound));
-            mockSession.Setup(x => x.CommitTransaction(It.IsAny<string>(), It.IsAny<MemoryStream>()))
-                .Returns(new CommitTransactionResult
-                {
-                    CommitDigest = new MemoryStream(digest)
-                }).Callback(() => commitCount++);
-
-            Assert.ThrowsException<AmazonQLDBSessionException>(() => qldbSession.Execute(
-                (TransactionExecutor txn) => { txn.Execute("testStatement"); return true; },
-                (int retry) => retryCount = retry));
-            Assert.AreEqual(1, txnCount);
-            Assert.AreEqual(1, executeCount);
-            Assert.AreEqual(0, commitCount);
-            Assert.AreEqual(0, retryCount);
-        }
-
-        [TestMethod]
-        public void TestExecuteOccConflictExceptionRetriesExecution()
-        {
-            int txnCount = 0;
-            int commitCount = 0;
-            int retryCount = 0;
-            mockSession.Setup(x => x.StartTransaction()).Returns(new StartTransactionResult
-            {
-                TransactionId = "testTransactionIdddddd"
-            }).Callback(() => txnCount++);
-            mockSession.SetupSequence(x => x.ExecuteStatement(
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<List<IIonValue>>()))
-                .Throws(new OccConflictException(""))
-                .Returns(new ExecuteStatementResult
-                {
-                    FirstPage = new Page
-                    {
-                        NextPageToken = null,
-                        Values = new List<ValueHolder>()
-                    }
-                });
-            mockSession.Setup(x => x.CommitTransaction(It.IsAny<string>(), It.IsAny<MemoryStream>()))
-                .Returns(new CommitTransactionResult
-                {
-                    CommitDigest = new MemoryStream(digest)
-                }).Callback(() => commitCount++);
-
-           qldbSession.Execute(
-                (TransactionExecutor txn) => { txn.Execute("testStatement"); return true; },
-                (int retry) => retryCount = retry);
-            Assert.AreEqual(2, txnCount);
-            Assert.AreEqual(1, commitCount);
-            Assert.AreEqual(1, retryCount);
+            return new List<object[]>() {
+                new object[] { new AmazonQLDBSessionException("", 0, "", "", HttpStatusCode.InternalServerError),
+                    typeof(RetriableException) },
+                new object[] { new AmazonQLDBSessionException("", 0, "", "", HttpStatusCode.ServiceUnavailable),
+                    typeof(RetriableException) },
+                new object[] { new AmazonQLDBSessionException("", 0, "", "", HttpStatusCode.Unauthorized),
+                    typeof(AmazonQLDBSessionException) },
+                new object[] { new OccConflictException("occ"),
+                    typeof(OccConflictException)},
+                new object[] { new AmazonServiceException(),
+                    typeof(AmazonServiceException)}
+            };
         }
 
         [TestMethod]

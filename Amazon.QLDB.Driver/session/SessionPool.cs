@@ -27,7 +27,7 @@ namespace Amazon.QLDB.Driver
         private readonly BlockingCollection<QldbSession> sessionPool;
         private readonly SemaphoreSlim poolPermits;
         private readonly Func<Session> sessionCreator;
-        private readonly int retryLimit;
+        private readonly IRetryHandler retryHandler;
         private readonly ILogger logger;
         private bool isClosed = false;
 
@@ -35,16 +35,59 @@ namespace Amazon.QLDB.Driver
         /// Initializes a new instance of the <see cref="SessionPool"/> class.
         /// </summary>
         /// <param name="sessionCreator">The method to create a new underlying QLDB session.</param>
-        /// <param name="retryLimit">The limit for retries on execute methods when an OCC conflict or retriable exception occurs.</param>
+        /// <param name="retryHandler">Handling the retry logic of the execute call.</param>
         /// <param name="maxConcurrentTransactions">The maximum number of sessions that can be created from the pool at any one time.</param>
         /// <param name="logger">Logger to be used by this.</param>
-        public SessionPool(Func<Session> sessionCreator, int retryLimit, int maxConcurrentTransactions, ILogger logger)
+        public SessionPool(Func<Session> sessionCreator, IRetryHandler retryHandler, int maxConcurrentTransactions, ILogger logger)
         {
             this.sessionPool = new BlockingCollection<QldbSession>(maxConcurrentTransactions);
             this.poolPermits = new SemaphoreSlim(maxConcurrentTransactions, maxConcurrentTransactions);
             this.sessionCreator = sessionCreator;
-            this.retryLimit = retryLimit;
+            this.retryHandler = retryHandler;
             this.logger = logger;
+        }
+
+        /// <summary>
+        /// Execute a function in session pool.
+        /// </summary>
+        /// <typeparam name="T">The return type of the function.</typeparam>
+        /// <param name="func">The function to be executed in the session pool.</param>
+        /// <param name="retryAction">The action to be executed on retry.</param>
+        /// <returns>The result from the function.</returns>
+        public T Exectue<T>(Func<TransactionExecutor, T> func, Action<int> retryAction)
+        {
+            QldbSession session = null;
+            try
+            {
+                session = this.GetSession();
+                return this.retryHandler.RetriableExecute(
+                    () => session.Execute(func),
+                    retryAction,
+                    () =>
+                    {
+                        session.Dispose();
+                        session = this.GetSession();
+                    });
+            }
+            finally
+            {
+                if (session != null)
+                {
+                    session.Dispose();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Dispose the session pool and all sessions.
+        /// </summary>
+        public void Dispose()
+        {
+            this.isClosed = true;
+            while (this.sessionPool.Count > 0)
+            {
+                this.sessionPool.Take().Destroy();
+            }
         }
 
         /// <summary>
@@ -57,7 +100,7 @@ namespace Amazon.QLDB.Driver
         /// <returns>The <see cref="IQldbSession"/> object.</returns>
         ///
         /// <exception cref="QldbDriverException">Thrown when this driver has been disposed or timeout.</exception>
-        public QldbSession GetSession()
+        internal QldbSession GetSession()
         {
             if (this.isClosed)
             {
@@ -97,28 +140,20 @@ namespace Amazon.QLDB.Driver
             }
         }
 
-        /// <summary>
-        /// Dispose the session pool and all sessions.
-        /// </summary>
-        public void Dispose()
-        {
-            this.isClosed = true;
-            while (this.sessionPool.Count > 0)
-            {
-                this.sessionPool.Take().Destroy();
-            }
-        }
-
         private void ReleaseSession(QldbSession session)
         {
-            this.sessionPool.Add(session);
+            if (session != null)
+            {
+                this.sessionPool.Add(session);
+            }
+
             this.poolPermits.Release();
             this.logger.LogDebug("Session returned to pool; pool size is now {}.", this.sessionPool.Count);
         }
 
         private QldbSession StartNewSession()
         {
-            return new QldbSession(this.sessionCreator.Invoke(), this.retryLimit, this.ReleaseSession, this.logger);
+            return new QldbSession(this.sessionCreator.Invoke(), this.ReleaseSession, this.logger);
         }
     }
 }

@@ -25,7 +25,6 @@ namespace Amazon.QLDB.Driver.Tests
     using Microsoft.Extensions.Logging.Abstractions;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
-    using static Amazon.QLDB.Driver.QldbDriver;
     using System.Linq;
     using Amazon.IonDotnet.Tree.Impl;
     using Amazon.IonDotnet.Builders;
@@ -104,7 +103,8 @@ namespace Amazon.QLDB.Driver.Tests
         public void TestQldbDriverConstructorReturnsValidObject()
         {
             var driver = new QldbDriver(
-                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance), 4, 4, NullLogger.Instance));
+                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
+                    new Mock<IRetryHandler>().Object, 4, NullLogger.Instance));
             Assert.IsNotNull(driver);
         }
         
@@ -175,7 +175,8 @@ namespace Amazon.QLDB.Driver.Tests
                     .Returns(Task.FromResult(sendCommandResponseCommit));
 
             var driver = new QldbDriver(
-                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance), 4, 4, NullLogger.Instance));
+                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
+                        QldbDriverBuilder.CreateDefaultRetryHandler(4), 4, NullLogger.Instance));
 
             var result = driver.ListTableNames();
 
@@ -187,7 +188,8 @@ namespace Amazon.QLDB.Driver.Tests
         public void TestExecuteWithActionLambdaCanInvokeSuccessfully()
         {
             var driver = new QldbDriver(
-                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance), 4, 4, NullLogger.Instance));
+                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
+                    new Mock<IRetryHandler>().Object, 4, NullLogger.Instance));
             driver.Execute((txn) =>
             {
                 txn.Execute("testStatement");
@@ -198,7 +200,8 @@ namespace Amazon.QLDB.Driver.Tests
         public void TestExecuteWithActionLambdaAndRetryActionCanInvokeSuccessfully()
         {
             var driver = new QldbDriver(
-                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance), 4, 4, NullLogger.Instance));
+                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
+                    new Mock<IRetryHandler>().Object, 4, NullLogger.Instance));
             driver.Execute((txn) =>
             {
                 txn.Execute("testStatement");
@@ -209,7 +212,8 @@ namespace Amazon.QLDB.Driver.Tests
         public void TestExecuteWithFuncLambdaReturnsFuncOutput()
         {
             var driver = new QldbDriver(
-                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance), 4, 4, NullLogger.Instance));
+                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
+                    QldbDriverBuilder.CreateDefaultRetryHandler(4), 4, NullLogger.Instance));
             var result = driver.Execute((txn) =>
             {
                 txn.Execute("testStatement");
@@ -222,7 +226,8 @@ namespace Amazon.QLDB.Driver.Tests
         public void TestExecuteWithFuncLambdaAndRetryActionReturnsFuncOutput()
         {
             var driver = new QldbDriver(
-                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance), 4, 4, NullLogger.Instance));
+                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
+                    QldbDriverBuilder.CreateDefaultRetryHandler(4), 4, NullLogger.Instance));
             driver.Dispose();
             Assert.ThrowsException<QldbDriverException>(() => driver.Execute((txn) =>
             {
