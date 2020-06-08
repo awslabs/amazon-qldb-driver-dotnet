@@ -21,13 +21,13 @@ namespace Amazon.QLDB.Driver
     {
         private readonly int retryLimit;
         private readonly IEnumerable<Type> retryExceptions;
-        private readonly IEnumerable<Type> exceptionsNeedsRecover;
+        private readonly IEnumerable<Type> exceptionsNeedRecover;
 
-        public RetryHandler(int retryLimit, IEnumerable<Type> retryExceptions, IEnumerable<Type> exceptionsNeedsRecover)
+        public RetryHandler(int retryLimit, IEnumerable<Type> retryExceptions, IEnumerable<Type> exceptionsNeedRecover)
         {
             this.retryLimit = retryLimit;
             this.retryExceptions = retryExceptions;
-            this.exceptionsNeedsRecover = exceptionsNeedsRecover;
+            this.exceptionsNeedRecover = exceptionsNeedRecover;
         }
 
         public T RetriableExecute<T>(Func<T> func, Action<int> retryAction, Action recoverAction)
@@ -67,22 +67,19 @@ namespace Amazon.QLDB.Driver
 
         internal bool IsRetriable(Exception ex)
         {
-            foreach (var i in this.retryExceptions)
-            {
-                if (this.IsSameOrSubclass(i, ex.GetType()))
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return FindException(this.retryExceptions, ex);
         }
 
         internal bool NeedsRecover(Exception ex)
         {
-            foreach (var i in this.exceptionsNeedsRecover)
+            return FindException(this.exceptionsNeedRecover, ex);
+        }
+
+        private static bool FindException(IEnumerable<Type> exceptions, Exception ex)
+        {
+            foreach (var i in exceptions)
             {
-                if (this.IsSameOrSubclass(i, ex.GetType()))
+                if (IsSameOrSubclass(i, ex.GetType()))
                 {
                     return true;
                 }
@@ -106,7 +103,7 @@ namespace Amazon.QLDB.Driver
             Thread.Sleep(Convert.ToInt32(jitterRand * (exponentialBackoff + 1)));
         }
 
-        private bool IsSameOrSubclass(Type baseClass, Type childClass)
+        private static bool IsSameOrSubclass(Type baseClass, Type childClass)
         {
             return baseClass == childClass || childClass.IsSubclassOf(baseClass);
         }

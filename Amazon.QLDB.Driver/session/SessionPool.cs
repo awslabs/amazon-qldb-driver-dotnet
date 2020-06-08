@@ -54,7 +54,7 @@ namespace Amazon.QLDB.Driver
         /// <param name="func">The function to be executed in the session pool.</param>
         /// <param name="retryAction">The action to be executed on retry.</param>
         /// <returns>The result from the function.</returns>
-        public T Exectue<T>(Func<TransactionExecutor, T> func, Action<int> retryAction)
+        public T Execute<T>(Func<TransactionExecutor, T> func, Action<int> retryAction)
         {
             QldbSession session = null;
             try

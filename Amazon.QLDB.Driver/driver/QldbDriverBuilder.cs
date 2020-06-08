@@ -187,10 +187,10 @@
         }
 
         /// <summary>
-        /// Create the IRetryHandler object with the defautl set of retriable exceptions.
+        /// Create a RetryHandler object with the default set of retriable exceptions.
         /// </summary>
         /// <param name="retryLimit">The number of retry attempts to be made by the driver.</param>
-        /// <returns>The constructed IRetryHanlder instance.</returns>
+        /// <returns>The constructed IRetryHandler instance.</returns>
         internal static IRetryHandler CreateDefaultRetryHandler(int retryLimit)
         {
             return CreateRetryHandler(

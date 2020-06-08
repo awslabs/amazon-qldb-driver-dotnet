@@ -141,7 +141,7 @@ namespace Amazon.QLDB.Driver
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
         public T Execute<T>(Func<TransactionExecutor, T> func, Action<int> retryAction)
         {
-            return this.sessionPool.Exectue(func, retryAction);
+            return this.sessionPool.Execute(func, retryAction);
         }
 
         /// <summary>
