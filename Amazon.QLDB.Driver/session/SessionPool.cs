@@ -94,8 +94,7 @@ namespace Amazon.QLDB.Driver
         /// <para>Get a <see cref="IQldbSession"/> object.</para>
         ///
         /// <para>This will attempt to retrieve an active existing session, or it will start a new session with QLDB unless the
-        /// number of allocated sessions has exceeded the pool size limit. If so, then it will continue trying to retrieve an
-        /// active existing session until the timeout is reached, throwing a <see cref="TimeoutException"/>.</para>
+        /// number of allocated sessions has exceeded the pool size limit.</para>
         /// </summary>
         /// <returns>The <see cref="IQldbSession"/> object.</returns>
         ///

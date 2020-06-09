@@ -17,12 +17,25 @@ namespace Amazon.QLDB.Driver
     using System.Collections.Generic;
     using System.Threading;
 
+    /// <summary>
+    /// <para>The default implementation of Retry Handler.</para>
+    ///
+    /// <para>The driver retries in two scenarios: retrying inside a session, and retrying with another session. In the second case,
+    /// it would require a <i>recover</i> action to reset the session into a working state. Customer can also provide an Action to
+    /// complete certain tasks, for example logging the retries.
+    /// </summary>
     internal class RetryHandler : IRetryHandler
     {
         private readonly int retryLimit;
         private readonly IEnumerable<Type> retryExceptions;
         private readonly IEnumerable<Type> exceptionsNeedRecover;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RetryHandler"/> class.
+        /// </summary>
+        /// <param name="retryLimit">>The number of retry attempts to be made by the driver.</param>
+        /// <param name="retryExceptions">The exceptions that the handler would retry on.</param>
+        /// <param name="exceptionsNeedRecover">The exceptions that need to call the recover action on retry.</param>
         public RetryHandler(int retryLimit, IEnumerable<Type> retryExceptions, IEnumerable<Type> exceptionsNeedRecover)
         {
             this.retryLimit = retryLimit;
@@ -30,6 +43,7 @@ namespace Amazon.QLDB.Driver
             this.exceptionsNeedRecover = exceptionsNeedRecover;
         }
 
+        /// <inheritdoc/>
         public T RetriableExecute<T>(Func<T> func, Action<int> retryAction, Action recoverAction)
         {
             Exception last = null;

@@ -16,7 +16,6 @@ namespace Amazon.QLDB.Driver
     using System;
     using System.Net;
     using System.Threading;
-    using Amazon.QLDBSession;
     using Amazon.QLDBSession.Model;
     using Amazon.Runtime;
     using Microsoft.Extensions.Logging;
@@ -110,8 +109,6 @@ namespace Amazon.QLDB.Driver
         /// <param name="func">The Executor lambda representing the block of code to be executed within the transaction. This cannot have any
         /// side effects as it may be invoked multiple times, and the result cannot be trusted until the
         /// transaction is committed.</param>
-        /// <param name="retryAction">A lambda that is invoked when the Executor lambda is about to be retried due to
-        /// a retriable error. Can be null if not applicable.</param>
         /// <typeparam name="T">The return type.</typeparam>
         ///
         /// <returns>The return value of executing the executor. Note that if you directly return a <see cref="IResult"/>, this will
@@ -192,21 +189,6 @@ namespace Amazon.QLDB.Driver
         internal string GetSessionId()
         {
             return this.session.SessionId;
-        }
-
-        /// <summary>
-        /// Sleep for an exponentially increasing amount relative to executionAttempt.
-        /// </summary>
-        ///
-        /// <param name="executionAttempt">The number of execution attempts.</param>
-        private static void SleepOnRetry(int executionAttempt)
-        {
-            const int SleepBaseMilliseconds = 10;
-            const int SleepCapMilliseconds = 5000;
-            var rng = new Random();
-            var jitterRand = rng.NextDouble();
-            var exponentialBackoff = Math.Min(SleepCapMilliseconds, Math.Pow(SleepBaseMilliseconds, executionAttempt));
-            Thread.Sleep(Convert.ToInt32(jitterRand * (exponentialBackoff + 1)));
         }
 
         /// <summary>

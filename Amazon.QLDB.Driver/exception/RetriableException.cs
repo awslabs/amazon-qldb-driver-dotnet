@@ -15,8 +15,17 @@ namespace Amazon.QLDB.Driver
 {
     using System;
 
+    /// <summary>
+    /// This exception is used internally to allow lower level exceptions to be retried. In some cases, only
+    /// the instances of an exception class with certain data values, e.g. HTTP Status code, are allowed
+    /// to be retried, so we wrapped them into this exception.
+    /// </summary>
     internal class RetriableException : Exception
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RetriableException"/> class.
+        /// </summary>
+        /// <param name="innerException">The exception that can be retried.</param>
         public RetriableException(Exception innerException)
             : base("Qldb retriable exception.", innerException)
         {

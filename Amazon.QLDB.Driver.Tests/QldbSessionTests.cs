@@ -231,6 +231,29 @@ namespace Amazon.QLDB.Driver.Tests
             Assert.Fail();
         }
 
+        [TestMethod]
+        public void Execute_ThrowBadRequestExceptionOnStartTransaction_ThrowTransactionOpenedException()
+        {
+            mockSession.Setup(x => x.StartTransaction()).Throws(new BadRequestException("bad request"));
+
+            Assert.ThrowsException<TransactionAlreadyOpenException>(
+                () => qldbSession.Execute(
+                    (TransactionExecutor txn) => { txn.Execute("testStatement"); return true; }));
+
+            mockSession.Verify(s => s.AbortTransaction(), Times.Once);
+        }
+
+        [TestMethod]
+        public void Execute_ThrowAmazonServiceExceptionOnAbort_ShouldNotThrowAmazonServiceException()
+        {
+            mockSession.Setup(x => x.StartTransaction()).Throws(new BadRequestException("bad request"));
+            mockSession.Setup(x => x.AbortTransaction()).Throws(new AmazonServiceException());
+
+            Assert.ThrowsException<TransactionAlreadyOpenException>(
+                () => qldbSession.Execute(
+                    (TransactionExecutor txn) => { txn.Execute("testStatement"); return true; }));
+        }
+
         public static IEnumerable<object[]> CreateExceptionTestData()
         {
             return new List<object[]>() {

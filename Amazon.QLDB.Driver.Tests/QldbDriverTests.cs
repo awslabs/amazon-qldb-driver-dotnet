@@ -197,11 +197,24 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
+        public void TestExecuteWithActionAndRetryActionCanInvokeSuccessfully()
+        {
+            var driver = new QldbDriver(
+                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
+                    QldbDriverBuilder.CreateDefaultRetryHandler(4), 4, NullLogger.Instance));
+            driver.Execute((txn) =>
+            {
+                txn.Execute("testStatement");
+            },
+            i => { return; } );
+        }
+
+        [TestMethod]
         public void TestExecuteWithActionLambdaAndRetryActionCanInvokeSuccessfully()
         {
             var driver = new QldbDriver(
                 new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
-                    new Mock<IRetryHandler>().Object, 4, NullLogger.Instance));
+                    QldbDriverBuilder.CreateDefaultRetryHandler(4), 4, NullLogger.Instance));
             driver.Execute((txn) =>
             {
                 txn.Execute("testStatement");
