@@ -79,7 +79,12 @@ namespace Amazon.QLDB.Driver
             if (!this.isClosed)
             {
                 this.isClosed = true;
-                this.disposeDelegate(null);
+                if (!this.isDisposed)
+                {
+                    this.isDisposed = true;
+                    this.disposeDelegate(null);
+                }
+
                 this.session.End();
                 return;
             }
