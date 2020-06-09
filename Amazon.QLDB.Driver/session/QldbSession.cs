@@ -155,7 +155,6 @@ namespace Amazon.QLDB.Driver
                 }
                 catch (InvalidSessionException ise)
                 {
-                    this.isDisposed = true;
                     this.Destroy();
                     throw ise;
                 }
@@ -175,12 +174,7 @@ namespace Amazon.QLDB.Driver
                 catch (TransactionAlreadyOpenException taoe)
                 {
                     this.NoThrowAbort(transaction);
-                    if (executionAttempt >= this.retryLimit)
-                    {
-                        throw taoe.InnerException;
-                    }
-
-                    this.logger.LogInformation("Retrying the transaction. {msg}", taoe.Message);
+                    throw taoe;
                 }
                 catch (AmazonQLDBSessionException aqse)
                 {
