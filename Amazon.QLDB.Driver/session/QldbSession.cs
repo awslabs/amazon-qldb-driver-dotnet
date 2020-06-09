@@ -121,6 +121,7 @@ namespace Amazon.QLDB.Driver
         /// </returns>
         ///
         /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
+        /// <exception cref="TransactionAlreadyOpenException">Thrown if the transaction has already been opened.</exception>
         /// <exception cref="QldbDriverException">Thrown when called on a disposed instance.</exception>
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
         public T Execute<T>(Func<TransactionExecutor, T> func)
@@ -178,6 +179,7 @@ namespace Amazon.QLDB.Driver
             }
             catch (BadRequestException e)
             {
+                this.NoThrowAbort(null);
                 throw new TransactionAlreadyOpenException(e);
             }
         }

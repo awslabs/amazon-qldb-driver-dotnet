@@ -33,7 +33,7 @@ namespace Amazon.QLDB.Driver
         public T RetriableExecute<T>(Func<T> func, Action<int> retryAction, Action recoverAction)
         {
             Exception last = null;
-            for (int i = 0; i < this.retryLimit + 1; i++)
+            for (int i = 1; i <= this.retryLimit + 1; i++)
             {
                 try
                 {
