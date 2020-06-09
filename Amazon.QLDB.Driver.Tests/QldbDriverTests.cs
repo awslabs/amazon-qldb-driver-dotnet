@@ -104,10 +104,11 @@ namespace Amazon.QLDB.Driver.Tests
         public void TestQldbDriverConstructorReturnsValidObject()
         {
             var driver = new QldbDriver(
-                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance), 4, 4, NullLogger.Instance));
+                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
+                4, 4, NullLogger.Instance), NullLogger.Instance);
             Assert.IsNotNull(driver);
         }
-        
+
         [TestMethod]
         public void TestListTableNamesLists()
         {
@@ -117,7 +118,7 @@ namespace Amazon.QLDB.Driver.Tests
 
             var h1 = QldbHash.ToQldbHash("transactionId");
             h1 = Transaction.Dot(h1, QldbDriver.TableNameQuery, new List<IIonValue> { });
-            
+
             var sendCommandResponseWithStartSession = new SendCommandResponse
             {
                 StartSession = new StartSessionResult
@@ -175,7 +176,8 @@ namespace Amazon.QLDB.Driver.Tests
                     .Returns(Task.FromResult(sendCommandResponseCommit));
 
             var driver = new QldbDriver(
-                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance), 4, 4, NullLogger.Instance));
+                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
+                4, 4, NullLogger.Instance), NullLogger.Instance);
 
             var result = driver.ListTableNames();
 
@@ -187,7 +189,8 @@ namespace Amazon.QLDB.Driver.Tests
         public void TestExecuteWithActionLambdaCanInvokeSuccessfully()
         {
             var driver = new QldbDriver(
-                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance), 4, 4, NullLogger.Instance));
+                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
+                4, 4, NullLogger.Instance), NullLogger.Instance);
             driver.Execute((txn) =>
             {
                 txn.Execute("testStatement");
@@ -198,7 +201,8 @@ namespace Amazon.QLDB.Driver.Tests
         public void TestExecuteWithActionLambdaAndRetryActionCanInvokeSuccessfully()
         {
             var driver = new QldbDriver(
-                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance), 4, 4, NullLogger.Instance));
+                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
+                4, 4, NullLogger.Instance), NullLogger.Instance);
             driver.Execute((txn) =>
             {
                 txn.Execute("testStatement");
@@ -209,7 +213,8 @@ namespace Amazon.QLDB.Driver.Tests
         public void TestExecuteWithFuncLambdaReturnsFuncOutput()
         {
             var driver = new QldbDriver(
-                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance), 4, 4, NullLogger.Instance));
+                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
+                4, 4, NullLogger.Instance), NullLogger.Instance);
             var result = driver.Execute((txn) =>
             {
                 txn.Execute("testStatement");
@@ -222,7 +227,8 @@ namespace Amazon.QLDB.Driver.Tests
         public void TestExecuteWithFuncLambdaAndRetryActionReturnsFuncOutput()
         {
             var driver = new QldbDriver(
-                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance), 4, 4, NullLogger.Instance));
+                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
+                4, 4, NullLogger.Instance), NullLogger.Instance);
             driver.Dispose();
             Assert.ThrowsException<QldbDriverException>(() => driver.Execute((txn) =>
             {
@@ -230,7 +236,83 @@ namespace Amazon.QLDB.Driver.Tests
                 return "testReturnValue";
             }, (int k) => { return; }));
         }
-        
+
+        [DataTestMethod]
+        [DynamicData(nameof(CreateDriverExceptions), DynamicDataSourceType.Method)]
+        public void Execute_ExceptionOnExecute_ShouldOnlyRetryOnISEAndTAOE(Exception exception, bool expectThrow)
+        {
+            var statement = "DELETE FROM table;";
+            var h1 = QldbHash.ToQldbHash("transactionId");
+            h1 = Transaction.Dot(h1, statement, new List<IIonValue> { });
+
+            var sendCommandResponseWithStartSession = new SendCommandResponse
+            {
+                StartTransaction = new StartTransactionResult
+                {
+                    TransactionId = "transactionId"
+                },
+                ResponseMetadata = new ResponseMetadata
+                {
+                    RequestId = "testId"
+                }
+            };
+
+            var sendCommandResponseExecute = new SendCommandResponse
+            {
+                ExecuteStatement = new ExecuteStatementResult
+                {
+                    FirstPage = new Page
+                    {
+                        NextPageToken = null
+                    }
+                },
+                ResponseMetadata = new ResponseMetadata
+                {
+                    RequestId = "testId"
+                }
+            };
+
+            var sendCommandResponseCommit = new SendCommandResponse
+            {
+                CommitTransaction = new CommitTransactionResult
+                {
+                    TransactionId = "transactionId",
+                    CommitDigest = new MemoryStream(h1.Hash),
+                },
+                ResponseMetadata = new ResponseMetadata
+                {
+                    RequestId = "testId"
+                }
+            };
+            var mockCreator = new Mock<Func<Session>>();
+            var mockSession = new Mock<Session>(null, null, null, null, null);
+
+            mockSession.Setup(x => x.StartTransaction()).Returns(sendCommandResponseWithStartSession.StartTransaction);
+            mockSession.SetupSequence(x => x.ExecuteStatement(It.IsAny<String>(), It.IsAny<String>(), It.IsAny<List<IIonValue>>()))
+                .Throws(exception)
+                .Throws(exception)
+                .Returns(sendCommandResponseExecute.ExecuteStatement);
+            mockSession.Setup(x => x.CommitTransaction(It.IsAny<String>(), It.IsAny<MemoryStream>()))
+                .Returns(sendCommandResponseCommit.CommitTransaction);
+
+            mockCreator.Setup(x => x()).Returns(mockSession.Object);
+
+            var driver = new QldbDriver(
+                new SessionPool(mockCreator.Object, 4, 4, NullLogger.Instance), NullLogger.Instance);
+            try
+            {
+                driver.Execute(txn => txn.Execute(statement));
+            }
+            catch (Exception e)
+            {
+                Assert.IsTrue(expectThrow);
+                Assert.AreEqual(exception, e);
+                return;
+            }
+
+            Assert.IsFalse(expectThrow);
+        }
+
         public static ValueHolder CreateValueHolder(IIonValue ionValue)
         {
             MemoryStream stream = new MemoryStream();
@@ -246,6 +328,15 @@ namespace Amazon.QLDB.Driver.Tests
             };
 
             return valueHolder;
+        }
+
+        public static IEnumerable<object[]> CreateDriverExceptions()
+        {
+            return new List<object[]>() {
+                new object[] { new InvalidSessionException("invalid session") , false },
+                new object[] { new TransactionAlreadyOpenException(new Exception()), false },
+                new object[] { new QldbDriverException("generic"), true }
+            };
         }
     }
 }

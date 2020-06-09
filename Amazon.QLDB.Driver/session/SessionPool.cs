@@ -111,7 +111,11 @@ namespace Amazon.QLDB.Driver
 
         private void ReleaseSession(QldbSession session)
         {
-            this.sessionPool.Add(session);
+            if (session != null)
+            {
+                this.sessionPool.Add(session);
+            }
+
             this.poolPermits.Release();
             this.logger.LogDebug("Session returned to pool; pool size is now {}.", this.sessionPool.Count);
         }

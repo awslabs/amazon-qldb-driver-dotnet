@@ -79,6 +79,12 @@ namespace Amazon.QLDB.Driver
             if (!this.isClosed)
             {
                 this.isClosed = true;
+                if (!this.isDisposed)
+                {
+                    this.isDisposed = true;
+                    this.disposeDelegate(null);
+                }
+
                 this.session.End();
                 return;
             }
@@ -149,12 +155,12 @@ namespace Amazon.QLDB.Driver
                 }
                 catch (InvalidSessionException ise)
                 {
-                    this.isClosed = true;
+                    this.Destroy();
                     throw ise;
                 }
-                catch (TransactionAbortedException ae)
+                catch (TransactionAbortedException tae)
                 {
-                    throw ae;
+                    throw tae;
                 }
                 catch (OccConflictException oce)
                 {
@@ -168,12 +174,7 @@ namespace Amazon.QLDB.Driver
                 catch (TransactionAlreadyOpenException taoe)
                 {
                     this.NoThrowAbort(transaction);
-                    if (executionAttempt >= this.retryLimit)
-                    {
-                        throw taoe.InnerException;
-                    }
-
-                    this.logger.LogInformation("Retrying the transaction. {msg}", taoe.Message);
+                    throw taoe;
                 }
                 catch (AmazonQLDBSessionException aqse)
                 {
