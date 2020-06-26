@@ -1,3 +1,12 @@
+## GA Release v1.0.0
+
+### :hammer_and_wrench:​ Improvements
+* Added `Execute` methods that take a customized `RetryPolicy` object. It allows customer to set the retry limit and also create customized 'IBackoffStrategy'.
+* Added `QldbDriverBuilder.WithRetryLogging` to enable logging retries.
+
+### :warning: Deprecated
+* The `Execute` methods in the `IQldbDriver` class that take a `retryAction` parameter are deprecated, and will be removed in the future release.
+
 ## Release the v1.0.0-rc-1
 We have reworked the driver to deliver the next set of changes:
 

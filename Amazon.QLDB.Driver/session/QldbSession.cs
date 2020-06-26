@@ -15,8 +15,6 @@ namespace Amazon.QLDB.Driver
 {
     using System;
     using System.Net;
-    using System.Threading;
-    using Amazon.QLDBSession;
     using Amazon.QLDBSession.Model;
     using Amazon.Runtime;
     using Microsoft.Extensions.Logging;
@@ -48,7 +46,6 @@ namespace Amazon.QLDB.Driver
     /// </summary>
     internal class QldbSession : IDisposable
     {
-        private readonly int retryLimit;
         private readonly ILogger logger;
         private readonly Action<QldbSession> disposeDelegate;
         private Session session;
@@ -60,14 +57,12 @@ namespace Amazon.QLDB.Driver
         /// </summary>
         ///
         /// <param name="session">The session object representing a communication channel with QLDB.</param>
-        /// <param name="retryLimit">The limit for retries on execute methods when an OCC conflict or retriable exception occurs.</param>
         /// <param name="disposeDelegate">The delegate method to invoke upon disposal of this.</param>
         /// <param name="logger">The logger to be used by this.</param>
-        internal QldbSession(Session session, int retryLimit, Action<QldbSession> disposeDelegate, ILogger logger)
+        internal QldbSession(Session session, Action<QldbSession> disposeDelegate, ILogger logger)
         {
             this.session = session;
             this.disposeDelegate = disposeDelegate;
-            this.retryLimit = retryLimit;
             this.logger = logger;
         }
 
@@ -95,7 +90,7 @@ namespace Amazon.QLDB.Driver
         /// </summary>
         public void Dispose()
         {
-            if (!this.isDisposed)
+            if (!this.isDisposed && !this.isClosed)
             {
                 this.isDisposed = true;
                 this.disposeDelegate(this);
@@ -119,8 +114,6 @@ namespace Amazon.QLDB.Driver
         /// <param name="func">The Executor lambda representing the block of code to be executed within the transaction. This cannot have any
         /// side effects as it may be invoked multiple times, and the result cannot be trusted until the
         /// transaction is committed.</param>
-        /// <param name="retryAction">A lambda that is invoked when the Executor lambda is about to be retried due to
-        /// a retriable error. Can be null if not applicable.</param>
         /// <typeparam name="T">The return type.</typeparam>
         ///
         /// <returns>The return value of executing the executor. Note that if you directly return a <see cref="IResult"/>, this will
@@ -130,73 +123,52 @@ namespace Amazon.QLDB.Driver
         /// </returns>
         ///
         /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
+        /// <exception cref="TransactionAlreadyOpenException">Thrown if the transaction has already been opened.</exception>
         /// <exception cref="QldbDriverException">Thrown when called on a disposed instance.</exception>
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        public T Execute<T>(Func<TransactionExecutor, T> func, Action<int> retryAction)
+        public T Execute<T>(Func<TransactionExecutor, T> func)
         {
             ValidationUtils.AssertNotNull(func, "func");
             this.ThrowIfDisposedOrClosed();
 
-            var executionAttempt = 0;
-            while (true)
+            ITransaction transaction = null;
+            try
             {
-                ITransaction transaction = null;
-                try
+                transaction = this.StartTransaction();
+                T returnedValue = func(new TransactionExecutor(transaction));
+                if (returnedValue is IResult)
                 {
-                    transaction = this.StartTransaction();
-                    T returnedValue = func(new TransactionExecutor(transaction));
-                    if (returnedValue is IResult)
-                    {
-                        returnedValue = (T)(object)BufferedResult.BufferResult((IResult)returnedValue);
-                    }
-
-                    transaction.Commit();
-                    return returnedValue;
-                }
-                catch (InvalidSessionException ise)
-                {
-                    this.Destroy();
-                    throw ise;
-                }
-                catch (TransactionAbortedException tae)
-                {
-                    throw tae;
-                }
-                catch (OccConflictException oce)
-                {
-                    if (executionAttempt >= this.retryLimit)
-                    {
-                        throw oce;
-                    }
-
-                    this.logger.LogInformation("Retrying the transaction. {msg}", oce.Message);
-                }
-                catch (TransactionAlreadyOpenException taoe)
-                {
-                    this.NoThrowAbort(transaction);
-                    throw taoe;
-                }
-                catch (AmazonQLDBSessionException aqse)
-                {
-                    this.NoThrowAbort(transaction);
-                    if (executionAttempt >= this.retryLimit ||
-                        ((aqse.StatusCode != HttpStatusCode.InternalServerError) &&
-                        (aqse.StatusCode != HttpStatusCode.ServiceUnavailable)))
-                    {
-                        throw aqse;
-                    }
-
-                    this.logger.LogInformation("Retrying the transaction. {msg}", aqse.Message);
-                }
-                catch (AmazonServiceException ase)
-                {
-                    this.NoThrowAbort(transaction);
-                    throw ase;
+                    returnedValue = (T)(object)BufferedResult.BufferResult((IResult)returnedValue);
                 }
 
-                executionAttempt++;
-                retryAction?.Invoke(executionAttempt);
-                SleepOnRetry(executionAttempt);
+                transaction.Commit();
+                return returnedValue;
+            }
+            catch (InvalidSessionException ise)
+            {
+                this.Destroy();
+                throw ise;
+            }
+            catch (TransactionAbortedException tae)
+            {
+                this.NoThrowAbort(transaction);
+                throw tae;
+            }
+            catch (OccConflictException occ)
+            {
+                throw new QldbTransactionException(transaction.Id, occ);
+            }
+            catch (AmazonServiceException ase)
+            {
+                this.NoThrowAbort(transaction);
+
+                if (ase.StatusCode == HttpStatusCode.InternalServerError ||
+                    ase.StatusCode == HttpStatusCode.ServiceUnavailable)
+                {
+                    throw new RetriableException(transaction.Id, ase);
+                }
+
+                throw ase;
             }
         }
 
@@ -216,7 +188,8 @@ namespace Amazon.QLDB.Driver
             }
             catch (BadRequestException e)
             {
-                throw new TransactionAlreadyOpenException(e);
+                this.NoThrowAbort(null);
+                throw new TransactionAlreadyOpenException(string.Empty, e);
             }
         }
 
@@ -228,21 +201,6 @@ namespace Amazon.QLDB.Driver
         internal string GetSessionId()
         {
             return this.session.SessionId;
-        }
-
-        /// <summary>
-        /// Sleep for an exponentially increasing amount relative to executionAttempt.
-        /// </summary>
-        ///
-        /// <param name="executionAttempt">The number of execution attempts.</param>
-        private static void SleepOnRetry(int executionAttempt)
-        {
-            const int SleepBaseMilliseconds = 10;
-            const int SleepCapMilliseconds = 5000;
-            var rng = new Random();
-            var jitterRand = rng.NextDouble();
-            var exponentialBackoff = Math.Min(SleepCapMilliseconds, Math.Pow(SleepBaseMilliseconds, executionAttempt));
-            Thread.Sleep(Convert.ToInt32(jitterRand * (exponentialBackoff + 1)));
         }
 
         /// <summary>

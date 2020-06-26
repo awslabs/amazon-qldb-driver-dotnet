@@ -13,18 +13,22 @@
 
 namespace Amazon.QLDB.Driver
 {
+    using System;
+
     /// <summary>
-    /// Exception type representing the abort of a transaction within a lambda execution block. Signals that the lambda
-    /// should cease to execute and the current transaction should be aborted.
+    /// This exception is used internally to allow lower level exceptions to be retried. In some cases, only
+    /// the instances of an exception class with certain data values, e.g. HTTP Status code, are allowed
+    /// to be retried, so we wrapped them into this exception.
     /// </summary>
-    public class TransactionAbortedException : QldbTransactionException
+    internal class RetriableException : QldbTransactionException
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TransactionAbortedException"/> class.
+        /// Initializes a new instance of the <see cref="RetriableException"/> class.
         /// </summary>
         /// <param name="transactionId">The transaction ID.</param>
-        public TransactionAbortedException(string transactionId)
-            : base(transactionId)
+        /// <param name="innerException">The exception that can be retried.</param>
+        public RetriableException(string transactionId, Exception innerException)
+            : base("Qldb retriable exception.", transactionId, innerException)
         {
         }
     }

@@ -49,6 +49,35 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <summary>
+        /// Validates that the integer is positive.
+        /// </summary>
+        ///
+        /// <param name="num">The integer to validate.</param>
+        /// <param name="fieldName">Name of the parameter.</param>
+        internal static void AssertPositive(int num, string fieldName)
+        {
+            if (num < 0)
+            {
+                throw new ArgumentException("Parameter must not be zero or negative.", fieldName);
+            }
+        }
+
+        /// <summary>
+        /// Validates that the left integer is not greater than the right integer.
+        /// </summary>
+        /// <param name="left">The left integer.</param>
+        /// <param name="right">The right integer.</param>
+        /// <param name="leftName">Name of the left integer.</param>
+        /// <param name="rightName">Name of the right integer.</param>
+        internal static void AssertNotGreater(int left, int right, string leftName, string rightName)
+        {
+            if (left > right)
+            {
+                throw new ArgumentException(string.Format("Parameter {0} cannot be greater than {1}.", leftName, rightName), leftName);
+            }
+        }
+
+        /// <summary>
         /// Validates that the input is not Null.
         /// </summary>
         ///

@@ -16,19 +16,19 @@ namespace Amazon.QLDB.Driver
     using System;
 
     /// <summary>
-    /// Exception thrown when an attempt is made to start another transaction on the same session
-    /// while the previous transaction was still open.
+    /// Interface of Retry Handler.
     /// </summary>
-    public class TransactionAlreadyOpenException : QldbTransactionException
+    internal interface IRetryHandler
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TransactionAlreadyOpenException"/> class.
+        /// Execute a retriable function.
         /// </summary>
-        /// <param name="transactionId">The transaction ID.</param>
-        /// <param name="innerException">The inner exception.</param>
-        public TransactionAlreadyOpenException(string transactionId, Exception innerException)
-            : base(ExceptionMessages.TransactionAlreadyOpened, transactionId, innerException)
-        {
-        }
+        /// <typeparam name="T">The return type of the executed function.</typeparam>
+        /// <param name="func">The function to be executed and retried if needed.</param>
+        /// <param name="retryPolicy">The retry policy.</param>
+        /// <param name="recoverAction">The recover action needed on certain retry cases.</param>
+        /// <param name="retryAction">The custom retry action.</param>
+        /// <returns>The return value of the executed function.</returns>
+        T RetriableExecute<T>(Func<T> func, RetryPolicy retryPolicy, Action recoverAction, Action<int> retryAction);
     }
 }

@@ -53,6 +53,11 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <summary>
+        /// Gets the transaction ID.
+        /// </summary>
+        public string Id => this.txnId;
+
+        /// <summary>
         /// Abort the transaction and roll back any changes. No-op if closed.
         /// Any open <see cref="IResult"/> created by the transaction will be invalidated.
         /// </summary>
