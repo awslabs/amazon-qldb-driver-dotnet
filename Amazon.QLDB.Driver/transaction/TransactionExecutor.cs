@@ -40,7 +40,7 @@ namespace Amazon.QLDB.Driver
         /// </summary>
         public void Abort()
         {
-            throw new TransactionAbortedException();
+            throw new TransactionAbortedException(this.transaction.Id);
         }
 
         /// <summary>

@@ -13,8 +13,10 @@
 
  namespace Amazon.QLDB.Driver
 {
+    using System;
     using System.Runtime.CompilerServices;
     using Amazon.QLDBSession;
+    using Amazon.QLDBSession.Model;
     using Amazon.Runtime;
     using Microsoft.Extensions.Logging;
     using Microsoft.Extensions.Logging.Abstractions;
@@ -26,9 +28,9 @@
     public class QldbDriverBuilder
     {
         private protected AmazonQLDBSessionClient sessionClient;
-        private const int DefaultRetryLimit = 4;
 
         private int maxConcurrentTransactions = 0;
+        private bool logRetries = false;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="QldbDriverBuilder"/> class.
@@ -56,11 +58,6 @@
         /// Gets or sets the configuration to construct the <see cref="AmazonQLDBSessionClient"/> object.
         /// </summary>
         private protected AmazonQLDBSessionConfig SessionConfig { get; set; } = null;
-
-        /// <summary>
-        /// Gets or sets the number of retry attempts to be made by the session.
-        /// </summary>
-        private protected int RetryLimit { get; set; } = DefaultRetryLimit;
 
         /// <summary>
         /// Specify the credentials that should be used for the driver's sessions.
@@ -117,21 +114,6 @@
         }
 
         /// <summary>
-        /// Specify the retry limit that any convenience execute methods provided by sessions created from the driver
-        /// will attempt.
-        /// </summary>
-        ///
-        /// <param name="retryLimit">The number of retry attempts to be made by the session.</param>
-        ///
-        /// <returns>This builder object.</returns>
-        public QldbDriverBuilder WithRetryLimit(int retryLimit)
-        {
-            ValidationUtils.AssertNotNegative(retryLimit, "retryLimit");
-            this.RetryLimit = retryLimit;
-            return this;
-        }
-
-        /// <summary>
         /// <para>Specify the maximum number of concurrent transactions the driver can handle.</para>
         ///
         /// <para>Set to 0 by default to use the maximum possible amount allowed by the client
@@ -147,6 +129,16 @@
         {
             ValidationUtils.AssertNotNegative(maxConcurrentTransactions, "maxConcurrentTransactions");
             this.maxConcurrentTransactions = maxConcurrentTransactions;
+            return this;
+        }
+
+        /// <summary>
+        /// Enable loggging driver retries at the WARN level.
+        /// </summary>
+        /// <returns>This builder object.</returns>
+        public QldbDriverBuilder WithRetryLogging()
+        {
+            this.logRetries = true;
             return this;
         }
 
@@ -177,10 +169,23 @@
 
             return new QldbDriver(
                 new SessionPool(
-                () => Session.StartSession(this.LedgerName, this.sessionClient, this.Logger),
-                this.RetryLimit,
-                this.maxConcurrentTransactions,
-                this.Logger), this.Logger);
+                    () => Session.StartSession(this.LedgerName, this.sessionClient, this.Logger),
+                    CreateDefaultRetryHandler(this.logRetries ? this.Logger : null),
+                    this.maxConcurrentTransactions,
+                    this.Logger));
+        }
+
+        /// <summary>
+        /// Create a RetryHandler object with the default set of retriable exceptions.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
+        /// <returns>The constructed IRetryHandler instance.</returns>
+        internal static IRetryHandler CreateDefaultRetryHandler(ILogger logger)
+        {
+            return new RetryHandler(
+                new Type[] { typeof(RetriableException), typeof(OccConflictException), typeof(TransactionAlreadyOpenException) },
+                new Type[] { typeof(InvalidSessionException) },
+                logger);
         }
 
         private static void SetUserAgent(object sender, RequestEventArgs eventArgs)
@@ -188,10 +193,7 @@
             const string UserAgentHeader = "User-Agent";
             const string Version = "1.0.0-rc.1";
 
-#pragma warning disable IDE0019 // Use pattern matching
-            var args = eventArgs as WebServiceRequestEventArgs;
-#pragma warning restore IDE0019 // Use pattern matching
-            if (args == null || !args.Headers.ContainsKey(UserAgentHeader))
+            if (!(eventArgs is WebServiceRequestEventArgs args) || !args.Headers.ContainsKey(UserAgentHeader))
             {
                 return;
             }

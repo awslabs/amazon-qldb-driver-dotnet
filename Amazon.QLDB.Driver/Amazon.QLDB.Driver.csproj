@@ -5,7 +5,7 @@
     <RootNamespace>Amazon.QLDB.Driver</RootNamespace>
     <Company>Amazon.com, Inc.</Company>
     <Authors>Amazon Web Services</Authors>
-    <Version>1.0.0-rc.1</Version>
+    <Version>1.0.0</Version>
     <PackageId>Amazon.QLDB.Driver</PackageId>
     <Description>A .NET implementation of the Amazon QLDB driver that can be used to programmatically access and interact with data in Amazon QLDB ledgers.</Description>
     <Copyright>Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.</Copyright>
@@ -21,7 +21,7 @@
     <PackageTags>amazon api aws database driver ledger qldb quantum</PackageTags>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\public.snk</AssemblyOriginatorKeyFile>
-    <ReleaseVersion>1.0.0-rc.1</ReleaseVersion>
+    <ReleaseVersion>1.0.0</ReleaseVersion>
     <PackageIcon>product-icon_AWS_Quantum_125_squid-ink.png</PackageIcon>
   </PropertyGroup>
 
@@ -31,10 +31,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.QLDBSession" Version="3.3.100.119" />
+    <PackageReference Include="AWSSDK.QLDBSession" Version="3.3.100.128" />
     <PackageReference Include="Amazon.IonDotnet" Version="1.0.0" />
     <PackageReference Include="Amazon.IonHashDotnet" Version="1.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.4" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.5" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

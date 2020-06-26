@@ -16,9 +16,7 @@ namespace Amazon.QLDB.Driver
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using Amazon.QLDBSession.Model;
     using Amazon.Runtime;
-    using Microsoft.Extensions.Logging;
 
     /// <summary>
     /// <para>Represents a factory for accessing a specific ledger within QLDB. This class or
@@ -34,19 +32,17 @@ namespace Amazon.QLDB.Driver
         internal const string TableNameQuery =
                 "SELECT VALUE name FROM information_schema.user_tables WHERE status = 'ACTIVE'";
 
+        private static readonly RetryPolicy DefaultRetryPolicy = RetryPolicy.Builder().Build();
         private readonly SessionPool sessionPool;
-        private readonly ILogger logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="QldbDriver"/> class.
         /// </summary>
         ///
         /// <param name="sessionPool">The ledger to create sessions to.</param>
-        /// <param name="logger">The logger to be used by the driver.</param>
-        internal QldbDriver(SessionPool sessionPool, ILogger logger)
+        internal QldbDriver(SessionPool sessionPool)
         {
             this.sessionPool = sessionPool;
-            this.logger = logger;
         }
 
         /// <summary>
@@ -72,7 +68,7 @@ namespace Amazon.QLDB.Driver
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
         public void Execute(Action<TransactionExecutor> action)
         {
-            this.Execute(action, null);
+            this.Execute(action, DefaultRetryPolicy);
         }
 
         /// <summary>
@@ -87,7 +83,8 @@ namespace Amazon.QLDB.Driver
         ///
         /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
         /// <exception cref="QldbDriverException">Thrown when called on a disposed instance.</exception>
-        /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
+        /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception
+        [Obsolete("As of release 1.0, replaced by 'retryPolicy'. Will be removed in the next major release.")]
         public void Execute(Action<TransactionExecutor> action, Action<int> retryAction)
         {
             this.Execute(
@@ -97,6 +94,30 @@ namespace Amazon.QLDB.Driver
                     return false;
                 },
                 retryAction);
+        }
+
+        /// <summary>
+        /// Start a session, then execute the Executor lambda against QLDB within a transaction where no result is expected,
+        /// and end the session.
+        /// </summary>
+        ///
+        /// <param name="action">The Executor lambda with no return value representing the block of code to be executed within the transaction.
+        /// This cannot have any side effects as it may be invoked multiple times.</param>
+        /// <param name="retryPolicy">A <see cref="RetryPolicy"/> that overrides the RetryPolicy set when creating the driver. The given retry policy
+        /// will be used when retrying the transaction.</param>
+        ///
+        /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
+        /// <exception cref="QldbDriverException">Thrown when called on a disposed instance.</exception>
+        /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
+        public void Execute(Action<TransactionExecutor> action, RetryPolicy retryPolicy)
+        {
+            this.Execute(
+                txn =>
+                {
+                    action.Invoke(txn);
+                    return false;
+                },
+                retryPolicy);
         }
 
         /// <summary>
@@ -120,7 +141,7 @@ namespace Amazon.QLDB.Driver
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
         public T Execute<T>(Func<TransactionExecutor, T> func)
         {
-            return this.Execute(func, null);
+            return this.Execute(func, DefaultRetryPolicy);
         }
 
         /// <summary>
@@ -144,26 +165,36 @@ namespace Amazon.QLDB.Driver
         /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
         /// <exception cref="QldbDriverException">Thrown when called on a disposed instance.</exception>
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
+        [Obsolete("As of release 1.0, replaced by 'retryPolicy'. Will be removed in the next major release.")]
         public T Execute<T>(Func<TransactionExecutor, T> func, Action<int> retryAction)
         {
-            while (true)
-            {
-                try
-                {
-                    using (var session = this.sessionPool.GetSession())
-                    {
-                        return session.Execute(func, retryAction);
-                    }
-                }
-                catch (InvalidSessionException ise)
-                {
-                    this.logger.LogDebug("Retrying with another session. Error {Msg}", ise.Message);
-                }
-                catch (TransactionAlreadyOpenException taoe)
-                {
-                    this.logger.LogDebug("Retrying with another session. Error {Msg}", taoe.Message);
-                }
-            }
+            return this.Execute(func, DefaultRetryPolicy, retryAction);
+        }
+
+        /// <summary>
+        /// Start a session, then execute the Executor lambda against QLDB and retrieve the result within a transaction,
+        /// and end the session.
+        /// </summary>
+        ///
+        /// <param name="func">The Executor lambda representing the block of code to be executed within the transaction. This cannot have any
+        /// side effects as it may be invoked multiple times, and the result cannot be trusted until the
+        /// transaction is committed.</param>
+        /// <param name="retryPolicy">A <see cref="RetryPolicy"/> that overrides the RetryPolicy set when creating the driver. The given retry policy
+        /// will be used when retrying the transaction.</param>
+        /// <typeparam name="T">The return type.</typeparam>
+        ///
+        /// <returns>The return value of executing the executor. Note that if you directly return a <see cref="IResult"/>, this will
+        /// be automatically buffered in memory before the implicit commit to allow reading, as the commit will close
+        /// any open results. Any other <see cref="IResult"/> instances created within the executor block will be
+        /// invalidated, including if the return value is an object which nests said <see cref="IResult"/> instances within it.
+        /// </returns>
+        ///
+        /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
+        /// <exception cref="QldbDriverException">Thrown when called on a disposed instance.</exception>
+        /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
+        public T Execute<T>(Func<TransactionExecutor, T> func, RetryPolicy retryPolicy)
+        {
+            return this.Execute(func, retryPolicy, null);
         }
 
         /// <summary>
@@ -185,6 +216,11 @@ namespace Amazon.QLDB.Driver
         public void Dispose()
         {
             this.sessionPool.Dispose();
+        }
+
+        internal T Execute<T>(Func<TransactionExecutor, T> func, RetryPolicy retryPolicy, Action<int> retryAction)
+        {
+            return this.sessionPool.Execute(func, retryPolicy, retryAction);
         }
     }
 }

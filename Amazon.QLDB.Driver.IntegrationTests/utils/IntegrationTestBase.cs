@@ -97,10 +97,6 @@ namespace Amazon.QLDB.Driver.IntegrationTests.utils
                 builder.WithMaxConcurrentTransactions(maxConcurrentTransactions);
             }
 
-            if (retryLimit != -1)
-            {
-                builder.WithRetryLimit(retryLimit);
-            }
             return builder.WithQLDBSessionConfig(amazonQldbSessionConfig)
                 .WithLedger(finalLedgerName)
                 .Build();

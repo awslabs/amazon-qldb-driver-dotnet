@@ -13,19 +13,21 @@
 
 namespace Amazon.QLDB.Driver
 {
+    using System;
+
     /// <summary>
-    /// Exception type representing the abort of a transaction within a lambda execution block. Signals that the lambda
-    /// should cease to execute and the current transaction should be aborted.
+    /// Data struct used to pass retry policy context.
     /// </summary>
-    public class TransactionAbortedException : QldbTransactionException
+    public struct RetryPolicyContext
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TransactionAbortedException"/> class.
-        /// </summary>
-        /// <param name="transactionId">The transaction ID.</param>
-        public TransactionAbortedException(string transactionId)
-            : base(transactionId)
+        public RetryPolicyContext(int retriesAttempted, Exception lastException)
         {
+            this.RetriesAttempted = retriesAttempted;
+            this.LastException = lastException;
         }
+
+        public int RetriesAttempted { get; }
+
+        public Exception LastException { get; }
     }
 }

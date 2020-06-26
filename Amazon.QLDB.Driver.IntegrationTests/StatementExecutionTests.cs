@@ -571,7 +571,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
                         // Update document.
                         var ionValue = ValueFactory.NewInt(currentValue + 5);
                         txn.Execute(updateQuery, ionValue);
-                    }));
+                    }, RetryPolicy.Builder().WithMaxRetries(0).Build()));
 
                     tasks.Add(task);
                 }
@@ -589,7 +589,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             catch (AggregateException e)
             {
                 // Tasks only throw AggregateException which nests the underlying exception.
-                Assert.AreEqual(e.InnerException.GetType(), typeof(OccConflictException));
+                Assert.AreEqual(typeof(OccConflictException), e.InnerException.GetType());
 
                 // Update document to make sure everything still works after the OCC exception.
                 int updatedValue = 0;

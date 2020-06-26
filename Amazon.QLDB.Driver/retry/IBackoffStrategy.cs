@@ -13,19 +13,18 @@
 
 namespace Amazon.QLDB.Driver
 {
+    using System;
+
     /// <summary>
-    /// Exception type representing the abort of a transaction within a lambda execution block. Signals that the lambda
-    /// should cease to execute and the current transaction should be aborted.
+    /// Interface of Backoff Strategy.
     /// </summary>
-    public class TransactionAbortedException : QldbTransactionException
+    public interface IBackoffStrategy
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="TransactionAbortedException"/> class.
+        /// Method to calculate backoff delay based on the retry policy context.
         /// </summary>
-        /// <param name="transactionId">The transaction ID.</param>
-        public TransactionAbortedException(string transactionId)
-            : base(transactionId)
-        {
-        }
+        /// <param name="retryPolicyContext">The context of retry policy.</param>
+        /// <returns>The calculated delay.</returns>
+        TimeSpan CalculateDelay(RetryPolicyContext retryPolicyContext);
     }
 }

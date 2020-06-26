@@ -35,6 +35,8 @@ namespace Amazon.QLDB.Driver
     /// </summary>
     internal interface ITransaction : IDisposable, IExecutable
     {
+        string Id { get; }
+
         /// <summary>
         /// Abort the transaction and roll back any changes. No-op if closed.
         /// Any open <see cref="IResult"/> created by the transaction will be invalidated.
