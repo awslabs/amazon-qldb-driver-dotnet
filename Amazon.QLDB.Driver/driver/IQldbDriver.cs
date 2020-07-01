@@ -15,12 +15,13 @@ namespace Amazon.QLDB.Driver
 {
     using System;
     using System.Collections.Generic;
+    using System.Threading.Tasks;
     using Amazon.Runtime;
 
     /// <summary>
     /// Interface for the QLDB driver.
     /// </summary>
-    public interface IQldbDriver : IDisposable
+    public interface IQldbDriver : IAsyncDisposable
     {
         /// <summary>
         /// Execute the Executor lambda against QLDB within a transaction where no result is expected.
@@ -32,7 +33,7 @@ namespace Amazon.QLDB.Driver
         /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
         /// <exception cref="QldbDriverException">Thrown when called on a disposed instance.</exception>
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        void Execute(Action<TransactionExecutor> action);
+        Task Execute(Func<TransactionExecutor, Task> action);
 
         /// <summary>
         /// Execute the Executor lambda against QLDB within a transaction where no result is expected.
@@ -61,7 +62,7 @@ namespace Amazon.QLDB.Driver
         /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
         /// <exception cref="QldbDriverException">Thrown when called on a disposed instance.</exception>
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        void Execute(Action<TransactionExecutor> action, RetryPolicy retryPolicy);
+        Task Execute(Func<TransactionExecutor, Task> action, RetryPolicy retryPolicy);
 
         /// <summary>
         /// Execute the Executor lambda against QLDB and retrieve the result within a transaction.
@@ -81,7 +82,7 @@ namespace Amazon.QLDB.Driver
         /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
         /// <exception cref="QldbDriverException">Thrown when called on a disposed instance.</exception>
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        T Execute<T>(Func<TransactionExecutor, T> func);
+        Task<T> Execute<T>(Func<TransactionExecutor, Task<T>> func);
 
         /// <summary>
         /// Execute the Executor lambda against QLDB and retrieve the result within a transaction.
@@ -126,13 +127,13 @@ namespace Amazon.QLDB.Driver
         /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
         /// <exception cref="QldbDriverException">Thrown when called on a disposed instance.</exception>
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        T Execute<T>(Func<TransactionExecutor, T> func, RetryPolicy retryPolicy);
+        Task<T> Execute<T>(Func<TransactionExecutor, Task<T>> func, RetryPolicy retryPolicy);
 
         /// <summary>
         /// Retrieve the table names that are available within the ledger.
         /// </summary>
         ///
         /// <returns>The Enumerable over the table names in the ledger.</returns>
-        IEnumerable<string> ListTableNames();
+        Task<IEnumerable<string>> ListTableNames();
     }
 }

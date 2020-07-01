@@ -14,6 +14,8 @@
 namespace Amazon.QLDB.Driver.Tests
 {
     using System.Collections.Generic;
+    using System.Threading;
+    using System.Threading.Tasks;
     using Amazon.IonDotnet.Tree;
     using Amazon.IonDotnet.Tree.Impl;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -30,7 +32,7 @@ namespace Amazon.QLDB.Driver.Tests
 
         [ClassInitialize]
 #pragma warning disable IDE0060 // Remove unused parameter
-        public static void SetupClass(TestContext context)
+        public static async Task SetupClass(TestContext context)
 #pragma warning restore IDE0060 // Remove unused parameter
         {
             mockResult = new Mock<IResult>();
@@ -40,29 +42,42 @@ namespace Amazon.QLDB.Driver.Tests
                 valueFactory.NewInt(1),
                 valueFactory.NewInt(2)
             };
-            mockResult.Setup(x => x.GetEnumerator()).Returns(testList.GetEnumerator());
+            mockResult.Setup(x => x.GetAsyncEnumerator(It.IsAny<CancellationToken>())).Returns(new ValuesEnumerator(testList));
 
-            result = BufferedResult.BufferResult(mockResult.Object);
+            result = await BufferedResult.BufferResult(mockResult.Object);
         }
 
         [TestMethod]
         public void TestBufferResultEnumeratesInput()
         {
             Assert.IsNotNull(result);
-            mockResult.Verify(x => x.GetEnumerator(), Times.Exactly(1));
+            mockResult.Verify(x => x.GetAsyncEnumerator(default), Times.Exactly(1));
         }
 
         [TestMethod]
-        public void TestGetEnumeratorGetsAllInputEnumerableValues()
+        public async Task TestGetEnumeratorGetsAllInputEnumerableValues()
         {
             int count = 0;
-            var enumerator = result.GetEnumerator();
-            while (enumerator.MoveNext())
+            var enumerator = result.GetAsyncEnumerator();
+            while (await enumerator.MoveNextAsync())
             {
                 Assert.AreEqual(count, enumerator.Current.IntValue);
                 count++;
             }
             Assert.AreEqual(testList.Count, count);
+        }
+
+        private struct ValuesEnumerator : IAsyncEnumerator<IIonValue>
+        {
+            private List<IIonValue>.Enumerator valuesEnumerator;
+
+            public ValuesEnumerator(List<IIonValue> values) => this.valuesEnumerator = values.GetEnumerator();
+
+            public IIonValue Current => this.valuesEnumerator.Current;
+
+            public ValueTask<bool> MoveNextAsync() => new ValueTask<bool>(this.valuesEnumerator.MoveNext());
+
+            public ValueTask DisposeAsync() => default;
         }
     }
 }

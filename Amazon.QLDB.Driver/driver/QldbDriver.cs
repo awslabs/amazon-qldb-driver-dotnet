@@ -15,7 +15,7 @@ namespace Amazon.QLDB.Driver
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
+    using System.Threading.Tasks;
     using Amazon.Runtime;
 
     /// <summary>
@@ -66,9 +66,9 @@ namespace Amazon.QLDB.Driver
         /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
         /// <exception cref="QldbDriverException">Thrown when called on a disposed instance.</exception>
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        public void Execute(Action<TransactionExecutor> action)
+        public Task Execute(Func<TransactionExecutor, Task> action)
         {
-            this.Execute(action, DefaultRetryPolicy);
+            return this.Execute(action, DefaultRetryPolicy);
         }
 
         /// <summary>
@@ -109,12 +109,12 @@ namespace Amazon.QLDB.Driver
         /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
         /// <exception cref="QldbDriverException">Thrown when called on a disposed instance.</exception>
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        public void Execute(Action<TransactionExecutor> action, RetryPolicy retryPolicy)
+        public Task Execute(Func<TransactionExecutor, Task> action, RetryPolicy retryPolicy)
         {
-            this.Execute(
-                txn =>
+            return this.Execute(
+                async txn =>
                 {
-                    action.Invoke(txn);
+                    await action(txn);
                     return false;
                 },
                 retryPolicy);
@@ -139,7 +139,7 @@ namespace Amazon.QLDB.Driver
         /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
         /// <exception cref="QldbDriverException">Thrown when called on a disposed instance.</exception>
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        public T Execute<T>(Func<TransactionExecutor, T> func)
+        public Task<T> Execute<T>(Func<TransactionExecutor, Task<T>> func)
         {
             return this.Execute(func, DefaultRetryPolicy);
         }
@@ -168,7 +168,11 @@ namespace Amazon.QLDB.Driver
         [Obsolete("As of release 1.0, replaced by 'retryPolicy'. Will be removed in the next major release.")]
         public T Execute<T>(Func<TransactionExecutor, T> func, Action<int> retryAction)
         {
-            return this.Execute(func, DefaultRetryPolicy, retryAction);
+            return this.Execute(trx => Task.FromResult(func(trx)), DefaultRetryPolicy, retries =>
+            {
+                retryAction(retries);
+                return Task.CompletedTask;
+            }).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -192,7 +196,7 @@ namespace Amazon.QLDB.Driver
         /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
         /// <exception cref="QldbDriverException">Thrown when called on a disposed instance.</exception>
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        public T Execute<T>(Func<TransactionExecutor, T> func, RetryPolicy retryPolicy)
+        public Task<T> Execute<T>(Func<TransactionExecutor, Task<T>> func, RetryPolicy retryPolicy)
         {
             return this.Execute(func, retryPolicy, null);
         }
@@ -202,23 +206,26 @@ namespace Amazon.QLDB.Driver
         /// </summary>
         ///
         /// <returns>The Enumerable over the table names in the ledger.</returns>
-        public IEnumerable<string> ListTableNames()
+        public async Task<IEnumerable<string>> ListTableNames()
         {
-            return this.Execute((txn) =>
+            var tables = new List<string>();
+            await foreach (var item in await this.Execute(txn => txn.Execute(TableNameQuery)))
             {
-                return txn.Execute(TableNameQuery);
-            }).Select(i => i.StringValue);
+                tables.Add(item.StringValue);
+            }
+
+            return tables;
         }
 
         /// <summary>
         /// Close this driver and end all sessions in the current pool. No-op if already closed.
         /// </summary>
-        public void Dispose()
+        public ValueTask DisposeAsync()
         {
-            this.sessionPool.Dispose();
+            return this.sessionPool.DisposeAsync();
         }
 
-        internal T Execute<T>(Func<TransactionExecutor, T> func, RetryPolicy retryPolicy, Action<int> retryAction)
+        internal Task<T> Execute<T>(Func<TransactionExecutor, Task<T>> func, RetryPolicy retryPolicy, Func<int, Task> retryAction)
         {
             return this.sessionPool.Execute(func, retryPolicy, retryAction);
         }

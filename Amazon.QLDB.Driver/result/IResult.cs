@@ -18,9 +18,9 @@ namespace Amazon.QLDB.Driver
 
     /// <summary>
     /// Interface for the result of executing a statement in QLDB.
-    /// Implements IEnumerable to allow iteration over Ion values within the result.
+    /// Implements IAsyncEnumerable&lgt;IIonValue&gt; to allow asynchronous iteration over Ion values within the result.
     /// </summary>
-    public interface IResult : IEnumerable<IIonValue>
+    public interface IResult : IAsyncEnumerable<IIonValue>
     {
     }
 }

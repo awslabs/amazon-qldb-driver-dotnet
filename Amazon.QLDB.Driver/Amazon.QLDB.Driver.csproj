@@ -23,6 +23,7 @@
     <AssemblyOriginatorKeyFile>..\public.snk</AssemblyOriginatorKeyFile>
     <ReleaseVersion>1.0.0</ReleaseVersion>
     <PackageIcon>product-icon_AWS_Quantum_125_squid-ink.png</PackageIcon>
+    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

@@ -14,6 +14,7 @@
 namespace Amazon.QLDB.Driver
 {
     using System;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Interface of Retry Handler.
@@ -29,6 +30,6 @@ namespace Amazon.QLDB.Driver
         /// <param name="recoverAction">The recover action needed on certain retry cases.</param>
         /// <param name="retryAction">The custom retry action.</param>
         /// <returns>The return value of the executed function.</returns>
-        T RetriableExecute<T>(Func<T> func, RetryPolicy retryPolicy, Action recoverAction, Action<int> retryAction);
+        Task<T> RetriableExecute<T>(Func<Task<T>> func, RetryPolicy retryPolicy, Func<Task> recoverAction, Func<int, Task> retryAction);
     }
 }

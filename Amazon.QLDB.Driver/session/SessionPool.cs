@@ -16,6 +16,7 @@ namespace Amazon.QLDB.Driver
     using System;
     using System.Collections.Concurrent;
     using System.Threading;
+    using System.Threading.Tasks;
     using Microsoft.Extensions.Logging;
 
     /// <summary>
@@ -26,7 +27,7 @@ namespace Amazon.QLDB.Driver
         private const int DefaultTimeoutInMs = 1;
         private readonly BlockingCollection<QldbSession> sessionPool;
         private readonly SemaphoreSlim poolPermits;
-        private readonly Func<Session> sessionCreator;
+        private readonly Func<Task<Session>> sessionCreator;
         private readonly IRetryHandler retryHandler;
         private readonly ILogger logger;
         private bool isClosed = false;
@@ -38,7 +39,7 @@ namespace Amazon.QLDB.Driver
         /// <param name="retryHandler">Handling the retry logic of the execute call.</param>
         /// <param name="maxConcurrentTransactions">The maximum number of sessions that can be created from the pool at any one time.</param>
         /// <param name="logger">Logger to be used by this.</param>
-        public SessionPool(Func<Session> sessionCreator, IRetryHandler retryHandler, int maxConcurrentTransactions, ILogger logger)
+        public SessionPool(Func<Task<Session>> sessionCreator, IRetryHandler retryHandler, int maxConcurrentTransactions, ILogger logger)
         {
             this.sessionPool = new BlockingCollection<QldbSession>(maxConcurrentTransactions);
             this.poolPermits = new SemaphoreSlim(maxConcurrentTransactions, maxConcurrentTransactions);
@@ -55,19 +56,19 @@ namespace Amazon.QLDB.Driver
         /// <param name="retryPolicy">The policy on retry.</param>
         /// <param name="retryAction">The customer retry action.</param>
         /// <returns>The result from the function.</returns>
-        public T Execute<T>(Func<TransactionExecutor, T> func, RetryPolicy retryPolicy, Action<int> retryAction)
+        public async Task<T> Execute<T>(Func<TransactionExecutor, Task<T>> func, RetryPolicy retryPolicy, Func<int, Task> retryAction)
         {
             QldbSession session = null;
             try
             {
-                session = this.GetSession();
-                return this.retryHandler.RetriableExecute(
+                session = await this.GetSession();
+                return await this.retryHandler.RetriableExecute(
                     () => session.Execute(func),
                     retryPolicy,
-                    () =>
+                    async () =>
                     {
                         session.Dispose();
-                        session = this.GetSession();
+                        session = await this.GetSession();
                     },
                     retryAction);
             }
@@ -83,12 +84,12 @@ namespace Amazon.QLDB.Driver
         /// <summary>
         /// Dispose the session pool and all sessions.
         /// </summary>
-        public void Dispose()
+        public async ValueTask DisposeAsync()
         {
             this.isClosed = true;
             while (this.sessionPool.Count > 0)
             {
-                this.sessionPool.Take().Destroy();
+                await this.sessionPool.Take().Destroy();
             }
         }
 
@@ -101,7 +102,7 @@ namespace Amazon.QLDB.Driver
         /// <returns>The <see cref="IQldbSession"/> object.</returns>
         ///
         /// <exception cref="QldbDriverException">Thrown when this driver has been disposed or timeout.</exception>
-        internal QldbSession GetSession()
+        internal async Task<QldbSession> GetSession()
         {
             if (this.isClosed)
             {
@@ -114,7 +115,7 @@ namespace Amazon.QLDB.Driver
                 this.sessionPool.Count,
                 this.sessionPool.BoundedCapacity - this.poolPermits.CurrentCount);
 
-            if (this.poolPermits.Wait(DefaultTimeoutInMs))
+            if (await this.poolPermits.WaitAsync(DefaultTimeoutInMs))
             {
                 try
                 {
@@ -122,7 +123,7 @@ namespace Amazon.QLDB.Driver
 
                     if (session == null)
                     {
-                        session = this.StartNewSession();
+                        session = await this.StartNewSession();
                         this.logger.LogDebug("Creating new pooled session with ID {}.", session.GetSessionId());
                     }
 
@@ -152,9 +153,9 @@ namespace Amazon.QLDB.Driver
             this.logger.LogDebug("Session returned to pool; pool size is now {}.", this.sessionPool.Count);
         }
 
-        private QldbSession StartNewSession()
+        private async Task<QldbSession> StartNewSession()
         {
-            return new QldbSession(this.sessionCreator.Invoke(), this.ReleaseSession, this.logger);
+            return new QldbSession(await this.sessionCreator(), this.ReleaseSession, this.logger);
         }
     }
 }

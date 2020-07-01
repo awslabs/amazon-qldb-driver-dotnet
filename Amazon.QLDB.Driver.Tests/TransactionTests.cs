@@ -16,6 +16,7 @@ namespace Amazon.QLDB.Driver.Tests
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Threading.Tasks;
     using Amazon.IonDotnet.Tree;
     using Amazon.QLDBSession.Model;
     using Amazon.Runtime;
@@ -39,84 +40,84 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestAbortCallsAbortTransaction()
+        public async Task TestAbortCallsAbortTransaction()
         {
-            transaction.Abort();
+            await transaction.Abort();
             mockSession.Verify(m => m.AbortTransaction(), Times.Exactly(1));
         }
 
         [TestMethod]
-        public void TestDisposeCallsAbortException()
+        public async Task TestDisposeCallsAbortException()
         {
-            transaction.Dispose();
+            await transaction.DisposeAsync();
             mockSession.Verify(m => m.AbortTransaction(), Times.Exactly(1));
         }
 
         [TestMethod]
-        public void TestDisposeWhenExceptionIsProperlyIgnored()
+        public async Task TestDisposeWhenExceptionIsProperlyIgnored()
         {
             mockSession.Setup(m => m.AbortTransaction()).Throws(new AmazonServiceException(It.IsAny<string>()));
 
             // Dispose should not throw exception
-            transaction.Dispose();
+            await transaction.DisposeAsync();
             mockSession.Verify(m => m.AbortTransaction(), Times.Exactly(1));
         }
 
         [TestMethod]
-        public void TestCommitCallsCommitTransaction()
+        public async Task TestCommitCallsCommitTransaction()
         {
             mockSession.Setup(m => m.CommitTransaction(It.IsAny<string>(), It.IsAny<MemoryStream>()))
-                .Returns(GetTransactionResult(TxnId));
+                .ReturnsAsync(GetTransactionResult(TxnId));
 
             // We must not have any exceptions
-            transaction.Commit();
+            await transaction.Commit();
         }
 
         [TestMethod]
-        public void Commit_InvalidSessionException_ShouldNotDisposeTransaction()
+        public async Task Commit_InvalidSessionException_ShouldNotDisposeTransaction()
         {
             mockSession.Setup(m => m.CommitTransaction(It.IsAny<string>(), It.IsAny<MemoryStream>()))
-                .Throws(new InvalidSessionException("Invalid!"));
+                .ThrowsAsync(new InvalidSessionException("Invalid!"));
 
-            Assert.ThrowsException<InvalidSessionException>(transaction.Commit);
+            await Assert.ThrowsExceptionAsync<InvalidSessionException>(transaction.Commit);
             mockSession.Verify(s => s.AbortTransaction(), Times.Exactly(0));
         }
 
         [TestMethod]
-        public void TestCommitWhenOCCShouldThrowException()
+        public async Task TestCommitWhenOCCShouldThrowException()
         {
             mockSession.Setup(m => m.CommitTransaction(It.IsAny<string>(), It.IsAny<MemoryStream>()))
-                .Throws(new OccConflictException(It.IsAny<string>()));
+                .ThrowsAsync(new OccConflictException(It.IsAny<string>()));
 
-            Assert.ThrowsException<OccConflictException>(transaction.Commit);
+            await Assert.ThrowsExceptionAsync<OccConflictException>(transaction.Commit);
             mockSession.Verify(s => s.AbortTransaction(), Times.Exactly(0));
         }
 
         [TestMethod]
-        public void TestCommitWhenAmazonServiceExceptionShouldThrowException()
+        public async Task TestCommitWhenAmazonServiceExceptionShouldThrowException()
         {
             mockSession.Setup(m => m.CommitTransaction(It.IsAny<string>(), It.IsAny<MemoryStream>()))
-                .Throws(new AmazonServiceException(It.IsAny<string>()));
+                .ThrowsAsync(new AmazonServiceException(It.IsAny<string>()));
 
-            Assert.ThrowsException<AmazonServiceException>(transaction.Commit);
+            await Assert.ThrowsExceptionAsync<AmazonServiceException>(transaction.Commit);
             mockSession.Verify(s => s.AbortTransaction(), Times.Exactly(1));
         }
 
         [TestMethod]
-        public void TestCommitWhenDifferentTxnIDThrowsException()
+        public async Task TestCommitWhenDifferentTxnIDThrowsException()
         {
             mockSession.Setup(m => m.CommitTransaction(It.IsAny<string>(), It.IsAny<MemoryStream>()))
-                .Returns(GetTransactionResult("differentTnxIdFromThis"));
+                .ReturnsAsync(GetTransactionResult("differentTnxIdFromThis"));
 
-            Assert.ThrowsException<InvalidOperationException>(transaction.Commit);
+            await Assert.ThrowsExceptionAsync<InvalidOperationException>(transaction.Commit);
         }
 
         [TestMethod]
-        public void TestExecuteCallsExecuteStatement()
+        public async Task TestExecuteCallsExecuteStatement()
         {
             mockSession.Setup(m => m.ExecuteStatement(It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<List<IIonValue>>()))
-                .Returns(new ExecuteStatementResult
+                .ReturnsAsync(new ExecuteStatementResult
                 {
                     FirstPage = new Page
                     {
@@ -126,16 +127,16 @@ namespace Amazon.QLDB.Driver.Tests
                 });
 
 
-            var result = transaction.Execute("statement");
+            var result = await transaction.Execute("statement");
 
             mockSession.Verify(m => m.ExecuteStatement(TxnId, "statement", It.IsAny<List<IIonValue>>()));
             Assert.IsNotNull(result);
         }
 
         [TestMethod]
-        public void TestExecuteWhenStatementEmptyThrowsException()
+        public async Task TestExecuteWhenStatementEmptyThrowsException()
         {
-            Assert.ThrowsException<ArgumentException>(() => transaction.Execute(""));
+            await Assert.ThrowsExceptionAsync<ArgumentException>(() => transaction.Execute(""));
         }
 
         private CommitTransactionResult GetTransactionResult(string txnId)

@@ -14,6 +14,7 @@
 namespace Amazon.QLDB.Driver
 {
     using System;
+    using System.Threading.Tasks;
     using Amazon.QLDBSession.Model;
     using Amazon.Runtime;
 
@@ -33,7 +34,7 @@ namespace Amazon.QLDB.Driver
     ///
     /// <para>Child Result objects will be closed when the transaction is aborted or committed.</para>
     /// </summary>
-    internal interface ITransaction : IDisposable, IExecutable
+    internal interface ITransaction : IAsyncDisposable, IExecutable
     {
         string Id { get; }
 
@@ -41,7 +42,8 @@ namespace Amazon.QLDB.Driver
         /// Abort the transaction and roll back any changes. No-op if closed.
         /// Any open <see cref="IResult"/> created by the transaction will be invalidated.
         /// </summary>
-        void Abort();
+        /// <returns>A task representing the asynchronous abort operation.</returns>
+        Task Abort();
 
         /// <summary>
         /// Commit the transaction. Any open <see cref="IResult"/> created by the transaction will be invalidated.
@@ -51,6 +53,7 @@ namespace Amazon.QLDB.Driver
         /// <exception cref="OccConflictException">Thrown if an OCC conflict has been detected within the transaction.</exception>
         /// <exception cref="AmazonServiceException">Thrown when there is an error committing this transaction against QLDB.</exception>
         /// <exception cref="QldbDriverException">Thrown when this transaction has been disposed.</exception>
-        void Commit();
+        /// <returns>A task representing the asynchronous commit operation.</returns>
+        Task Commit();
     }
 }

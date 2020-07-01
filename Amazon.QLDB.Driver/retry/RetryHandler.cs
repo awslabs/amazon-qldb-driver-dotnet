@@ -15,7 +15,7 @@ namespace Amazon.QLDB.Driver
 {
     using System;
     using System.Collections.Generic;
-    using System.Threading;
+    using System.Threading.Tasks;
     using Microsoft.Extensions.Logging;
 
     /// <summary>
@@ -44,7 +44,7 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <inheritdoc/>
-        public T RetriableExecute<T>(Func<T> func, RetryPolicy retryPolicy, Action recoverAction, Action<int> retryAction)
+        public async Task<T> RetriableExecute<T>(Func<Task<T>> func, RetryPolicy retryPolicy, Func<Task> recoverAction, Func<int, Task> retryAction)
         {
             Exception last = null;
             int retryAttempt = 1;
@@ -53,7 +53,7 @@ namespace Amazon.QLDB.Driver
             {
                 try
                 {
-                    return func.Invoke();
+                    return await func();
                 }
                 catch (Exception ex)
                 {
@@ -68,15 +68,19 @@ namespace Amazon.QLDB.Driver
 
                     last = !(uex is RetriableException) || uex.InnerException == null ? uex : uex.InnerException;
 
-                    retryAction?.Invoke(retryAttempt);
+                    if (retryAction != null)
+                    {
+                        await retryAction(retryAttempt);
+                    }
 
                     if (this.NeedsRecover(uex))
                     {
-                        recoverAction();
+                        await recoverAction();
                     }
                     else
                     {
-                        Thread.Sleep(retryPolicy.BackoffStrategy.CalculateDelay(new RetryPolicyContext(retryAttempt, uex)));
+                        var backoffDelay = retryPolicy.BackoffStrategy.CalculateDelay(new RetryPolicyContext(retryAttempt, uex));
+                        await Task.Delay(backoffDelay);
                         retryAttempt++;
                     }
                 }

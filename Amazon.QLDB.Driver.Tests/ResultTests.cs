@@ -16,6 +16,7 @@ namespace Amazon.QLDB.Driver.Tests
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Threading.Tasks;
     using Amazon.IonDotnet.Tree;
     using Amazon.QLDBSession.Model;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -44,25 +45,25 @@ namespace Amazon.QLDB.Driver.Tests
         public void TestGetEnumeratorAndThrowsExceptionWhenAlreadyRetrieved()
         {
             // First time is fine - sets a flag
-            result.GetEnumerator();
+            result.GetAsyncEnumerator();
 
-            Assert.ThrowsException<InvalidOperationException>(result.GetEnumerator);
+            Assert.ThrowsException<InvalidOperationException>(() => result.GetAsyncEnumerator());
         }
 
         [TestMethod]
-        public void TestMoveNextWithOneNextPage()
+        public async Task TestMoveNextWithOneNextPage()
         {
             var ms = new MemoryStream();
             var valuHolderList = new List<ValueHolder> { new ValueHolder { IonBinary = ms, IonText = "ionText" } };
             Page nextPage = new Page { NextPageToken = null, Values = valuHolderList };
 
             mockSession.Setup(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(new FetchPageResult { Page = nextPage });
+                .ReturnsAsync(new FetchPageResult { Page = nextPage });
 
-            var results = result.GetEnumerator();
+            var results = result.GetAsyncEnumerator();
 
             int counter = 0;
-            while (results.MoveNext())
+            while (await results.MoveNextAsync())
             {
                 counter++;
             }
@@ -72,7 +73,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestMoveNextWithNoNextPage()
+        public async Task TestMoveNextWithNoNextPage()
         {
             Mock<Session> session = new Mock<Session>(null, null, null, null, null);
             var ms = new MemoryStream();
@@ -80,10 +81,10 @@ namespace Amazon.QLDB.Driver.Tests
             var firstPage = new Page { NextPageToken = null, Values = valuHolderList };
 
             Result res = new Result(session.Object, "txnId", firstPage);
-            var results = res.GetEnumerator();
+            var results = res.GetAsyncEnumerator();
 
             int counter = 0;
-            while (results.MoveNext())
+            while (await results.MoveNextAsync())
             {
                 counter++;
             }
@@ -93,20 +94,12 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestIonEnumeratorCurrentReturnsTrueWhenResultsExist()
+        public async Task TestIonEnumeratorCurrentReturnsTrueWhenResultsExist()
         {
-            var results = result.GetEnumerator();
+            var results = result.GetAsyncEnumerator();
 
             Assert.IsNotNull(results);
-            Assert.IsTrue(results.MoveNext());
-        }
-
-        [TestMethod]
-        public void TestIonEnumeratorResetIsNotSupported()
-        {
-            var results = result.GetEnumerator();
-
-            Assert.ThrowsException<NotSupportedException>(results.Reset);
+            Assert.IsTrue(await results.MoveNextAsync());
         }
     }
 }

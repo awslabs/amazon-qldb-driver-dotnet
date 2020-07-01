@@ -14,6 +14,7 @@
 namespace Amazon.QLDB.Driver
 {
     using System.Collections.Generic;
+    using System.Threading.Tasks;
     using Amazon.IonDotnet.Tree;
     using Amazon.Runtime;
 
@@ -30,7 +31,7 @@ namespace Amazon.QLDB.Driver
         ///
         /// <returns>Result from executed statement.</returns>
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        IResult Execute(string statement);
+        Task<IResult> Execute(string statement);
 
         /// <summary>
         /// Execute the statement using the specified parameters against QLDB and retrieve the result.
@@ -41,7 +42,7 @@ namespace Amazon.QLDB.Driver
         ///
         /// <returns>Result from executed statement.</returns>
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        IResult Execute(string statement, List<IIonValue> parameters);
+        Task<IResult> Execute(string statement, List<IIonValue> parameters);
 
         /// <summary>
         /// Execute the statement using the specified parameters against QLDB and retrieve the result.
@@ -52,6 +53,6 @@ namespace Amazon.QLDB.Driver
         ///
         /// <returns>Result from executed statement.</returns>
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        IResult Execute(string statement, params IIonValue[] parameters);
+        Task<IResult> Execute(string statement, params IIonValue[] parameters);
     }
 }

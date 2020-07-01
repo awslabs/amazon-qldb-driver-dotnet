@@ -15,6 +15,7 @@ namespace Amazon.QLDB.Driver
 {
     using System;
     using System.Net;
+    using System.Threading.Tasks;
     using Amazon.QLDBSession.Model;
     using Amazon.Runtime;
     using Microsoft.Extensions.Logging;
@@ -69,7 +70,7 @@ namespace Amazon.QLDB.Driver
         /// <summary>
         /// Close the internal session object and mark the session closed.
         /// </summary>
-        public void Destroy()
+        public async Task Destroy()
         {
             if (!this.isClosed)
             {
@@ -80,8 +81,7 @@ namespace Amazon.QLDB.Driver
                     this.disposeDelegate(null);
                 }
 
-                this.session.End();
-                return;
+                await this.session.End();
             }
         }
 
@@ -126,7 +126,7 @@ namespace Amazon.QLDB.Driver
         /// <exception cref="TransactionAlreadyOpenException">Thrown if the transaction has already been opened.</exception>
         /// <exception cref="QldbDriverException">Thrown when called on a disposed instance.</exception>
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        public T Execute<T>(Func<TransactionExecutor, T> func)
+        public async Task<T> Execute<T>(Func<TransactionExecutor, Task<T>> func)
         {
             ValidationUtils.AssertNotNull(func, "func");
             this.ThrowIfDisposedOrClosed();
@@ -134,24 +134,24 @@ namespace Amazon.QLDB.Driver
             ITransaction transaction = null;
             try
             {
-                transaction = this.StartTransaction();
-                T returnedValue = func(new TransactionExecutor(transaction));
+                transaction = await this.StartTransaction();
+                T returnedValue = await func(new TransactionExecutor(transaction));
                 if (returnedValue is IResult)
                 {
-                    returnedValue = (T)(object)BufferedResult.BufferResult((IResult)returnedValue);
+                    returnedValue = (T)(object) await BufferedResult.BufferResult((IResult)returnedValue);
                 }
 
-                transaction.Commit();
+                await transaction.Commit();
                 return returnedValue;
             }
             catch (InvalidSessionException ise)
             {
-                this.Destroy();
+                await this.Destroy();
                 throw ise;
             }
             catch (TransactionAbortedException tae)
             {
-                this.NoThrowAbort(transaction);
+                await this.NoThrowAbort(transaction);
                 throw tae;
             }
             catch (OccConflictException occ)
@@ -160,7 +160,7 @@ namespace Amazon.QLDB.Driver
             }
             catch (AmazonServiceException ase)
             {
-                this.NoThrowAbort(transaction);
+                await this.NoThrowAbort(transaction);
 
                 if (ase.StatusCode == HttpStatusCode.InternalServerError ||
                     ase.StatusCode == HttpStatusCode.ServiceUnavailable)
@@ -177,18 +177,18 @@ namespace Amazon.QLDB.Driver
         /// </summary>
         ///
         /// <returns>The newly created transaction object.</returns>
-        public virtual ITransaction StartTransaction()
+        public virtual async Task<ITransaction> StartTransaction()
         {
             this.ThrowIfDisposedOrClosed();
 
             try
             {
-                var startTransactionResult = this.session.StartTransaction();
+                var startTransactionResult = await this.session.StartTransaction();
                 return new Transaction(this.session, startTransactionResult.TransactionId, this.logger);
             }
             catch (BadRequestException e)
             {
-                this.NoThrowAbort(null);
+                await this.NoThrowAbort(null);
                 throw new TransactionAlreadyOpenException(string.Empty, e);
             }
         }
@@ -210,17 +210,17 @@ namespace Amazon.QLDB.Driver
         /// <param name="transaction">The transaction to abort.</param>
         ///
         /// <exception cref="AmazonServiceException">If there is an error communicating with QLDB.</exception>
-        private void NoThrowAbort(ITransaction transaction)
+        private async Task NoThrowAbort(ITransaction transaction)
         {
             try
             {
                 if (transaction != null)
                 {
-                    transaction.Abort();
+                    await transaction.Abort();
                 }
                 else
                 {
-                    this.session.AbortTransaction();
+                    await this.session.AbortTransaction();
                 }
             }
             catch (AmazonServiceException ase)

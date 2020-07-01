@@ -14,8 +14,9 @@
 namespace Amazon.QLDB.Driver
 {
     using System;
-    using System.Collections;
     using System.Collections.Generic;
+    using System.Threading;
+    using System.Threading.Tasks;
     using Amazon.IonDotnet.Builders;
     using Amazon.IonDotnet.Tree;
     using Amazon.QLDBSession.Model;
@@ -30,7 +31,7 @@ namespace Amazon.QLDB.Driver
     /// </summary>
     internal class Result : IResult
     {
-        private readonly IEnumerator<IIonValue> ionEnumerator;
+        private readonly IAsyncEnumerator<IIonValue> ionEnumerator;
         private bool isRetrieved = false;
 
         /// <summary>
@@ -46,7 +47,7 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <inheritdoc/>
-        public IEnumerator<IIonValue> GetEnumerator()
+        public IAsyncEnumerator<IIonValue> GetAsyncEnumerator(CancellationToken cancellationToken = default)
         {
             if (this.isRetrieved)
             {
@@ -57,17 +58,11 @@ namespace Amazon.QLDB.Driver
             return this.ionEnumerator;
         }
 
-        /// <inheritdoc/>
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return this.GetEnumerator();
-        }
-
         /// <summary>
-        /// Object which allows for iteration over the individual Ion values that make up the whole result of a statement
+        /// Object which allows for asynchronous iteration over the individual Ion values that make up the whole result of a statement
         /// execution against QLDB.
         /// </summary>
-        private class IonEnumerator : IEnumerator<IIonValue>
+        private class IonEnumerator : IAsyncEnumerator<IIonValue>
         {
             private static readonly IonLoader IonLoader = IonLoader.Default;
 
@@ -104,22 +99,19 @@ namespace Amazon.QLDB.Driver
                 }
             }
 
-            object IEnumerator.Current => this.Current;
-
             /// <summary>
             /// Dispose the enumerator. No-op.
             /// </summary>
-            public void Dispose()
+            public ValueTask DisposeAsync()
             {
-                return;
+                return default;
             }
 
             /// <summary>
             /// Advance the enumerator to the next value within the page.
             /// </summary>
-            ///
             /// <returns>True if there is another page token.</returns>
-            public bool MoveNext()
+            public async ValueTask<bool> MoveNextAsync()
             {
                 if (this.currentEnumerator.MoveNext())
                 {
@@ -130,24 +122,16 @@ namespace Amazon.QLDB.Driver
                     return false;
                 }
 
-                this.FetchPage();
-                return this.MoveNext();
-            }
-
-            /// <summary>
-            /// Reset. Not supported.
-            /// </summary>
-            public void Reset()
-            {
-                throw new NotSupportedException();
+                await this.FetchPage();
+                return await this.MoveNextAsync();
             }
 
             /// <summary>
             /// Fetch the next page from the session.
             /// </summary>
-            private void FetchPage()
+            private async Task FetchPage()
             {
-                Page newPage = this.session.FetchPage(this.txnId, this.nextPageToken).Page;
+                Page newPage = (await this.session.FetchPage(this.txnId, this.nextPageToken)).Page;
                 this.currentEnumerator = newPage.Values.GetEnumerator();
                 this.nextPageToken = newPage.NextPageToken;
             }
