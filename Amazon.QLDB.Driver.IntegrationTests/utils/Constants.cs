@@ -19,6 +19,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests.utils
         public const string CreateTableName = "DotnetCreateTestTable";
         public const string IndexAttribute = "Name";
         public const string ColumnName = "Name";
+        public const string SecondColumnName = "NameSecond";
         public const string SingleDocumentValue = "SingleDocumentValue";
         public const string MultipleDocumentValue1 = "MultipleDocumentValue1";
         public const string MultipleDocumentValue2 = "MultipleDocumentValue2";
