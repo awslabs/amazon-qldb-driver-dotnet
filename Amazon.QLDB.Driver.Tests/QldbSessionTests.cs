@@ -67,18 +67,6 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestStartTransactionGetsNewTransactionOrThrowsWhenDisposed()
-        {
-            var mockTransaction = new Mock<StartTransactionResult>();
-            mockSession.Setup(x => x.StartTransaction()).Returns(mockTransaction.Object);
-
-            Assert.IsNotNull(qldbSession.StartTransaction());
-
-            qldbSession.Dispose();
-            Assert.ThrowsException<QldbDriverException>(qldbSession.StartTransaction);
-        }
-
-        [TestMethod]
         public void TestQldbSessionConstrcutorReturnsValidObject()
         {
             Assert.IsNotNull(qldbSession);
