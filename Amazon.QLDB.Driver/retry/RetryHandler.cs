@@ -16,6 +16,7 @@ namespace Amazon.QLDB.Driver
     using System;
     using System.Collections.Generic;
     using System.Threading;
+    using Amazon.QLDBSession.Model;
     using Microsoft.Extensions.Logging;
 
     /// <summary>
@@ -29,17 +30,20 @@ namespace Amazon.QLDB.Driver
         private readonly IEnumerable<Type> retryExceptions;
         private readonly IEnumerable<Type> exceptionsNeedRecover;
         private readonly ILogger logger;
+        private readonly int recoverRetryLimit;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RetryHandler"/> class.
         /// </summary>
         /// <param name="limitedRetryExceptions">The exceptions that the handler would retry on.</param>
-        /// <param name="unlimitedRetryExceptions">The exceptions that need to call the recover action on retry.</param>
+        /// <param name="recoverRetryExceptions">The exceptions that need to call the recover action on retry.</param>
+        /// <param name="recoverRetryLimit">The limit of retries needing recover action.</param>
         /// <param name="logger">The logger to record retries.</param>
-        public RetryHandler(IEnumerable<Type> limitedRetryExceptions, IEnumerable<Type> unlimitedRetryExceptions, ILogger logger)
+        public RetryHandler(IEnumerable<Type> limitedRetryExceptions, IEnumerable<Type> recoverRetryExceptions, int recoverRetryLimit, ILogger logger)
         {
             this.retryExceptions = limitedRetryExceptions;
-            this.exceptionsNeedRecover = unlimitedRetryExceptions;
+            this.exceptionsNeedRecover = recoverRetryExceptions;
+            this.recoverRetryLimit = recoverRetryLimit;
             this.logger = logger;
         }
 
@@ -47,9 +51,10 @@ namespace Amazon.QLDB.Driver
         public T RetriableExecute<T>(Func<T> func, RetryPolicy retryPolicy, Action recoverAction, Action<int> retryAction)
         {
             Exception last = null;
-            int retryAttempt = 1;
+            int retryAttempt = 0;
+            int recoverRetryAttempt = 0;
 
-            while (retryAttempt <= retryPolicy.MaxRetries + 1)
+            while (true)
             {
                 try
                 {
@@ -59,25 +64,27 @@ namespace Amazon.QLDB.Driver
                 {
                     var uex = this.UnwrappedTransactionException(ex);
 
-                    this.logger?.LogWarning(uex, "The driver retried on transaction '{}' {} times.", TryGetTransactionId(ex), retryAttempt);
-
-                    if (!this.IsRetriable(uex))
-                    {
-                        throw uex;
-                    }
-
                     last = !(uex is RetriableException) || uex.InnerException == null ? uex : uex.InnerException;
 
-                    retryAction?.Invoke(retryAttempt);
-
-                    if (this.NeedsRecover(uex))
+                    if (FindException(this.retryExceptions, uex) && retryAttempt < retryPolicy.MaxRetries)
                     {
+                        this.logger?.LogWarning(uex, "A exception has occurred. Attempting retry {}. Errored Transaction ID: {}.",
+                            ++retryAttempt, TryGetTransactionId(ex));
+
+                        retryAction?.Invoke(retryAttempt);
+                        Thread.Sleep(retryPolicy.BackoffStrategy.CalculateDelay(new RetryPolicyContext(retryAttempt, uex)));
+                    }
+                    else if (FindException(this.exceptionsNeedRecover, uex) && recoverRetryAttempt < this.recoverRetryLimit)
+                    {
+                        this.logger?.LogWarning(uex, "A recoverable exception has occurred. Attempting retry {}. Errored Transaction ID: {}.",
+                            ++recoverRetryAttempt, TryGetTransactionId(ex));
+
+                        retryAction?.Invoke(retryAttempt);
                         recoverAction();
                     }
                     else
                     {
-                        Thread.Sleep(retryPolicy.BackoffStrategy.CalculateDelay(new RetryPolicyContext(retryAttempt, uex)));
-                        retryAttempt++;
+                        throw last;
                     }
                 }
             }

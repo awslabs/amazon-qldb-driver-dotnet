@@ -170,7 +170,9 @@
             return new QldbDriver(
                 new SessionPool(
                     () => Session.StartSession(this.LedgerName, this.sessionClient, this.Logger),
-                    CreateDefaultRetryHandler(this.logRetries ? this.Logger : null),
+                    CreateDefaultRetryHandler(
+                        this.logRetries ? this.Logger : null,
+                        Math.Min(this.maxConcurrentTransactions, int.MaxValue - 3) + 3),
                     this.maxConcurrentTransactions,
                     this.Logger));
         }
@@ -179,12 +181,14 @@
         /// Create a RetryHandler object with the default set of retriable exceptions.
         /// </summary>
         /// <param name="logger">The logger.</param>
+        /// <param name="recoverRetryLimit">The limit on the retries which need recover action.</param>
         /// <returns>The constructed IRetryHandler instance.</returns>
-        internal static IRetryHandler CreateDefaultRetryHandler(ILogger logger)
+        internal static IRetryHandler CreateDefaultRetryHandler(ILogger logger, int recoverRetryLimit)
         {
             return new RetryHandler(
                 new Type[] { typeof(RetriableException), typeof(OccConflictException), typeof(TransactionAlreadyOpenException) },
                 new Type[] { typeof(InvalidSessionException) },
+                recoverRetryLimit,
                 logger);
         }
 

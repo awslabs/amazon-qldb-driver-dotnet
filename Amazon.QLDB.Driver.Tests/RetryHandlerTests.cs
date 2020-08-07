@@ -15,7 +15,7 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public void DoesNeedRecover_CheckIfNeedRecover_ShouldReplyCorrectValue()
         {
-            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance);
+            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 10);
 
             Assert.IsTrue(handler.IsRetriable(new OccConflictException("occ")));
             Assert.IsTrue(handler.IsRetriable(new RetriableException("testTransactionIdddddd", new Exception())));
@@ -33,7 +33,7 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public void RetriableExecute_NoRetry_SuccessfulReturn()
         {
-            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance);
+            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 10);
 
             var func = new Mock<Func<int>>();
             var recover = new Mock<Action>();
@@ -51,7 +51,7 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public void RetriableExecute_NotInListException_ThrowIt()
         {
-            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance);
+            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 10);
 
             var func = new Mock<Func<int>>();
             var recover = new Mock<Action>();
@@ -71,7 +71,7 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public void RetriableExecute_RetryWithoutRecoverWithinLimit_Succeed()
         {
-            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance);
+            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 10);
 
             var func = new Mock<Func<int>>();
             var recover = new Mock<Action>();
@@ -89,9 +89,9 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void RetriableExecute_RetryWithRecoverRegardlessLimit_Succeed()
+        public void RetriableExecute_RetryWithRecoverWithinItsLimit_Succeed()
         {
-            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance);
+            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 7);
 
             var func = new Mock<Func<int>>();
             var recover = new Mock<Action>();
@@ -119,9 +119,36 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void RetriableExecute_BothLimitedAndUnlimitedRetryExceptions_UnlimitedRetriesShouldNotAffectRetryLimitCount()
+        public void RetriableExecute_RetryWithRecoverExceedItsLimit_Succeed()
         {
-            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance);
+            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 7);
+
+            var func = new Mock<Func<int>>();
+            var recover = new Mock<Action>();
+            var retry = new Mock<Action<int>>();
+
+            var invalid = new InvalidSessionException("invalid session");
+
+            func.SetupSequence(f => f.Invoke())
+                .Throws(invalid)
+                .Throws(invalid)
+                .Throws(invalid)
+                .Throws(invalid)
+                .Throws(invalid)
+                .Throws(invalid)
+                .Throws(invalid)
+                .Throws(invalid);
+
+            Assert.AreEqual(invalid,
+                Assert.ThrowsException<InvalidSessionException>(
+                    () => handler.RetriableExecute(func.Object,
+                    Driver.RetryPolicy.Builder().WithMaxRetries(4).Build(), recover.Object, retry.Object)));
+        }
+
+        [TestMethod]
+        public void RetriableExecute_BothLimitedAndRecoverRetryExceptions_SucceedSinceBothAreJustWithinLimit()
+        {
+            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 3);
 
             var func = new Mock<Func<int>>();
             var recover = new Mock<Action>();
@@ -130,11 +157,13 @@ namespace Amazon.QLDB.Driver.Tests
             var occ = new OccConflictException("qldb");
             var invalid = new InvalidSessionException("invalid session");
             func.SetupSequence(f => f.Invoke())
-                .Throws(invalid)
                 .Throws(occ)
                 .Throws(invalid)
                 .Throws(occ)
                 .Throws(invalid)
+                .Throws(occ)
+                .Throws(invalid)
+                .Throws(occ)
                 .Returns(1);
 
             Assert.AreEqual(1, handler.RetriableExecute<int>(func.Object,
@@ -142,15 +171,15 @@ namespace Amazon.QLDB.Driver.Tests
                 recover.Object,
                 retry.Object));
 
-            func.Verify(f => f.Invoke(), Times.Exactly(6));
+            func.Verify(f => f.Invoke(), Times.Exactly(8));
             recover.Verify(r => r.Invoke(), Times.Exactly(3));
-            retry.Verify(r => r.Invoke(It.IsAny<int>()), Times.Exactly(5));
+            retry.Verify(r => r.Invoke(It.IsAny<int>()), Times.Exactly(7));
         }
 
         [TestMethod]
         public void RetriableExecute_RetryMoreThanLimit_ThrowTheLastException()
         {
-            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance);
+            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 10);
 
             var func = new Mock<Func<int>>();
             var recover = new Mock<Action>();
@@ -177,7 +206,7 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public void RetriableExecute_CustomizedRetryPolicy_ThrowTheLastException()
         {
-            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance);
+            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 10);
 
             var func = new Mock<Func<int>>();
             var recover = new Mock<Action>();
