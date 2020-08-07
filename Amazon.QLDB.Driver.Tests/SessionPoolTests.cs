@@ -242,7 +242,7 @@ namespace Amazon.QLDB.Driver.Tests
             Assert.ThrowsException<OccConflictException>(() => pool.Execute(mockFunction.Object, Driver.RetryPolicy.Builder().Build(), retry.Object));
 
             mockCreator.Verify(x => x(), Times.Once);
-            retry.Verify(r => r.Invoke(It.IsAny<int>()), Times.Exactly(5));
+            retry.Verify(r => r.Invoke(It.IsAny<int>()), Times.Exactly(4));
         }
 
         [TestMethod]

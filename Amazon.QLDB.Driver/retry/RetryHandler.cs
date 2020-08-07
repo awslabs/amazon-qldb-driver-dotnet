@@ -51,10 +51,10 @@ namespace Amazon.QLDB.Driver
         public T RetriableExecute<T>(Func<T> func, RetryPolicy retryPolicy, Action recoverAction, Action<int> retryAction)
         {
             Exception last = null;
-            int retryAttempt = 1;
-            int recoverRetryAttempt = 1;
+            int retryAttempt = 0;
+            int recoverRetryAttempt = 0;
 
-            while (retryAttempt <= retryPolicy.MaxRetries + 1 && recoverRetryAttempt - 1 <= this.recoverRetryLimit)
+            while (true)
             {
                 try
                 {
@@ -64,25 +64,27 @@ namespace Amazon.QLDB.Driver
                 {
                     var uex = this.UnwrappedTransactionException(ex);
 
-                    this.logger?.LogWarning(uex, "The driver retried on transaction '{}' {} times.", TryGetTransactionId(ex), retryAttempt);
-
                     last = !(uex is RetriableException) || uex.InnerException == null ? uex : uex.InnerException;
 
-                    if (FindException(this.retryExceptions, uex))
+                    if (FindException(this.retryExceptions, uex) && retryAttempt < retryPolicy.MaxRetries)
                     {
+                        this.logger?.LogWarning(uex, "A recoverable error has occurred. Attempting retry {}. Errored Transaction ID: {}.",
+                            ++retryAttempt, TryGetTransactionId(ex));
+
                         retryAction?.Invoke(retryAttempt);
                         Thread.Sleep(retryPolicy.BackoffStrategy.CalculateDelay(new RetryPolicyContext(retryAttempt, uex)));
-                        retryAttempt++;
                     }
-                    else if (FindException(this.exceptionsNeedRecover, uex))
+                    else if (FindException(this.exceptionsNeedRecover, uex) && recoverRetryAttempt < this.recoverRetryLimit)
                     {
+                        this.logger?.LogWarning(uex, "A recoverable error has occurred. Attempting retry {}. Errored Transaction ID: {}.",
+                            ++recoverRetryAttempt, TryGetTransactionId(ex));
+
                         retryAction?.Invoke(retryAttempt);
                         recoverAction();
-                        recoverRetryAttempt++;
                     }
                     else
                     {
-                        throw uex;
+                        throw last;
                     }
                 }
             }
