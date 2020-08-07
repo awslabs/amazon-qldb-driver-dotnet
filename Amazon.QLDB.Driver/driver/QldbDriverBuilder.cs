@@ -195,7 +195,7 @@
         private static void SetUserAgent(object sender, RequestEventArgs eventArgs)
         {
             const string UserAgentHeader = "User-Agent";
-            const string Version = "1.0.0-rc.1";
+            const string Version = "1.1.0";
 
             if (!(eventArgs is WebServiceRequestEventArgs args) || !args.Headers.ContainsKey(UserAgentHeader))
             {
