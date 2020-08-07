@@ -15,6 +15,7 @@ namespace Amazon.QLDB.Driver
 {
     using System;
     using System.Collections.Generic;
+    using System.Text.RegularExpressions;
     using System.Threading;
     using Amazon.QLDBSession.Model;
     using Microsoft.Extensions.Logging;
@@ -74,7 +75,9 @@ namespace Amazon.QLDB.Driver
                         retryAction?.Invoke(retryAttempt);
                         Thread.Sleep(retryPolicy.BackoffStrategy.CalculateDelay(new RetryPolicyContext(retryAttempt, uex)));
                     }
-                    else if (FindException(this.exceptionsNeedRecover, uex) && recoverRetryAttempt < this.recoverRetryLimit)
+                    else if (FindException(this.exceptionsNeedRecover, uex)
+                        && recoverRetryAttempt < this.recoverRetryLimit
+                        && !IsTransactionExpiry(uex))
                     {
                         this.logger?.LogWarning(uex, "A recoverable exception has occurred. Attempting retry {}. Errored Transaction ID: {}.",
                             ++recoverRetryAttempt, TryGetTransactionId(ex));
@@ -90,6 +93,12 @@ namespace Amazon.QLDB.Driver
             }
 
             throw last;
+        }
+
+        internal static bool IsTransactionExpiry(Exception ex)
+        {
+            return ex is InvalidSessionException
+                && Regex.Match(ex.Message, @"Transaction\s.*\shas\sexpired").Success;
         }
 
         internal bool IsRetriable(Exception ex)

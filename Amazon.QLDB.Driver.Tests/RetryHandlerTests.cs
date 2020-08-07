@@ -69,6 +69,27 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
+        public void RetriableExecute_TransactionExpiryCase_ThrowISE()
+        {
+            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 10);
+
+            var func = new Mock<Func<int>>();
+            var recover = new Mock<Action>();
+            var retry = new Mock<Action<int>>();
+
+            var exception = new InvalidSessionException("Transaction 324weqr2314 has expired");
+            func.Setup(f => f.Invoke()).Throws(exception);
+
+            Assert.AreEqual(exception,
+                Assert.ThrowsException<InvalidSessionException>(() => 
+                    handler.RetriableExecute<int>(func.Object, Driver.RetryPolicy.Builder().Build(), recover.Object, retry.Object)));
+
+            func.Verify(f => f.Invoke(), Times.Once);
+            recover.Verify(r => r.Invoke(), Times.Never);
+            retry.Verify(r => r.Invoke(It.IsAny<int>()), Times.Never);
+        }
+
+        [TestMethod]
         public void RetriableExecute_RetryWithoutRecoverWithinLimit_Succeed()
         {
             var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 10);
@@ -246,6 +267,14 @@ namespace Amazon.QLDB.Driver.Tests
 
             Assert.AreEqual(retries, context.RetriesAttempted);
             Assert.AreEqual(exception, context.LastException);
+        }
+
+        [TestMethod]
+        public void IsTransactionExpiry_Match_ShouldMatchTransactionExpireCases()
+        {
+            Assert.IsTrue(RetryHandler.IsTransactionExpiry(new InvalidSessionException("Transaction 324weqr2314 has expired")));
+
+            Assert.IsFalse(RetryHandler.IsTransactionExpiry(new InvalidSessionException("Transaction 324weqr2314 has not expired")));
         }
     }
 }
