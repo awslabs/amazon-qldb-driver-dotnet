@@ -181,7 +181,8 @@ namespace Amazon.QLDB.Driver.Tests
         [DataTestMethod]
         [DynamicData(nameof(CreateExceptionTestData), DynamicDataSourceType.Method)]
         public void Execute_ThrowException_ThrowExpectedException(Exception exception,
-            Type expectedExceptionType, Type innerExceptionType, Times sessionEndCalledTimes, Times abortTransactionCalledTimes)
+            Type expectedExceptionType, Type innerExceptionType,
+            Times sessionEndCalledTimes, Times abortTransactionCalledTimes)
         {
             mockSession.Setup(x => x.StartTransaction()).Returns(new StartTransactionResult
             {
@@ -261,7 +262,7 @@ namespace Amazon.QLDB.Driver.Tests
                     Times.Once(), Times.Never()},
                 new object[] { new TransactionAlreadyOpenException(string.Empty, new BadRequestException("Bad request")),
                     typeof(TransactionAlreadyOpenException), typeof(BadRequestException),
-                    Times.Never(), Times.Never()},
+                    Times.Never(), Times.Once()},
                 new object[] { new TransactionAbortedException("testTransactionIdddddd"),
                     typeof(TransactionAbortedException), null,
                     Times.Never(), Times.Once()}

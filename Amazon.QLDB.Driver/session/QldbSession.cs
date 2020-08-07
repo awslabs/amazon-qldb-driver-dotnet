@@ -170,6 +170,11 @@ namespace Amazon.QLDB.Driver
 
                 throw ase;
             }
+            catch (Exception e)
+            {
+                this.NoThrowAbort(transaction);
+                throw e;
+            }
         }
 
         /// <summary>
@@ -188,7 +193,6 @@ namespace Amazon.QLDB.Driver
             }
             catch (BadRequestException e)
             {
-                this.NoThrowAbort(null);
                 throw new TransactionAlreadyOpenException(string.Empty, e);
             }
         }
