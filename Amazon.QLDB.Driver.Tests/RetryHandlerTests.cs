@@ -148,7 +148,7 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public void RetriableExecute_BothLimitedAndUnlimitedRetryExceptions_UnlimitedRetriesShouldNotAffectRetryLimitCount()
         {
-            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 10);
+            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 3);
 
             var func = new Mock<Func<int>>();
             var recover = new Mock<Action>();
@@ -157,11 +157,13 @@ namespace Amazon.QLDB.Driver.Tests
             var occ = new OccConflictException("qldb");
             var invalid = new InvalidSessionException("invalid session");
             func.SetupSequence(f => f.Invoke())
-                .Throws(invalid)
                 .Throws(occ)
                 .Throws(invalid)
                 .Throws(occ)
                 .Throws(invalid)
+                .Throws(occ)
+                .Throws(invalid)
+                .Throws(occ)
                 .Returns(1);
 
             Assert.AreEqual(1, handler.RetriableExecute<int>(func.Object,
@@ -169,9 +171,9 @@ namespace Amazon.QLDB.Driver.Tests
                 recover.Object,
                 retry.Object));
 
-            func.Verify(f => f.Invoke(), Times.Exactly(6));
+            func.Verify(f => f.Invoke(), Times.Exactly(8));
             recover.Verify(r => r.Invoke(), Times.Exactly(3));
-            retry.Verify(r => r.Invoke(It.IsAny<int>()), Times.Exactly(5));
+            retry.Verify(r => r.Invoke(It.IsAny<int>()), Times.Exactly(7));
         }
 
         [TestMethod]
