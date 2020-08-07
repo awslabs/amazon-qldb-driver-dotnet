@@ -265,6 +265,9 @@ namespace Amazon.QLDB.Driver.Tests
                     Times.Never(), Times.Once()},
                 new object[] { new TransactionAbortedException("testTransactionIdddddd"),
                     typeof(TransactionAbortedException), null,
+                    Times.Never(), Times.Once()},
+                new object[] { new Exception("Customer Exception"),
+                    typeof(Exception), null,
                     Times.Never(), Times.Once()}
             };
         }
