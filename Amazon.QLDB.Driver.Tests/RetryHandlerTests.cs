@@ -146,7 +146,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void RetriableExecute_BothLimitedAndUnlimitedRetryExceptions_UnlimitedRetriesShouldNotAffectRetryLimitCount()
+        public void RetriableExecute_BothLimitedAndRecoverRetryExceptions_SucceedSinceBothAreJustWithinLimit()
         {
             var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 3);
 

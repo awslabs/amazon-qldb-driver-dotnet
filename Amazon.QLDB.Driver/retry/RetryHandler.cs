@@ -68,7 +68,7 @@ namespace Amazon.QLDB.Driver
 
                     if (FindException(this.retryExceptions, uex) && retryAttempt < retryPolicy.MaxRetries)
                     {
-                        this.logger?.LogWarning(uex, "A recoverable error has occurred. Attempting retry {}. Errored Transaction ID: {}.",
+                        this.logger?.LogWarning(uex, "A exception has occurred. Attempting retry {}. Errored Transaction ID: {}.",
                             ++retryAttempt, TryGetTransactionId(ex));
 
                         retryAction?.Invoke(retryAttempt);
@@ -76,7 +76,7 @@ namespace Amazon.QLDB.Driver
                     }
                     else if (FindException(this.exceptionsNeedRecover, uex) && recoverRetryAttempt < this.recoverRetryLimit)
                     {
-                        this.logger?.LogWarning(uex, "A recoverable error has occurred. Attempting retry {}. Errored Transaction ID: {}.",
+                        this.logger?.LogWarning(uex, "A recoverable exception has occurred. Attempting retry {}. Errored Transaction ID: {}.",
                             ++recoverRetryAttempt, TryGetTransactionId(ex));
 
                         retryAction?.Invoke(retryAttempt);
