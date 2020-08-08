@@ -1,3 +1,11 @@
+## Release v1.1.0
+
+#### Bug Fixes:
+* Fixed the bug which leads to infinite number of retries on expried long running transactions.
+
+### :hammer_and_wrench:​ Improvements
+* Customized exceptions in a transaction will abort the transaction immediately.
+
 ## GA Release v1.0.0
 
 ### :hammer_and_wrench:​ Improvements
