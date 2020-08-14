@@ -1,4 +1,4 @@
-## Release v1.1.0
+## Release v1.0.1
 
 #### Bug Fixes:
 * Fixed the bug which leads to infinite number of retries on expried long running transactions.
