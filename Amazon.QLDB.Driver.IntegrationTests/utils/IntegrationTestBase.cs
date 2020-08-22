@@ -17,7 +17,6 @@ namespace Amazon.QLDB.Driver.IntegrationTests.utils
     using Amazon.QLDBSession;
     using NLog;
     using System.Threading;
-    using static Amazon.QLDB.Driver.QldbDriver;
 
     /// <summary>
     /// Helper class which provides functions that test QLDB directly and through the driver.

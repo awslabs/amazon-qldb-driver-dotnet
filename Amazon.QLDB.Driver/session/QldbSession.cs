@@ -149,11 +149,6 @@ namespace Amazon.QLDB.Driver
                 this.Destroy();
                 throw ise;
             }
-            catch (TransactionAbortedException tae)
-            {
-                this.NoThrowAbort(transaction);
-                throw tae;
-            }
             catch (OccConflictException occ)
             {
                 throw new QldbTransactionException(transaction.Id, occ);
@@ -169,6 +164,11 @@ namespace Amazon.QLDB.Driver
                 }
 
                 throw ase;
+            }
+            catch (Exception e)
+            {
+                this.NoThrowAbort(transaction);
+                throw e;
             }
         }
 
@@ -188,7 +188,6 @@ namespace Amazon.QLDB.Driver
             }
             catch (BadRequestException e)
             {
-                this.NoThrowAbort(null);
                 throw new TransactionAlreadyOpenException(string.Empty, e);
             }
         }

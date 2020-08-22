@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFrameworks>netcoreapp2.1;netcoreapp3.1;net48</TargetFrameworks>
     <IsPackable>false</IsPackable>
+    <ReleaseVersion>1.0.1</ReleaseVersion>
     <LangVersion>Latest</LangVersion>
   </PropertyGroup>
 
