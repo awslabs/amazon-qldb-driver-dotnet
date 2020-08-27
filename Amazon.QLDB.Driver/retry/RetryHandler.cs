@@ -15,6 +15,7 @@ namespace Amazon.QLDB.Driver
 {
     using System;
     using System.Collections.Generic;
+    using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Extensions.Logging;
 
@@ -44,7 +45,7 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <inheritdoc/>
-        public async Task<T> RetriableExecute<T>(Func<Task<T>> func, RetryPolicy retryPolicy, Func<Task> recoverAction, Func<int, Task> retryAction)
+        public async Task<T> RetriableExecute<T>(Func<CancellationToken, Task<T>> func, RetryPolicy retryPolicy, Func<CancellationToken, Task> recoverAction, Func<int, CancellationToken, Task> retryAction, CancellationToken cancellationToken = default)
         {
             Exception last = null;
             int retryAttempt = 1;
@@ -53,7 +54,7 @@ namespace Amazon.QLDB.Driver
             {
                 try
                 {
-                    return await func();
+                    return await func(cancellationToken);
                 }
                 catch (Exception ex)
                 {
@@ -70,12 +71,12 @@ namespace Amazon.QLDB.Driver
 
                     if (retryAction != null)
                     {
-                        await retryAction(retryAttempt);
+                        await retryAction(retryAttempt, cancellationToken);
                     }
 
                     if (this.NeedsRecover(uex))
                     {
-                        await recoverAction();
+                        await recoverAction(cancellationToken);
                     }
                     else
                     {
@@ -87,6 +88,11 @@ namespace Amazon.QLDB.Driver
             }
 
             throw last;
+        }
+
+        public Task<T> RetriableExecute<T>(Func<Task<T>> func, RetryPolicy retryPolicy, Func<Task> recoverAction, Func<int, Task> retryAction, CancellationToken cancellationToken = default)
+        {
+            return this.RetriableExecute(ct => func(), retryPolicy, ct => recoverAction(), (arg, ct) => retryAction(arg), cancellationToken);
         }
 
         internal bool IsRetriable(Exception ex)

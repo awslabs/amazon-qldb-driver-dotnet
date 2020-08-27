@@ -58,6 +58,11 @@ namespace Amazon.QLDB.Driver
         /// <summary>
         /// Returns an enumerator that iterates through a collection.
         /// </summary>
+        ///
+        /// <param name="cancellationToken">
+        ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
+        /// </param>
+        ///
         /// <returns>An <see cref="IAsyncEnumerator&lt;IIonValue&gt;"/> object that can be used to iterate through the collection.</returns>
         public IAsyncEnumerator<IIonValue> GetAsyncEnumerator(CancellationToken cancellationToken = default)
         {

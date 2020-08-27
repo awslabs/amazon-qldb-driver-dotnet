@@ -197,7 +197,7 @@ namespace Amazon.QLDB.Driver.Tests
             var driver = new QldbDriver(
                 new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
                     new Mock<IRetryHandler>().Object, 4, NullLogger.Instance));
-            await driver.Execute((txn) => txn.Execute("testStatement"));
+            await driver.Execute(txn => txn.Execute("testStatement"));
         }
 
         [TestMethod]
@@ -206,7 +206,7 @@ namespace Amazon.QLDB.Driver.Tests
             var driver = new QldbDriver(
                 new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
                     QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 4, NullLogger.Instance));
-            await driver.Execute(async (txn) => await txn.Execute("testStatement"),
+            await driver.Execute(async txn => await txn.Execute("testStatement"),
             Driver.RetryPolicy.Builder().Build());
         }
 
@@ -231,7 +231,7 @@ namespace Amazon.QLDB.Driver.Tests
                 new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
                     QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 4, NullLogger.Instance));
 
-            await driver.Execute((txn) => txn.Execute("testStatement"), Driver.RetryPolicy.Builder().Build());
+            await driver.Execute(txn => txn.Execute("testStatement"), Driver.RetryPolicy.Builder().Build());
         }
 
         [TestMethod]
@@ -241,7 +241,7 @@ namespace Amazon.QLDB.Driver.Tests
                 new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
                     QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 4, NullLogger.Instance));
 
-            var result = await driver.Execute(async (txn) =>
+            var result = await driver.Execute(async txn =>
             {
                 await txn.Execute("testStatement");
                 return "testReturnValue";
@@ -257,7 +257,7 @@ namespace Amazon.QLDB.Driver.Tests
                     QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 4, NullLogger.Instance));
 
             await driver.DisposeAsync();
-            await Assert.ThrowsExceptionAsync<QldbDriverException>(async () => await driver.Execute(async (txn) =>
+            await Assert.ThrowsExceptionAsync<QldbDriverException>(async () => await driver.Execute(async txn =>
             {
                 await txn.Execute("testStatement");
                 return "testReturnValue";
@@ -327,18 +327,18 @@ namespace Amazon.QLDB.Driver.Tests
                     RequestId = "testId"
                 }
             };
-            var mockCreator = new Mock<Func<Task<Session>>>();
+            var mockCreator = new Mock<Func<CancellationToken, Task<Session>>>();
             var mockSession = new Mock<Session>(null, null, null, null, null);
 
-            mockSession.Setup(x => x.StartTransaction()).ReturnsAsync(sendCommandResponseWithStartSession.StartTransaction);
-            mockSession.SetupSequence(x => x.ExecuteStatement(It.IsAny<String>(), It.IsAny<String>(), It.IsAny<List<IIonValue>>()))
+            mockSession.Setup(x => x.StartTransaction(It.IsAny<CancellationToken>())).ReturnsAsync(sendCommandResponseWithStartSession.StartTransaction);
+            mockSession.SetupSequence(x => x.ExecuteStatement(It.IsAny<String>(), It.IsAny<String>(), It.IsAny<List<IIonValue>>(), It.IsAny<CancellationToken>()))
                 .Throws(exception)
                 .Throws(exception)
                 .ReturnsAsync(sendCommandResponseExecute.ExecuteStatement);
-            mockSession.Setup(x => x.CommitTransaction(It.IsAny<String>(), It.IsAny<MemoryStream>()))
+            mockSession.Setup(x => x.CommitTransaction(It.IsAny<String>(), It.IsAny<MemoryStream>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(sendCommandResponseCommit.CommitTransaction);
 
-            mockCreator.Setup(x => x()).ReturnsAsync(mockSession.Object);
+            mockCreator.Setup(x => x(It.IsAny<CancellationToken>())).ReturnsAsync(mockSession.Object);
 
             var driver = new QldbDriver(
                 new SessionPool(mockCreator.Object, QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 4, NullLogger.Instance));

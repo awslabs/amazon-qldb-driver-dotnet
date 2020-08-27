@@ -31,7 +31,8 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         public static void SetUp(TestContext context)
         {
             // Get AWS configuration properties from .runsettings file.
-            string region = context.Properties["region"].ToString();
+            // string region = context.Properties["region"].ToString();
+            var region = "eu-west-1";
 
             amazonQldbSessionConfig = IntegrationTestBase.CreateAmazonQLDBSessionConfig(region);
             integrationTestBase = new IntegrationTestBase(Constants.LedgerName, region);

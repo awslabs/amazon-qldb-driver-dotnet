@@ -15,6 +15,7 @@ namespace Amazon.QLDB.Driver.Tests
 {
     using System;
     using System.IO;
+    using System.Threading;
     using System.Threading.Tasks;
     using Amazon.QLDBSession.Model;
     using Amazon.Runtime;
@@ -80,7 +81,7 @@ namespace Amazon.QLDB.Driver.Tests
             var mockCreator = new Mock<Func<Task<Session>>>();
             var mockSession = new Mock<Session>(null, null, null, null, null);
             mockCreator.Setup(x => x()).ReturnsAsync(mockSession.Object);
-            mockSession.Setup(x => x.StartTransaction()).ReturnsAsync(new StartTransactionResult
+            mockSession.Setup(x => x.StartTransaction(It.IsAny<CancellationToken>())).ReturnsAsync(new StartTransactionResult
             {
                 TransactionId = "testTransactionIdddddd"
             });
@@ -120,7 +121,7 @@ namespace Amazon.QLDB.Driver.Tests
 
             returnedSession.Dispose();
 
-            mockSession.Verify(s => s.End(), Times.Exactly(0));
+            mockSession.Verify(s => s.End(It.IsAny<CancellationToken>()), Times.Exactly(0));
         }
 
         [TestMethod]
@@ -144,9 +145,9 @@ namespace Amazon.QLDB.Driver.Tests
                 TransactionId = "testTransactionIdddddd"
             };
 
-            mockSession.Setup(x => x.StartTransaction())
+            mockSession.Setup(x => x.StartTransaction(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(sendCommandResponseStart);
-            mockSession.Setup(x => x.CommitTransaction(It.IsAny<string>(), It.IsAny<MemoryStream>()))
+            mockSession.Setup(x => x.CommitTransaction(It.IsAny<string>(), It.IsAny<MemoryStream>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(sendCommandResponseCommit);
 
             var mockFunction = new Mock<Func<TransactionExecutor, Task<int>>>();
@@ -182,9 +183,9 @@ namespace Amazon.QLDB.Driver.Tests
                 TransactionId = "testTransactionIdddddd"
             };
 
-            mockSession.Setup(x => x.StartTransaction())
+            mockSession.Setup(x => x.StartTransaction(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(sendCommandResponseStart);
-            mockSession.Setup(x => x.CommitTransaction(It.IsAny<string>(), It.IsAny<MemoryStream>()))
+            mockSession.Setup(x => x.CommitTransaction(It.IsAny<string>(), It.IsAny<MemoryStream>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(sendCommandResponseCommit);
 
             var mockFunction = new Mock<Func<TransactionExecutor, Task<int>>>();
@@ -224,9 +225,9 @@ namespace Amazon.QLDB.Driver.Tests
                 TransactionId = "testTransactionIdddddd"
             };
 
-            mockSession.Setup(x => x.StartTransaction())
+            mockSession.Setup(x => x.StartTransaction(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(sendCommandResponseStart);
-            mockSession.Setup(x => x.CommitTransaction(It.IsAny<string>(), It.IsAny<MemoryStream>()))
+            mockSession.Setup(x => x.CommitTransaction(It.IsAny<string>(), It.IsAny<MemoryStream>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(sendCommandResponseCommit);
 
             var mockFunction = new Mock<Func<TransactionExecutor, Task<int>>>();
@@ -267,9 +268,9 @@ namespace Amazon.QLDB.Driver.Tests
                 TransactionId = "testTransactionIdddddd"
             };
 
-            mockSession.Setup(x => x.StartTransaction())
+            mockSession.Setup(x => x.StartTransaction(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(sendCommandResponseStart);
-            mockSession.Setup(x => x.CommitTransaction(It.IsAny<string>(), It.IsAny<MemoryStream>()))
+            mockSession.Setup(x => x.CommitTransaction(It.IsAny<string>(), It.IsAny<MemoryStream>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(sendCommandResponseCommit);
 
             var mockFunction = new Mock<Func<TransactionExecutor, Task<int>>>();
@@ -288,7 +289,7 @@ namespace Amazon.QLDB.Driver.Tests
             await pool.Execute(mockFunction.Object, Driver.RetryPolicy.Builder().Build(), retry.Object);
 
             mockCreator.Verify(x => x(), Times.Exactly(7));
-            mockSession.Verify(s => s.End(), Times.Exactly(6));
+            mockSession.Verify(s => s.End(It.IsAny<CancellationToken>()), Times.Exactly(6));
             retry.Verify(r => r.Invoke(It.IsAny<int>()), Times.Exactly(6));
         }
 
@@ -309,8 +310,8 @@ namespace Amazon.QLDB.Driver.Tests
 
             await pool.DisposeAsync();
 
-            mockSession1.Verify(s => s.End(), Times.Exactly(1));
-            mockSession2.Verify(s => s.End(), Times.Exactly(1));
+            mockSession1.Verify(s => s.End(It.IsAny<CancellationToken>()), Times.Exactly(1));
+            mockSession2.Verify(s => s.End(It.IsAny<CancellationToken>()), Times.Exactly(1));
         }
     }
 }

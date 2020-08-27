@@ -17,6 +17,7 @@ namespace Amazon.QLDB.Driver
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
     using Amazon.IonDotnet.Tree;
     using Amazon.QLDBSession.Model;
@@ -62,13 +63,16 @@ namespace Amazon.QLDB.Driver
         /// Abort the transaction and roll back any changes. No-op if closed.
         /// Any open <see cref="IResult"/> created by the transaction will be invalidated.
         /// </summary>
+        ///
+        /// <param name="cancellationToken">Propagates notification that operations should be canceled.</param>
+        ///
         /// <returns>A task representing the asynchronous abort operation.</returns>
-        public async Task Abort()
+        public async Task Abort(CancellationToken cancellationToken = default)
         {
             if (!this.isClosed)
             {
                 this.isClosed = true;
-                await this.session.AbortTransaction();
+                await this.session.AbortTransaction(cancellationToken);
             }
         }
 
@@ -76,12 +80,14 @@ namespace Amazon.QLDB.Driver
         /// Commit the transaction. Any open <see cref="IResult"/> created by the transaction will be invalidated.
         /// </summary>
         ///
+        /// <param name="cancellationToken">Propagates notification that operations should be canceled.</param>
+        ///
         /// <exception cref="InvalidOperationException">Thrown when Hash returned from QLDB is not equal.</exception>
         /// <exception cref="OccConflictException">Thrown if an OCC conflict has been detected within the transaction.</exception>
         /// <exception cref="AmazonServiceException">Thrown when there is an error committing this transaction against QLDB.</exception>
         /// <exception cref="QldbDriverException">Thrown when this transaction has been disposed.</exception>
         /// <returns>A task representing the asynchronous commit operation.</returns>
-        public async Task Commit()
+        public async Task Commit(CancellationToken cancellationToken = default)
         {
             try
             {
@@ -132,12 +138,15 @@ namespace Amazon.QLDB.Driver
         /// </summary>
         ///
         /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
-        ///
+        /// <param name="cancellationToken">
+        ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
+        /// </param>
+        /// 
         /// <returns>Result from executed statement.</returns>
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
         /// <exception cref="QldbDriverException">Thrown when this transaction has been disposed.</exception>
-        public async Task<IResult> Execute(string statement)
+        public async Task<IResult> Execute(string statement, CancellationToken cancellationToken = default)
         {
             return await this.Execute(statement, new List<IIonValue>());
         }
@@ -148,12 +157,15 @@ namespace Amazon.QLDB.Driver
         ///
         /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
         /// <param name="parameters">Parameters to execute.</param>
-        ///
+        /// <param name="cancellationToken">
+        ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
+        /// </param>
+        /// 
         /// <returns>Result from executed statement.</returns>
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
         /// <exception cref="QldbDriverException">Thrown when this transaction has been disposed.</exception>
-        public async Task<IResult> Execute(string statement, List<IIonValue> parameters)
+        public async Task<IResult> Execute(string statement, List<IIonValue> parameters, CancellationToken cancellationToken = default)
         {
             ValidationUtils.AssertStringNotEmpty(statement, "statement");
 
@@ -164,7 +176,7 @@ namespace Amazon.QLDB.Driver
 
             this.qldbHash = Dot(this.qldbHash, statement, parameters);
             ExecuteStatementResult executeStatementResult = await this.session.ExecuteStatement(
-                this.txnId, statement, parameters);
+                this.txnId, statement, parameters, cancellationToken);
             return new Result(this.session, this.txnId, executeStatementResult.FirstPage);
         }
 
@@ -173,15 +185,18 @@ namespace Amazon.QLDB.Driver
         /// </summary>
         ///
         /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
+        /// <param name="cancellationToken">
+        ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
+        /// </param>
         /// <param name="parameters">Parameters to execute.</param>
         ///
         /// <returns>Result from executed statement.</returns>
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
         /// <exception cref="QldbDriverException">Thrown when this transaction has been disposed.</exception>
-        public Task<IResult> Execute(string statement, params IIonValue[] parameters)
+        public Task<IResult> Execute(string statement, CancellationToken cancellationToken = default, params IIonValue[] parameters)
         {
-            return this.Execute(statement, new List<IIonValue>(parameters));
+            return this.Execute(statement, new List<IIonValue>(parameters), cancellationToken);
         }
 
         /// <summary>

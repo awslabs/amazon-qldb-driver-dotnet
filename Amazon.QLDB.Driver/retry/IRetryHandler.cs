@@ -14,6 +14,7 @@
 namespace Amazon.QLDB.Driver
 {
     using System;
+    using System.Threading;
     using System.Threading.Tasks;
 
     /// <summary>
@@ -25,11 +26,30 @@ namespace Amazon.QLDB.Driver
         /// Execute a retriable function.
         /// </summary>
         /// <typeparam name="T">The return type of the executed function.</typeparam>
+        /// <param name="func">The function to be executed and retried if needed. The operation can be cancelled.</param>
+        /// <param name="retryPolicy">The retry policy.</param>
+        /// <param name="recoverAction">The recover action needed on certain retry cases. The operation can be cancelled.</param>
+        /// <param name="retryAction">The custom retry action. The operation can be cancelled.</param>
+        /// <param name="cancellationToken">
+        ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
+        /// </param>
+        ///
+        /// <returns>The return value of the executed function.</returns>
+        Task<T> RetriableExecute<T>(Func<CancellationToken, Task<T>> func, RetryPolicy retryPolicy, Func<CancellationToken, Task> recoverAction, Func<int, CancellationToken, Task> retryAction, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Execute a retriable function.
+        /// </summary>
+        /// <typeparam name="T">The return type of the executed function.</typeparam>
         /// <param name="func">The function to be executed and retried if needed.</param>
         /// <param name="retryPolicy">The retry policy.</param>
         /// <param name="recoverAction">The recover action needed on certain retry cases.</param>
         /// <param name="retryAction">The custom retry action.</param>
+        /// <param name="cancellationToken">
+        ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
+        /// </param>
+        ///
         /// <returns>The return value of the executed function.</returns>
-        Task<T> RetriableExecute<T>(Func<Task<T>> func, RetryPolicy retryPolicy, Func<Task> recoverAction, Func<int, Task> retryAction);
+        Task<T> RetriableExecute<T>(Func<Task<T>> func, RetryPolicy retryPolicy, Func<Task> recoverAction, Func<int, Task> retryAction, CancellationToken cancellationToken = default);
     }
 }

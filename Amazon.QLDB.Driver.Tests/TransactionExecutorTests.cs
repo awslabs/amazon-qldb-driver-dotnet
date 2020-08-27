@@ -1,6 +1,7 @@
 ﻿namespace Amazon.QLDB.Driver.Tests
 {
     using System.Collections.Generic;
+    using System.Threading;
     using System.Threading.Tasks;
     using Amazon.IonDotnet.Tree;
     using Amazon.IonDotnet.Tree.Impl;
@@ -22,10 +23,10 @@
         {
             mockResult = new Mock<IResult>();
             mockTransaction = new Mock<ITransaction>();
-            mockTransaction.Setup(transaction => transaction.Execute(It.IsAny<string>())).ReturnsAsync(mockResult.Object);
-            mockTransaction.Setup(transaction => transaction.Execute(It.IsAny<string>(), It.IsAny<List<IIonValue>>()))
+            mockTransaction.Setup(transaction => transaction.Execute(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(mockResult.Object);
+            mockTransaction.Setup(transaction => transaction.Execute(It.IsAny<string>(), It.IsAny<List<IIonValue>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(mockResult.Object);
-            mockTransaction.Setup(transaction => transaction.Execute(It.IsAny<string>(), It.IsAny<IIonValue[]>()))
+            mockTransaction.Setup(transaction => transaction.Execute(It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<IIonValue[]>()))
                 .ReturnsAsync(mockResult.Object);
         }
 
@@ -45,7 +46,7 @@
         public async Task TestExecuteNoParamsDelegatesCallToTransaction()
         {
             IResult actualResult = await transactionExecutor.Execute(query);
-            mockTransaction.Verify(transaction => transaction.Execute(query), Times.Exactly(1));
+            mockTransaction.Verify(transaction => transaction.Execute(query, It.IsAny<CancellationToken>()), Times.Exactly(1));
             Assert.AreEqual(mockResult.Object, actualResult);
         }
 
@@ -54,7 +55,7 @@
         {
             List<IIonValue> emptyParams = new List<IIonValue>();
             IResult actualResult = await transactionExecutor.Execute(query, emptyParams);
-            mockTransaction.Verify(transaction => transaction.Execute(query, emptyParams), Times.Exactly(1));
+            mockTransaction.Verify(transaction => transaction.Execute(query, emptyParams, It.IsAny<CancellationToken>()), Times.Exactly(1));
             Assert.AreEqual(mockResult.Object, actualResult);
         }
 
@@ -63,7 +64,7 @@
         {
             List<IIonValue> nullParams = null;
             IResult actualResult = await transactionExecutor.Execute(query, nullParams);
-            mockTransaction.Verify(transaction => transaction.Execute(query, (List<IIonValue>)null), Times.Exactly(1));
+            mockTransaction.Verify(transaction => transaction.Execute(query, (List<IIonValue>)null, It.IsAny<CancellationToken>()), Times.Exactly(1));
             Assert.AreEqual(mockResult.Object, actualResult);
         }
 
@@ -72,7 +73,7 @@
         {
             List<IIonValue> oneParam = new List<IIonValue> { new ValueFactory().NewInt(1) };
             IResult actualResult = await transactionExecutor.Execute(query, oneParam);
-            mockTransaction.Verify(transaction => transaction.Execute(query, oneParam), Times.Exactly(1));
+            mockTransaction.Verify(transaction => transaction.Execute(query, oneParam, It.IsAny<CancellationToken>()), Times.Exactly(1));
             Assert.AreEqual(mockResult.Object, actualResult);
         }
 
@@ -83,7 +84,7 @@
             IIonValue one = ionFactory.NewInt(1);
             IIonValue two = ionFactory.NewInt(2);
             IResult actualResult = await transactionExecutor.Execute(query, one, two);
-            mockTransaction.Verify(transaction => transaction.Execute(query, one, two), Times.Exactly(1));
+            mockTransaction.Verify(transaction => transaction.Execute(query, It.IsAny<CancellationToken>(), one, two), Times.Exactly(1));
             Assert.AreEqual(mockResult.Object, actualResult);
         }
     }

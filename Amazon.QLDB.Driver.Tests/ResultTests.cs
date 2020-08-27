@@ -16,6 +16,7 @@ namespace Amazon.QLDB.Driver.Tests
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Threading;
     using System.Threading.Tasks;
     using Amazon.IonDotnet.Tree;
     using Amazon.QLDBSession.Model;
@@ -57,7 +58,7 @@ namespace Amazon.QLDB.Driver.Tests
             var valuHolderList = new List<ValueHolder> { new ValueHolder { IonBinary = ms, IonText = "ionText" } };
             Page nextPage = new Page { NextPageToken = null, Values = valuHolderList };
 
-            mockSession.Setup(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>()))
+            mockSession.Setup(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new FetchPageResult { Page = nextPage });
 
             var results = result.GetAsyncEnumerator();
@@ -69,7 +70,7 @@ namespace Amazon.QLDB.Driver.Tests
             }
 
             Assert.AreEqual(2, counter);
-            mockSession.Verify(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+            mockSession.Verify(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [TestMethod]
@@ -90,7 +91,7 @@ namespace Amazon.QLDB.Driver.Tests
             }
 
             Assert.AreEqual(1, counter);
-            session.Verify(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            session.Verify(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [TestMethod]

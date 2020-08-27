@@ -23,6 +23,7 @@ namespace Amazon.QLDB.Driver.Tests
     using System.Collections.Generic;
     using System.IO;
     using System.Net;
+    using System.Threading;
     using System.Threading.Tasks;
     using Amazon.IonDotnet.Tree;
     using Amazon.QLDBSession;
@@ -71,12 +72,12 @@ namespace Amazon.QLDB.Driver.Tests
         public async Task TestStartTransactionGetsNewTransactionOrThrowsWhenDisposed()
         {
             var mockTransaction = new Mock<StartTransactionResult>();
-            mockSession.Setup(x => x.StartTransaction()).ReturnsAsync(mockTransaction.Object);
+            mockSession.Setup(x => x.StartTransaction(It.IsAny<CancellationToken>())).ReturnsAsync(mockTransaction.Object);
 
             Assert.IsNotNull(await qldbSession.StartTransaction());
 
             qldbSession.Dispose();
-            await Assert.ThrowsExceptionAsync<QldbDriverException>(qldbSession.StartTransaction);
+            await Assert.ThrowsExceptionAsync<QldbDriverException>(async () => await qldbSession.StartTransaction());
         }
 
         [TestMethod]
@@ -89,7 +90,7 @@ namespace Amazon.QLDB.Driver.Tests
         public void TestDisposeCanBeInvokedMultipleTimesButNotEndSession()
         {
             // Throw on second End() call
-            mockSession.SetupSequence(x => x.End()).PassAsync().Throws(new ObjectDisposedException(ExceptionMessages.SessionClosed));
+            mockSession.SetupSequence(x => x.End(It.IsAny<CancellationToken>())).PassAsync().Throws(new ObjectDisposedException(ExceptionMessages.SessionClosed));
 
             qldbSession.Dispose();
 
@@ -104,14 +105,15 @@ namespace Amazon.QLDB.Driver.Tests
             int executeCount = 0;
             int commitCount = 0;
             int retryCount = 0;
-            mockSession.Setup(x => x.StartTransaction()).ReturnsAsync(new StartTransactionResult
+            mockSession.Setup(x => x.StartTransaction(It.IsAny<CancellationToken>())).ReturnsAsync(new StartTransactionResult
             {
                 TransactionId = "testTransactionIdddddd"
             }).Callback(() => txnCount++);
             mockSession.Setup(x => x.ExecuteStatement(
                 It.IsAny<string>(),
                 It.IsAny<string>(),
-                It.IsAny<List<IIonValue>>())).ReturnsAsync(new ExecuteStatementResult
+                It.IsAny<List<IIonValue>>(),
+                It.IsAny<CancellationToken>())).ReturnsAsync(new ExecuteStatementResult
                 {
                     FirstPage = new Page
                     {
@@ -119,7 +121,7 @@ namespace Amazon.QLDB.Driver.Tests
                         Values = new List<ValueHolder>()
                     }
                 }).Callback(() => executeCount++);
-            mockSession.Setup(x => x.CommitTransaction(It.IsAny<string>(), It.IsAny<MemoryStream>()))
+            mockSession.Setup(x => x.CommitTransaction(It.IsAny<string>(), It.IsAny<MemoryStream>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new CommitTransactionResult
                 {
                     CommitDigest = new MemoryStream(digest)
@@ -145,14 +147,15 @@ namespace Amazon.QLDB.Driver.Tests
             int executeCount = 0;
             int commitCount = 0;
             int retryCount = 0;
-            mockSession.Setup(x => x.StartTransaction()).ReturnsAsync(new StartTransactionResult
+            mockSession.Setup(x => x.StartTransaction(It.IsAny<CancellationToken>())).ReturnsAsync(new StartTransactionResult
             {
                 TransactionId = "testTransactionIdddddd"
             }).Callback(() => txnCount++);
             mockSession.Setup(x => x.ExecuteStatement(
                 It.IsAny<string>(),
                 It.IsAny<string>(),
-                It.IsAny<List<IIonValue>>())).ReturnsAsync(new ExecuteStatementResult
+                It.IsAny<List<IIonValue>>(),
+                It.IsAny<CancellationToken>())).ReturnsAsync(new ExecuteStatementResult
                 {
                     FirstPage = new Page
                     {
@@ -160,7 +163,7 @@ namespace Amazon.QLDB.Driver.Tests
                         Values = new List<ValueHolder>()
                     }
                 }).Callback(() => executeCount++);
-            mockSession.Setup(x => x.CommitTransaction(It.IsAny<string>(), It.IsAny<MemoryStream>()))
+            mockSession.Setup(x => x.CommitTransaction(It.IsAny<string>(), It.IsAny<MemoryStream>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new CommitTransactionResult
                 {
                     CommitDigest = new MemoryStream(digest)
@@ -184,14 +187,15 @@ namespace Amazon.QLDB.Driver.Tests
         public async Task Execute_ThrowException_ThrowExpectedException(Exception exception,
             Type expectedExceptionType, Type innerExceptionType, Times sessionEndCalledTimes, Times abortTransactionCalledTimes)
         {
-            mockSession.Setup(x => x.StartTransaction()).ReturnsAsync(new StartTransactionResult
+            mockSession.Setup(x => x.StartTransaction(It.IsAny<CancellationToken>())).ReturnsAsync(new StartTransactionResult
             {
                 TransactionId = "testTransactionIdddddd"
             });
             mockSession.Setup(x => x.ExecuteStatement(
                 It.IsAny<string>(),
                 It.IsAny<string>(),
-                It.IsAny<List<IIonValue>>()))
+                It.IsAny<List<IIonValue>>(),
+                It.IsAny<CancellationToken>()))
                 .Throws(exception);
 
             try
@@ -206,8 +210,8 @@ namespace Amazon.QLDB.Driver.Tests
                 {
                     Assert.AreEqual(innerExceptionType, e.InnerException.GetType());
                 }
-                mockSession.Verify(s => s.End(), sessionEndCalledTimes);
-                mockSession.Verify(s => s.AbortTransaction(), abortTransactionCalledTimes);
+                mockSession.Verify(s => s.End(It.IsAny<CancellationToken>()), sessionEndCalledTimes);
+                mockSession.Verify(s => s.AbortTransaction(It.IsAny<CancellationToken>()), abortTransactionCalledTimes);
                 return;
             }
             Assert.Fail();
@@ -216,27 +220,27 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public async Task Execute_ThrowBadRequestExceptionOnStartTransaction_ThrowTransactionOpenedException()
         {
-            mockSession.Setup(x => x.StartTransaction()).ThrowsAsync(new BadRequestException("bad request"));
+            mockSession.Setup(x => x.StartTransaction(It.IsAny<CancellationToken>())).ThrowsAsync(new BadRequestException("bad request"));
 
             await Assert.ThrowsExceptionAsync<TransactionAlreadyOpenException>(
                 async () => await qldbSession.Execute(
                     async (TransactionExecutor txn) => { await txn.Execute("testStatement"); return true; }));
 
-            mockSession.Verify(s => s.AbortTransaction(), Times.Once);
+            mockSession.Verify(s => s.AbortTransaction(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [TestMethod]
         public async Task Execute_ThrowAmazonServiceExceptionOnAbort_ShouldNotThrowAmazonServiceException()
         {
-            mockSession.Setup(x => x.StartTransaction()).ThrowsAsync(new BadRequestException("bad request"));
-            mockSession.Setup(x => x.AbortTransaction()).ThrowsAsync(new AmazonServiceException());
+            mockSession.Setup(x => x.StartTransaction(It.IsAny<CancellationToken>())).ThrowsAsync(new BadRequestException("bad request"));
+            mockSession.Setup(x => x.AbortTransaction(It.IsAny<CancellationToken>())).ThrowsAsync(new AmazonServiceException());
 
             await Assert.ThrowsExceptionAsync<TransactionAlreadyOpenException>(
                 async () => await qldbSession.Execute(
                     async (TransactionExecutor txn) => { await txn.Execute("testStatement"); return true; }));
 
-            mockSession.Verify(s => s.End(), Times.Never);
-            mockSession.Verify(s => s.AbortTransaction(), Times.Once);
+            mockSession.Verify(s => s.End(It.IsAny<CancellationToken>()), Times.Never);
+            mockSession.Verify(s => s.AbortTransaction(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         public static IEnumerable<object[]> CreateExceptionTestData()
@@ -272,7 +276,7 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public async Task TestStartTransactionReturnsANewTransaction()
         {
-            mockSession.Setup(x => x.StartTransaction()).ReturnsAsync(new StartTransactionResult
+            mockSession.Setup(x => x.StartTransaction(It.IsAny<CancellationToken>())).ReturnsAsync(new StartTransactionResult
             {
                 TransactionId = "testTransactionIdddddd"
             });
@@ -281,14 +285,14 @@ namespace Amazon.QLDB.Driver.Tests
             Assert.IsNotNull(transaction);
 
             qldbSession.Dispose();
-            await Assert.ThrowsExceptionAsync<QldbDriverException>(qldbSession.StartTransaction);
+            await Assert.ThrowsExceptionAsync<QldbDriverException>(async () => await qldbSession.StartTransaction());
         }
 
 
         [TestMethod]
         public async Task Renew_RenewDisposedSession_ShouldNotThrow()
         {
-            mockSession.Setup(x => x.StartTransaction()).ReturnsAsync(new StartTransactionResult
+            mockSession.Setup(x => x.StartTransaction(It.IsAny<CancellationToken>())).ReturnsAsync(new StartTransactionResult
             {
                 TransactionId = "testTransactionIdddddd"
             });
@@ -297,7 +301,7 @@ namespace Amazon.QLDB.Driver.Tests
             Assert.IsNotNull(transaction);
 
             qldbSession.Dispose();
-            await Assert.ThrowsExceptionAsync<QldbDriverException>(qldbSession.StartTransaction);
+            await Assert.ThrowsExceptionAsync<QldbDriverException>(async () => await qldbSession.StartTransaction());
 
             qldbSession.Renew();
             await qldbSession.StartTransaction();

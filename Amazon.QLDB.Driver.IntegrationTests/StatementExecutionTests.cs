@@ -22,6 +22,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
     using System;
     using System.Collections.Generic;
     using System.Text;
+    using System.Threading;
     using System.Threading.Tasks;
 
     [TestClass]
@@ -36,7 +37,8 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         public static async Task SetUp(TestContext context)
         {
             // Get AWS configuration properties from .runsettings file.
-            string region = context.Properties["region"].ToString();
+            // string region = context.Properties["region"].ToString();
+            var region = "eu-west-1";
 
             amazonQldbSessionConfig = IntegrationTestBase.CreateAmazonQLDBSessionConfig(region);
             integrationTestBase = new IntegrationTestBase(Constants.LedgerName, region);
@@ -150,6 +152,21 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             }
 
             Assert.AreEqual(1, count);
+        }
+
+        [TestMethod]
+        public async Task Execute_ListTables_IsCancelled()
+        {
+            // Given
+            var cts = new CancellationTokenSource();
+            var cancellationToken = cts.Token;
+            cts.Cancel();
+
+            // When.
+            Func<Task> act = () => qldbDriver.ListTableNames(cancellationToken);
+
+            // Then.
+            await Assert.ThrowsExceptionAsync<TaskCanceledException>(act);
         }
 
         [TestMethod]

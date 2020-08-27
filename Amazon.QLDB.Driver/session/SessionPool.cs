@@ -27,7 +27,7 @@ namespace Amazon.QLDB.Driver
         private const int DefaultTimeoutInMs = 1;
         private readonly BlockingCollection<QldbSession> sessionPool;
         private readonly SemaphoreSlim poolPermits;
-        private readonly Func<Task<Session>> sessionCreator;
+        private readonly Func<CancellationToken, Task<Session>> sessionCreator;
         private readonly IRetryHandler retryHandler;
         private readonly ILogger logger;
         private bool isClosed = false;
@@ -35,11 +35,11 @@ namespace Amazon.QLDB.Driver
         /// <summary>
         /// Initializes a new instance of the <see cref="SessionPool"/> class.
         /// </summary>
-        /// <param name="sessionCreator">The method to create a new underlying QLDB session.</param>
+        /// <param name="sessionCreator">The method to create a new underlying QLDB session. The operation can be cancelled.</param>
         /// <param name="retryHandler">Handling the retry logic of the execute call.</param>
         /// <param name="maxConcurrentTransactions">The maximum number of sessions that can be created from the pool at any one time.</param>
         /// <param name="logger">Logger to be used by this.</param>
-        public SessionPool(Func<Task<Session>> sessionCreator, IRetryHandler retryHandler, int maxConcurrentTransactions, ILogger logger)
+        public SessionPool(Func<CancellationToken, Task<Session>> sessionCreator, IRetryHandler retryHandler, int maxConcurrentTransactions, ILogger logger)
         {
             this.sessionPool = new BlockingCollection<QldbSession>(maxConcurrentTransactions);
             this.poolPermits = new SemaphoreSlim(maxConcurrentTransactions, maxConcurrentTransactions);
@@ -49,28 +49,46 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="SessionPool"/> class.
+        /// </summary>
+        /// <param name="sessionCreator">The method to create a new underlying QLDB session.</param>
+        /// <param name="retryHandler">Handling the retry logic of the execute call.</param>
+        /// <param name="maxConcurrentTransactions">The maximum number of sessions that can be created from the pool at any one time.</param>
+        /// <param name="logger">Logger to be used by this.</param>
+        public SessionPool(Func<Task<Session>> sessionCreator, IRetryHandler retryHandler, int maxConcurrentTransactions, ILogger logger)
+            : this(ct => sessionCreator(), retryHandler, maxConcurrentTransactions, logger)
+        {
+        }
+
+        /// <summary>
         /// Execute a function in session pool.
         /// </summary>
         /// <typeparam name="T">The return type of the function.</typeparam>
-        /// <param name="func">The function to be executed in the session pool.</param>
+        ///
+        /// <param name="func">The function to be executed in the session pool. The operation can be cancelled.</param>
         /// <param name="retryPolicy">The policy on retry.</param>
-        /// <param name="retryAction">The customer retry action.</param>
+        /// <param name="retryAction">The customer retry action. The operation can be cancelled.</param>
+        /// <param name="cancellationToken">
+        ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
+        /// </param>
+        ///
         /// <returns>The result from the function.</returns>
-        public async Task<T> Execute<T>(Func<TransactionExecutor, Task<T>> func, RetryPolicy retryPolicy, Func<int, Task> retryAction)
+        public async Task<T> Execute<T>(Func<TransactionExecutor, CancellationToken, Task<T>> func, RetryPolicy retryPolicy, Func<int, CancellationToken, Task> retryAction, CancellationToken cancellationToken = default)
         {
             QldbSession session = null;
             try
             {
-                session = await this.GetSession();
+                session = await this.GetSession(cancellationToken);
                 return await this.retryHandler.RetriableExecute(
-                    () => session.Execute(func),
+                    ct => session.Execute(func, ct),
                     retryPolicy,
-                    async () =>
+                    async ct =>
                     {
                         session.Dispose();
-                        session = await this.GetSession();
+                        session = await this.GetSession(ct);
                     },
-                    retryAction);
+                    retryAction, 
+                    cancellationToken);
             }
             finally
             {
@@ -79,6 +97,24 @@ namespace Amazon.QLDB.Driver
                     session.Dispose();
                 }
             }
+        }
+
+        /// <summary>
+        /// Execute a function in session pool.
+        /// </summary>
+        /// <typeparam name="T">The return type of the function.</typeparam>
+        ///
+        /// <param name="func">The function to be executed in the session pool.</param>
+        /// <param name="retryPolicy">The policy on retry.</param>
+        /// <param name="retryAction">The customer retry action.</param>
+        /// <param name="cancellationToken">
+        ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
+        /// </param>
+        ///
+        /// <returns>The result from the function.</returns>
+        public Task<T> Execute<T>(Func<TransactionExecutor, Task<T>> func, RetryPolicy retryPolicy, Func<int, Task> retryAction, CancellationToken cancellationToken = default)
+        {
+            return this.Execute((trx, ct) => func(trx), retryPolicy, (arg, ct) => retryAction(arg), cancellationToken);
         }
 
         /// <summary>
@@ -99,10 +135,15 @@ namespace Amazon.QLDB.Driver
         /// <para>This will attempt to retrieve an active existing session, or it will start a new session with QLDB unless the
         /// number of allocated sessions has exceeded the pool size limit.</para>
         /// </summary>
+        ///
+        /// <param name="cancellationToken">
+        ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
+        /// </param>
+        /// 
         /// <returns>The <see cref="IQldbSession"/> object.</returns>
         ///
         /// <exception cref="QldbDriverException">Thrown when this driver has been disposed or timeout.</exception>
-        internal async Task<QldbSession> GetSession()
+        internal async Task<QldbSession> GetSession(CancellationToken cancellationToken = default)
         {
             if (this.isClosed)
             {
@@ -115,15 +156,15 @@ namespace Amazon.QLDB.Driver
                 this.sessionPool.Count,
                 this.sessionPool.BoundedCapacity - this.poolPermits.CurrentCount);
 
-            if (await this.poolPermits.WaitAsync(DefaultTimeoutInMs))
+            if (await this.poolPermits.WaitAsync(DefaultTimeoutInMs, cancellationToken))
             {
                 try
                 {
-                    var session = this.sessionPool.Count > 0 ? this.sessionPool.Take() : null;
+                    var session = this.sessionPool.Count > 0 ? this.sessionPool.Take(cancellationToken) : null;
 
                     if (session == null)
                     {
-                        session = await this.StartNewSession();
+                        session = await this.StartNewSession(cancellationToken);
                         this.logger.LogDebug("Creating new pooled session with ID {}.", session.GetSessionId());
                     }
 
@@ -132,7 +173,7 @@ namespace Amazon.QLDB.Driver
                 catch (Exception e)
                 {
                     this.poolPermits.Release();
-                    throw e;
+                    throw;
                 }
             }
             else
@@ -153,9 +194,9 @@ namespace Amazon.QLDB.Driver
             this.logger.LogDebug("Session returned to pool; pool size is now {}.", this.sessionPool.Count);
         }
 
-        private async Task<QldbSession> StartNewSession()
+        private async Task<QldbSession> StartNewSession(CancellationToken cancellationToken = default)
         {
-            return new QldbSession(await this.sessionCreator(), this.ReleaseSession, this.logger);
+            return new QldbSession(await this.sessionCreator(cancellationToken), this.ReleaseSession, this.logger);
         }
     }
 }
