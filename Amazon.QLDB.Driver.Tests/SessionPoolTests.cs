@@ -40,7 +40,7 @@ namespace Amazon.QLDB.Driver.Tests
             var mockSession = new Mock<Session>(null, null, null, null, null).Object;
             mockCreator.Setup(x => x()).ReturnsAsync(mockSession);
 
-            var pool = new SessionPool(mockCreator.Object, QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 1, NullLogger.Instance);
+            var pool = new SessionPool(mockCreator.Object, QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 10), 1, NullLogger.Instance);
             var returnedSession = pool.GetSession();
 
             Assert.IsNotNull(returnedSession);
@@ -54,7 +54,7 @@ namespace Amazon.QLDB.Driver.Tests
             var session = new Session(null, null, null, "testSessionId", null);
             mockCreator.Setup(x => x()).ReturnsAsync(session);
 
-            var pool = new SessionPool(mockCreator.Object, QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 1, NullLogger.Instance);
+            var pool = new SessionPool(mockCreator.Object, QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 10), 1, NullLogger.Instance);
             var returnedSession = await pool.GetSession();
 
             Assert.AreEqual(session.SessionId, returnedSession.GetSessionId());
@@ -67,7 +67,7 @@ namespace Amazon.QLDB.Driver.Tests
             var mockSession = new Mock<Session>(null, null, null, null, null).Object;
             mockCreator.Setup(x => x()).ReturnsAsync(mockSession);
 
-            var pool = new SessionPool(mockCreator.Object, QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 1, NullLogger.Instance);
+            var pool = new SessionPool(mockCreator.Object, QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 10), 1, NullLogger.Instance);
             var returnedSession = pool.GetSession();
             await Assert.ThrowsExceptionAsync<QldbDriverException>(() => pool.GetSession());
 
@@ -86,7 +86,7 @@ namespace Amazon.QLDB.Driver.Tests
                 TransactionId = "testTransactionIdddddd"
             });
 
-            var pool = new SessionPool(mockCreator.Object, QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 1, NullLogger.Instance);
+            var pool = new SessionPool(mockCreator.Object, QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 10), 1, NullLogger.Instance);
             var returnedSession = await pool.GetSession();
             returnedSession.Dispose();
             var nextSession = await pool.GetSession();
@@ -103,7 +103,7 @@ namespace Amazon.QLDB.Driver.Tests
             var exception = new AmazonServiceException("test");
             mockCreator.Setup(x => x()).ThrowsAsync(exception);
 
-            var pool = new SessionPool(mockCreator.Object, QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 1, NullLogger.Instance);
+            var pool = new SessionPool(mockCreator.Object, QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 10), 1, NullLogger.Instance);
 
             await Assert.ThrowsExceptionAsync<AmazonServiceException>(() => pool.GetSession());
         }
@@ -115,7 +115,7 @@ namespace Amazon.QLDB.Driver.Tests
             var mockSession = new Mock<Session>(null, null, null, null, null);
             mockCreator.Setup(x => x()).ReturnsAsync(mockSession.Object);
 
-            var pool = new SessionPool(mockCreator.Object, QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 1, NullLogger.Instance);
+            var pool = new SessionPool(mockCreator.Object, QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 10), 1, NullLogger.Instance);
 
             var returnedSession = await pool.GetSession();
 
@@ -154,7 +154,7 @@ namespace Amazon.QLDB.Driver.Tests
             mockFunction.Setup(f => f.Invoke(It.IsAny<TransactionExecutor>())).ReturnsAsync(1);
             var mockRetry = new Mock<Action<int>>();
 
-            var pool = new SessionPool(mockCreator.Object, QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 1, NullLogger.Instance);
+            var pool = new SessionPool(mockCreator.Object, QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 10), 1, NullLogger.Instance);
 
             await pool.Execute(mockFunction.Object, Driver.RetryPolicy.Builder().Build(), retry.Object);
 
@@ -196,7 +196,7 @@ namespace Amazon.QLDB.Driver.Tests
                 .ReturnsAsync(1);
             var mockRetry = new Mock<Action<int>>();
 
-            var pool = new SessionPool(mockCreator.Object, QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 1, NullLogger.Instance);
+            var pool = new SessionPool(mockCreator.Object, QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 10), 1, NullLogger.Instance);
 
             await pool.Execute(mockFunction.Object, Driver.RetryPolicy.Builder().Build(), retry.Object);
 
@@ -239,12 +239,12 @@ namespace Amazon.QLDB.Driver.Tests
                 .ThrowsAsync(new OccConflictException("occ"));
             var mockRetry = new Mock<Action<int>>();
 
-            var pool = new SessionPool(mockCreator.Object, QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 1, NullLogger.Instance);
+            var pool = new SessionPool(mockCreator.Object, QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 10), 1, NullLogger.Instance);
 
             await Assert.ThrowsExceptionAsync<OccConflictException>(() => pool.Execute(mockFunction.Object, Driver.RetryPolicy.Builder().Build(), retry.Object));
 
             mockCreator.Verify(x => x(), Times.Once);
-            retry.Verify(r => r.Invoke(It.IsAny<int>()), Times.Exactly(5));
+            retry.Verify(r => r.Invoke(It.IsAny<int>()), Times.Exactly(4));
         }
 
         [TestMethod]
@@ -284,7 +284,7 @@ namespace Amazon.QLDB.Driver.Tests
                 .ReturnsAsync(1);
             var mockRetry = new Mock<Action<int>>();
 
-            var pool = new SessionPool(mockCreator.Object, QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 1, NullLogger.Instance);
+            var pool = new SessionPool(mockCreator.Object, QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 10), 1, NullLogger.Instance);
 
             await pool.Execute(mockFunction.Object, Driver.RetryPolicy.Builder().Build(), retry.Object);
 
@@ -301,7 +301,7 @@ namespace Amazon.QLDB.Driver.Tests
             var mockSession2 = new Mock<Session>(null, null, null, null, null);
             mockCreator.SetupSequence(x => x()).ReturnsAsync(mockSession1.Object).ReturnsAsync(mockSession2.Object);
 
-            var pool = new SessionPool(mockCreator.Object, QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 2, NullLogger.Instance);
+            var pool = new SessionPool(mockCreator.Object, QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 10), 2, NullLogger.Instance);
 
             var session1 = await pool.GetSession();
             var session2 = await pool.GetSession();

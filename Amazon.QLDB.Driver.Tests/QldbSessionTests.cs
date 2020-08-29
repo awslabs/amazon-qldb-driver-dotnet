@@ -69,18 +69,6 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public async Task TestStartTransactionGetsNewTransactionOrThrowsWhenDisposed()
-        {
-            var mockTransaction = new Mock<StartTransactionResult>();
-            mockSession.Setup(x => x.StartTransaction(It.IsAny<CancellationToken>())).ReturnsAsync(mockTransaction.Object);
-
-            Assert.IsNotNull(await qldbSession.StartTransaction());
-
-            qldbSession.Dispose();
-            await Assert.ThrowsExceptionAsync<QldbDriverException>(async () => await qldbSession.StartTransaction());
-        }
-
-        [TestMethod]
         public void TestQldbSessionConstrcutorReturnsValidObject()
         {
             Assert.IsNotNull(qldbSession);
@@ -185,7 +173,8 @@ namespace Amazon.QLDB.Driver.Tests
         [DataTestMethod]
         [DynamicData(nameof(CreateExceptionTestData), DynamicDataSourceType.Method)]
         public async Task Execute_ThrowException_ThrowExpectedException(Exception exception,
-            Type expectedExceptionType, Type innerExceptionType, Times sessionEndCalledTimes, Times abortTransactionCalledTimes)
+            Type expectedExceptionType, Type innerExceptionType,
+            Times sessionEndCalledTimes, Times abortTransactionCalledTimes)
         {
             mockSession.Setup(x => x.StartTransaction(It.IsAny<CancellationToken>())).ReturnsAsync(new StartTransactionResult
             {
@@ -266,9 +255,12 @@ namespace Amazon.QLDB.Driver.Tests
                     Times.Once(), Times.Never()},
                 new object[] { new TransactionAlreadyOpenException(string.Empty, new BadRequestException("Bad request")),
                     typeof(TransactionAlreadyOpenException), typeof(BadRequestException),
-                    Times.Never(), Times.Never()},
+                    Times.Never(), Times.Once()},
                 new object[] { new TransactionAbortedException("testTransactionIdddddd"),
                     typeof(TransactionAbortedException), null,
+                    Times.Never(), Times.Once()},
+                new object[] { new Exception("Customer Exception"),
+                    typeof(Exception), null,
                     Times.Never(), Times.Once()}
             };
         }

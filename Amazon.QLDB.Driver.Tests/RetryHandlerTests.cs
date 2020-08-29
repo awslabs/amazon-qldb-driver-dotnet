@@ -15,7 +15,7 @@
         [TestMethod]
         public void DoesNeedRecover_CheckIfNeedRecover_ShouldReplyCorrectValue()
         {
-            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance);
+            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 10);
 
             Assert.IsTrue(handler.IsRetriable(new OccConflictException("occ")));
             Assert.IsTrue(handler.IsRetriable(new RetriableException("testTransactionIdddddd", new Exception())));
@@ -33,7 +33,7 @@
         [TestMethod]
         public async Task RetriableExecute_NoRetry_SuccessfulReturn()
         {
-            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance);
+            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 10);
 
             var func = new Mock<Func<Task<int>>>();
             var recover = new Mock<Func<Task>>();
@@ -51,7 +51,7 @@
         [TestMethod]
         public async Task RetriableExecute_NotInListException_ThrowIt()
         {
-            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance);
+            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 10);
 
             var func = new Mock<Func<Task<int>>>();
             var recover = new Mock<Func<Task>>();
@@ -69,9 +69,30 @@
         }
 
         [TestMethod]
+        public async Task RetriableExecute_TransactionExpiryCase_ThrowISE()
+        {
+            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 10);
+
+            var func = new Mock<Func<Task<int>>>();
+            var recover = new Mock<Func<Task>>();
+            var retry = new Mock<Func<int, Task>>();
+
+            var exception = new InvalidSessionException("Transaction 324weqr2314 has expired");
+            func.Setup(f => f.Invoke()).ThrowsAsync(exception);
+
+            Assert.AreEqual(exception,
+                await Assert.ThrowsExceptionAsync<InvalidSessionException>(() => 
+                    handler.RetriableExecute<int>(func.Object, Driver.RetryPolicy.Builder().Build(), recover.Object, retry.Object)));
+
+            func.Verify(f => f.Invoke(), Times.Once);
+            recover.Verify(r => r.Invoke(), Times.Never);
+            retry.Verify(r => r.Invoke(It.IsAny<int>()), Times.Never);
+        }
+
+        [TestMethod]
         public async Task RetriableExecute_RetryWithoutRecoverWithinLimit_Succeed()
         {
-            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance);
+            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 10);
 
             var func = new Mock<Func<Task<int>>>();
             var recover = new Mock<Func<Task>>();
@@ -94,9 +115,9 @@
         }
 
         [TestMethod]
-        public async Task RetriableExecute_RetryWithRecoverRegardlessLimit_Succeed()
+        public async Task RetriableExecute_RetryWithRecoverWithinItsLimit_Succeed()
         {
-            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance);
+            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 7);
 
             var func = new Mock<Func<Task<int>>>();
             var recover = new Mock<Func<Task>>();
@@ -124,9 +145,36 @@
         }
 
         [TestMethod]
-        public async Task RetriableExecute_BothLimitedAndUnlimitedRetryExceptions_UnlimitedRetriesShouldNotAffectRetryLimitCount()
+        public async Task RetriableExecute_RetryWithRecoverExceedItsLimit_Succeed()
         {
-            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance);
+            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 7);
+
+            var func = new Mock<Func<Task<int>>>();
+            var recover = new Mock<Func<Task>>();
+            var retry = new Mock<Func<int, Task>>();
+
+            var invalid = new InvalidSessionException("invalid session");
+
+            func.SetupSequence(f => f.Invoke())
+                .ThrowsAsync(invalid)
+                .ThrowsAsync(invalid)
+                .ThrowsAsync(invalid)
+                .ThrowsAsync(invalid)
+                .ThrowsAsync(invalid)
+                .ThrowsAsync(invalid)
+                .ThrowsAsync(invalid)
+                .ThrowsAsync(invalid);
+
+            Assert.AreEqual(invalid,
+                await Assert.ThrowsExceptionAsync<InvalidSessionException>(
+                    () => handler.RetriableExecute(func.Object,
+                    Driver.RetryPolicy.Builder().WithMaxRetries(4).Build(), recover.Object, retry.Object)));
+        }
+
+        [TestMethod]
+        public async Task RetriableExecute_BothLimitedAndRecoverRetryExceptions_SucceedSinceBothAreJustWithinLimit()
+        {
+            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 3);
 
             var func = new Mock<Func<Task<int>>>();
             var recover = new Mock<Func<Task>>();
@@ -135,11 +183,13 @@
             var occ = new OccConflictException("qldb");
             var invalid = new InvalidSessionException("invalid session");
             func.SetupSequence(f => f.Invoke())
-                .ThrowsAsync(invalid)
                 .ThrowsAsync(occ)
                 .ThrowsAsync(invalid)
                 .ThrowsAsync(occ)
                 .ThrowsAsync(invalid)
+                .ThrowsAsync(occ)
+                .ThrowsAsync(invalid)
+                .ThrowsAsync(occ)
                 .ReturnsAsync(1);
 
             Assert.AreEqual(1, await handler.RetriableExecute<int>(func.Object,
@@ -147,15 +197,15 @@
                 recover.Object,
                 retry.Object));
 
-            func.Verify(f => f.Invoke(), Times.Exactly(6));
+            func.Verify(f => f.Invoke(), Times.Exactly(8));
             recover.Verify(r => r.Invoke(), Times.Exactly(3));
-            retry.Verify(r => r.Invoke(It.IsAny<int>()), Times.Exactly(5));
+            retry.Verify(r => r.Invoke(It.IsAny<int>()), Times.Exactly(7));
         }
 
         [TestMethod]
         public async Task RetriableExecute_RetryMoreThanLimit_ThrowTheLastException()
         {
-            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance);
+            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 10);
 
             var func = new Mock<Func<Task<int>>>();
             var recover = new Mock<Func<Task>>();
@@ -182,7 +232,7 @@
         [TestMethod]
         public async Task RetriableExecute_CustomizedRetryPolicy_ThrowTheLastException()
         {
-            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance);
+            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance, 10);
 
             var func = new Mock<Func<Task<int>>>();
             var recover = new Mock<Func<Task>>();
@@ -222,6 +272,14 @@
 
             Assert.AreEqual(retries, context.RetriesAttempted);
             Assert.AreEqual(exception, context.LastException);
+        }
+
+        [TestMethod]
+        public void IsTransactionExpiry_Match_ShouldMatchTransactionExpireCases()
+        {
+            Assert.IsTrue(RetryHandler.IsTransactionExpiry(new InvalidSessionException("Transaction 324weqr2314 has expired")));
+
+            Assert.IsFalse(RetryHandler.IsTransactionExpiry(new InvalidSessionException("Transaction 324weqr2314 has not expired")));
         }
     }
 }

@@ -15,8 +15,10 @@ namespace Amazon.QLDB.Driver
 {
     using System;
     using System.Collections.Generic;
+    using System.Text.RegularExpressions;
     using System.Threading;
     using System.Threading.Tasks;
+    using Amazon.QLDBSession.Model;
     using Microsoft.Extensions.Logging;
 
     /// <summary>
@@ -30,17 +32,20 @@ namespace Amazon.QLDB.Driver
         private readonly IEnumerable<Type> retryExceptions;
         private readonly IEnumerable<Type> exceptionsNeedRecover;
         private readonly ILogger logger;
+        private readonly int recoverRetryLimit;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RetryHandler"/> class.
         /// </summary>
         /// <param name="limitedRetryExceptions">The exceptions that the handler would retry on.</param>
-        /// <param name="unlimitedRetryExceptions">The exceptions that need to call the recover action on retry.</param>
+        /// <param name="recoverRetryExceptions">The exceptions that need to call the recover action on retry.</param>
+        /// <param name="recoverRetryLimit">The limit of retries needing recover action.</param>
         /// <param name="logger">The logger to record retries.</param>
-        public RetryHandler(IEnumerable<Type> limitedRetryExceptions, IEnumerable<Type> unlimitedRetryExceptions, ILogger logger)
+        public RetryHandler(IEnumerable<Type> limitedRetryExceptions, IEnumerable<Type> recoverRetryExceptions, int recoverRetryLimit, ILogger logger)
         {
             this.retryExceptions = limitedRetryExceptions;
-            this.exceptionsNeedRecover = unlimitedRetryExceptions;
+            this.exceptionsNeedRecover = recoverRetryExceptions;
+            this.recoverRetryLimit = recoverRetryLimit;
             this.logger = logger;
         }
 
@@ -48,9 +53,10 @@ namespace Amazon.QLDB.Driver
         public async Task<T> RetriableExecute<T>(Func<CancellationToken, Task<T>> func, RetryPolicy retryPolicy, Func<CancellationToken, Task> recoverAction, Func<int, CancellationToken, Task> retryAction, CancellationToken cancellationToken = default)
         {
             Exception last = null;
-            int retryAttempt = 1;
+            int retryAttempt = 0;
+            int recoverRetryAttempt = 0;
 
-            while (retryAttempt <= retryPolicy.MaxRetries + 1)
+            while (true)
             {
                 try
                 {
@@ -60,29 +66,38 @@ namespace Amazon.QLDB.Driver
                 {
                     var uex = this.UnwrappedTransactionException(ex);
 
-                    this.logger?.LogWarning(uex, "The driver retried on transaction '{}' {} times.", TryGetTransactionId(ex), retryAttempt);
-
-                    if (!this.IsRetriable(uex))
-                    {
-                        throw uex;
-                    }
-
                     last = !(uex is RetriableException) || uex.InnerException == null ? uex : uex.InnerException;
 
-                    if (retryAction != null)
+                    if (FindException(this.retryExceptions, uex) && retryAttempt < retryPolicy.MaxRetries)
                     {
-                        await retryAction(retryAttempt, cancellationToken);
-                    }
+                        this.logger?.LogWarning(uex, "A exception has occurred. Attempting retry {}. Errored Transaction ID: {}.",
+                            ++retryAttempt, TryGetTransactionId(ex));
 
-                    if (this.NeedsRecover(uex))
+                        if (retryAction != null)
+                        {
+                            await retryAction(retryAttempt, cancellationToken);
+                        }
+
+                        var backoffDelay = retryPolicy.BackoffStrategy.CalculateDelay(new RetryPolicyContext(retryAttempt, uex));
+                        await Task.Delay(backoffDelay, cancellationToken);
+                    }
+                    else if (FindException(this.exceptionsNeedRecover, uex)
+                        && recoverRetryAttempt < this.recoverRetryLimit
+                        && !IsTransactionExpiry(uex))
                     {
+                        this.logger?.LogWarning(uex, "A recoverable exception has occurred. Attempting retry {}. Errored Transaction ID: {}.",
+                            ++recoverRetryAttempt, TryGetTransactionId(ex));
+
+                        if (retryAction != null)
+                        {
+                            await retryAction(retryAttempt, cancellationToken);
+                        }
+
                         await recoverAction(cancellationToken);
                     }
                     else
                     {
-                        var backoffDelay = retryPolicy.BackoffStrategy.CalculateDelay(new RetryPolicyContext(retryAttempt, uex));
-                        await Task.Delay(backoffDelay);
-                        retryAttempt++;
+                        throw last;
                     }
                 }
             }
@@ -93,6 +108,12 @@ namespace Amazon.QLDB.Driver
         public Task<T> RetriableExecute<T>(Func<Task<T>> func, RetryPolicy retryPolicy, Func<Task> recoverAction, Func<int, Task> retryAction, CancellationToken cancellationToken = default)
         {
             return this.RetriableExecute(ct => func(), retryPolicy, ct => recoverAction(), (arg, ct) => retryAction(arg), cancellationToken);
+        }
+
+        internal static bool IsTransactionExpiry(Exception ex)
+        {
+            return ex is InvalidSessionException
+                && Regex.Match(ex.Message, @"Transaction\s.*\shas\sexpired").Success;
         }
 
         internal bool IsRetriable(Exception ex)
