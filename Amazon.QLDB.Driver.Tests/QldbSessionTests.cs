@@ -219,11 +219,12 @@ namespace Amazon.QLDB.Driver.Tests
             mockSession.Setup(x => x.StartTransaction()).Throws(new BadRequestException("bad request"));
             mockSession.Setup(x => x.AbortTransaction()).Throws(new AmazonServiceException());
 
-            Assert.ThrowsException<TransactionAlreadyOpenException>(
+            var ex = Assert.ThrowsException<TransactionAlreadyOpenException>(
                 () => qldbSession.Execute(
                     (TransactionExecutor txn) => { txn.Execute("testStatement"); return true; }));
 
-            mockSession.Verify(s => s.End(), Times.Never);
+            Assert.IsFalse(ex.IsSessionAlive);
+            mockSession.Verify(s => s.End(), Times.Once);
             mockSession.Verify(s => s.AbortTransaction(), Times.Once);
         }
 
@@ -237,25 +238,25 @@ namespace Amazon.QLDB.Driver.Tests
                     typeof(RetriableException), null,
                     Times.Never(), Times.Once()},
                 new object[] { new AmazonQLDBSessionException("", 0, "", "", HttpStatusCode.Unauthorized),
-                    typeof(AmazonQLDBSessionException), null,
+                    typeof(QldbTransactionException), null,
                     Times.Never(), Times.Once()},
                 new object[] { new OccConflictException("occ"),
-                    typeof(QldbTransactionException), typeof(OccConflictException),
+                    typeof(RetriableException), typeof(OccConflictException),
                     Times.Never(), Times.Never()},
                 new object[] { new AmazonServiceException(),
-                    typeof(AmazonServiceException), null,
+                    typeof(QldbTransactionException), typeof(AmazonServiceException),
                     Times.Never(), Times.Once()},
                 new object[] { new InvalidSessionException("invalid session"),
-                    typeof(InvalidSessionException), null,
+                    typeof(RetriableException), typeof(InvalidSessionException),
                     Times.Once(), Times.Never()},
-                new object[] { new TransactionAlreadyOpenException(string.Empty, new BadRequestException("Bad request")),
+                new object[] { new TransactionAlreadyOpenException(string.Empty, true, new BadRequestException("Bad request")),
                     typeof(TransactionAlreadyOpenException), typeof(BadRequestException),
-                    Times.Never(), Times.Once()},
-                new object[] { new TransactionAbortedException("testTransactionIdddddd"),
+                    Times.Never(), Times.Never()},
+                new object[] { new TransactionAbortedException("testTransactionIdddddd", true),
                     typeof(TransactionAbortedException), null,
-                    Times.Never(), Times.Once()},
+                    Times.Never(), Times.Never()},
                 new object[] { new Exception("Customer Exception"),
-                    typeof(Exception), null,
+                    typeof(QldbTransactionException), typeof(Exception),
                     Times.Never(), Times.Once()}
             };
         }

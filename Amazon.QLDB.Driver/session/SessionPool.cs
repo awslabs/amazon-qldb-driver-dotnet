@@ -64,11 +64,8 @@ namespace Amazon.QLDB.Driver
                 return this.retryHandler.RetriableExecute(
                     () => session.Execute(func),
                     retryPolicy,
-                    () =>
-                    {
-                        session.Dispose();
-                        session = this.GetSession();
-                    },
+                    () => session = this.StartNewSession(),
+                    () => session = this.GetSession(),
                     retryAction);
             }
             finally

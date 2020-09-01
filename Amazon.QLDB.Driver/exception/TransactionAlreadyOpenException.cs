@@ -19,15 +19,16 @@ namespace Amazon.QLDB.Driver
     /// Exception thrown when an attempt is made to start another transaction on the same session
     /// while the previous transaction was still open.
     /// </summary>
-    public class TransactionAlreadyOpenException : QldbTransactionException
+    public class TransactionAlreadyOpenException : RetriableException
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="TransactionAlreadyOpenException"/> class.
         /// </summary>
         /// <param name="transactionId">The transaction ID.</param>
+        /// <param name="isSessionAlive">Whether the sesion is still a live.</param>
         /// <param name="innerException">The inner exception.</param>
-        public TransactionAlreadyOpenException(string transactionId, Exception innerException)
-            : base(ExceptionMessages.TransactionAlreadyOpened, transactionId, innerException)
+        public TransactionAlreadyOpenException(string transactionId, bool isSessionAlive, Exception innerException)
+            : base(ExceptionMessages.TransactionAlreadyOpened, transactionId, isSessionAlive, innerException)
         {
         }
     }

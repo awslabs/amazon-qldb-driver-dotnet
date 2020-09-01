@@ -146,29 +146,31 @@ namespace Amazon.QLDB.Driver
             }
             catch (InvalidSessionException ise)
             {
+                this.isDisposed = true;
                 this.Destroy();
-                throw ise;
+                throw new RetriableException(transaction.Id, false, ise);
             }
             catch (OccConflictException occ)
             {
-                throw new QldbTransactionException(transaction.Id, occ);
+                throw new RetriableException(transaction.Id, occ);
             }
             catch (AmazonServiceException ase)
             {
-                this.NoThrowAbort(transaction);
-
                 if (ase.StatusCode == HttpStatusCode.InternalServerError ||
                     ase.StatusCode == HttpStatusCode.ServiceUnavailable)
                 {
-                    throw new RetriableException(transaction.Id, ase);
+                    throw new RetriableException(transaction.Id, this.TryAbort(transaction), ase);
                 }
 
-                throw ase;
+                throw new QldbTransactionException(transaction.Id, this.TryAbort(transaction), ase);
+            }
+            catch (QldbTransactionException te)
+            {
+                throw te;
             }
             catch (Exception e)
             {
-                this.NoThrowAbort(transaction);
-                throw e;
+                throw new QldbTransactionException(transaction == null ? null : transaction.Id, this.TryAbort(transaction), e);
             }
         }
 
@@ -188,7 +190,7 @@ namespace Amazon.QLDB.Driver
             }
             catch (BadRequestException e)
             {
-                throw new TransactionAlreadyOpenException(string.Empty, e);
+                throw new TransactionAlreadyOpenException(string.Empty, this.TryAbort(null), e);
             }
         }
 
@@ -203,13 +205,13 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <summary>
-        /// Send an abort which will not throw on failure.
+        /// Try to abort the transaction.
         /// </summary>
         ///
         /// <param name="transaction">The transaction to abort.</param>
-        ///
+        /// <returns>Whether the abort call has succeeded.</returns>
         /// <exception cref="AmazonServiceException">If there is an error communicating with QLDB.</exception>
-        private void NoThrowAbort(ITransaction transaction)
+        private bool TryAbort(ITransaction transaction)
         {
             try
             {
@@ -224,8 +226,12 @@ namespace Amazon.QLDB.Driver
             }
             catch (AmazonServiceException ase)
             {
-                this.logger.LogWarning("Ignored error aborting transaction during execution: {}", ase);
+                this.logger.LogWarning("This session is invalid on ABORT: {}", ase);
+                this.Destroy();
+                return false;
             }
+
+            return true;
         }
 
         /// <summary>
