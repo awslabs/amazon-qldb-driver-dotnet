@@ -92,7 +92,7 @@ namespace Amazon.QLDB.Driver
         public string TransactionId { get; }
 
         /// <summary>
-        /// Gets a value indicating whether whether the session is still alive after this exception.
+        /// Gets a value indicating whether the session is still alive after this exception.
         /// </summary>
         public bool IsSessionAlive { get; }
     }

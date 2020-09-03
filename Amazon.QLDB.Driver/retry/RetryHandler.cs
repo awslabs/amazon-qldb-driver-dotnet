@@ -52,30 +52,30 @@ namespace Amazon.QLDB.Driver
                 }
                 catch (QldbTransactionException ex)
                 {
-                    var uex = ex.InnerException != null ? ex.InnerException : ex;
+                    var iex = ex.InnerException != null ? ex.InnerException : ex;
 
                     if (!(ex is RetriableException))
                     {
-                        throw uex;
+                        throw iex;
                     }
 
-                    last = uex.InnerException == null ? uex : uex.InnerException;
+                    last = iex.InnerException == null ? iex : iex.InnerException;
 
-                    if (retryAttempt < retryPolicy.MaxRetries && !IsTransactionExpiry(uex))
+                    if (retryAttempt < retryPolicy.MaxRetries && !IsTransactionExpiry(iex))
                     {
                         this.logger?.LogWarning(
-                                uex,
+                                iex,
                                 "A recoverable exception has occurred. Attempting retry {}. Errored Transaction ID: {}.",
                                 ++retryAttempt,
                                 TryGetTransactionId(ex));
 
                         retryAction?.Invoke(retryAttempt);
 
-                        Thread.Sleep(retryPolicy.BackoffStrategy.CalculateDelay(new RetryPolicyContext(retryAttempt, uex)));
+                        Thread.Sleep(retryPolicy.BackoffStrategy.CalculateDelay(new RetryPolicyContext(retryAttempt, iex)));
 
                         if (!ex.IsSessionAlive)
                         {
-                            if (uex is InvalidSessionException)
+                            if (iex is InvalidSessionException)
                             {
                                 newSessionAction();
                             }

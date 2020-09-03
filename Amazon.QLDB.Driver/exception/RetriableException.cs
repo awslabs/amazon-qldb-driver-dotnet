@@ -21,7 +21,7 @@ namespace Amazon.QLDB.Driver
     /// the instances of an exception class with certain data values, e.g. HTTP Status code, are allowed
     /// to be retried, so we wrapped them into this exception.
     /// </summary>
-    public class RetriableException : QldbTransactionException
+    internal class RetriableException : QldbTransactionException
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="RetriableException"/> class.
