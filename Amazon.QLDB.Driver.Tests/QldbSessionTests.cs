@@ -211,8 +211,8 @@ namespace Amazon.QLDB.Driver.Tests
                 new object[] { new InvalidSessionException("invalid session"),
                     typeof(RetriableException), typeof(InvalidSessionException),
                     Times.Never()},
-                new object[] { new TransactionAlreadyOpenException(string.Empty, true, new BadRequestException("Bad request")),
-                    typeof(TransactionAlreadyOpenException), typeof(BadRequestException),
+                new object[] { new QldbTransactionException(string.Empty, true, new BadRequestException("Bad request")),
+                    typeof(QldbTransactionException), typeof(BadRequestException),
                     Times.Never()},
                 new object[] { new TransactionAbortedException("testTransactionIdddddd", true),
                     typeof(TransactionAbortedException), null,
@@ -228,7 +228,7 @@ namespace Amazon.QLDB.Driver.Tests
         {
             mockSession.Setup(x => x.StartTransaction()).Throws(new BadRequestException("bad request"));
 
-            var ex = Assert.ThrowsException<TransactionAlreadyOpenException>(
+            var ex = Assert.ThrowsException<QldbTransactionException>(
                 () => qldbSession.Execute(
                     (TransactionExecutor txn) => { txn.Execute("testStatement"); return true; }));
 
@@ -242,7 +242,7 @@ namespace Amazon.QLDB.Driver.Tests
             mockSession.Setup(x => x.StartTransaction()).Throws(new BadRequestException("bad request"));
             mockSession.Setup(x => x.AbortTransaction()).Throws(new AmazonServiceException());
 
-            var ex = Assert.ThrowsException<TransactionAlreadyOpenException>(
+            var ex = Assert.ThrowsException<QldbTransactionException>(
                 () => qldbSession.Execute(
                     (TransactionExecutor txn) => { txn.Execute("testStatement"); return true; }));
 

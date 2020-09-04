@@ -166,7 +166,7 @@ namespace Amazon.QLDB.Driver
             }
             catch (BadRequestException e)
             {
-                throw new TransactionAlreadyOpenException(string.Empty, this.TryAbort(null), e);
+                throw new QldbTransactionException(ExceptionMessages.TransactionAlreadyOpened, string.Empty, this.TryAbort(null), e);
             }
         }
 

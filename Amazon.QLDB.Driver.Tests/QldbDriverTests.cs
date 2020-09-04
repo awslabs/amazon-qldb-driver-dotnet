@@ -387,7 +387,7 @@ namespace Amazon.QLDB.Driver.Tests
         {
             return new List<object[]>() {
                 new object[] { new InvalidSessionException("invalid session") , false },
-                new object[] { new TransactionAlreadyOpenException(string.Empty, false, new Exception()), false },
+                new object[] { new QldbTransactionException(string.Empty, false, new Exception()), false },
                 new object[] { new QldbDriverException("generic"), true }
             };
         }
