@@ -29,7 +29,7 @@ namespace Amazon.QLDB.Driver
         /// <param name="transactionId">The transaction ID.</param>
         /// <param name="innerException">The exception that can be retried.</param>
         public RetriableException(string transactionId, Exception innerException)
-            : base("Qldb retriable exception.", transactionId, innerException)
+            : base("QLDB retriable exception.", transactionId, innerException)
         {
         }
 

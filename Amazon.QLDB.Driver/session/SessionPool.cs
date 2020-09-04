@@ -65,7 +65,8 @@ namespace Amazon.QLDB.Driver
                     () => session.Execute(func),
                     retryPolicy,
                     () => session = this.StartNewSession(),
-                    () => {
+                    () =>
+                    {
                         this.poolPermits.Release();
                         session = this.GetSession();
                     },
