@@ -14,7 +14,6 @@
 namespace Amazon.QLDB.Driver
 {
     using System;
-    using System.Collections.Generic;
     using System.Text.RegularExpressions;
     using System.Threading;
     using Amazon.QLDBSession.Model;
@@ -28,67 +27,68 @@ namespace Amazon.QLDB.Driver
     /// </summary>
     internal class RetryHandler : IRetryHandler
     {
-        private readonly IEnumerable<Type> retryExceptions;
-        private readonly IEnumerable<Type> exceptionsNeedRecover;
         private readonly ILogger logger;
-        private readonly int recoverRetryLimit;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RetryHandler"/> class.
         /// </summary>
-        /// <param name="limitedRetryExceptions">The exceptions that the handler would retry on.</param>
-        /// <param name="recoverRetryExceptions">The exceptions that need to call the recover action on retry.</param>
-        /// <param name="recoverRetryLimit">The limit of retries needing recover action.</param>
         /// <param name="logger">The logger to record retries.</param>
-        public RetryHandler(IEnumerable<Type> limitedRetryExceptions, IEnumerable<Type> recoverRetryExceptions, int recoverRetryLimit, ILogger logger)
+        public RetryHandler(ILogger logger)
         {
-            this.retryExceptions = limitedRetryExceptions;
-            this.exceptionsNeedRecover = recoverRetryExceptions;
-            this.recoverRetryLimit = recoverRetryLimit;
             this.logger = logger;
         }
 
         /// <inheritdoc/>
-        public T RetriableExecute<T>(Func<T> func, RetryPolicy retryPolicy, Action recoverAction, Action<int> retryAction)
+        public T RetriableExecute<T>(Func<T> func, RetryPolicy retryPolicy, Action newSessionAction, Action nextSessionAction, Action<int> retryAction)
         {
             Exception last = null;
             int retryAttempt = 0;
-            int recoverRetryAttempt = 0;
 
             while (true)
             {
                 try
                 {
-                    return func.Invoke();
+                    return func();
                 }
-                catch (Exception ex)
+                catch (QldbTransactionException ex)
                 {
-                    var uex = this.UnwrappedTransactionException(ex);
+                    var iex = ex.InnerException != null ? ex.InnerException : ex;
 
-                    last = !(uex is RetriableException) || uex.InnerException == null ? uex : uex.InnerException;
-
-                    if (FindException(this.retryExceptions, uex) && retryAttempt < retryPolicy.MaxRetries)
+                    if (!(ex is RetriableException))
                     {
-                        this.logger?.LogWarning(uex, "A exception has occurred. Attempting retry {}. Errored Transaction ID: {}.",
-                            ++retryAttempt, TryGetTransactionId(ex));
+                        throw iex;
+                    }
+
+                    last = iex.InnerException == null ? iex : iex.InnerException;
+
+                    if (retryAttempt < retryPolicy.MaxRetries && !IsTransactionExpiry(iex))
+                    {
+                        this.logger?.LogWarning(
+                                iex,
+                                "A recoverable exception has occurred. Attempting retry {}. Errored Transaction ID: {}.",
+                                ++retryAttempt,
+                                TryGetTransactionId(ex));
 
                         retryAction?.Invoke(retryAttempt);
-                        Thread.Sleep(retryPolicy.BackoffStrategy.CalculateDelay(new RetryPolicyContext(retryAttempt, uex)));
-                    }
-                    else if (FindException(this.exceptionsNeedRecover, uex)
-                        && recoverRetryAttempt < this.recoverRetryLimit
-                        && !IsTransactionExpiry(uex))
-                    {
-                        this.logger?.LogWarning(uex, "A recoverable exception has occurred. Attempting retry {}. Errored Transaction ID: {}.",
-                            ++recoverRetryAttempt, TryGetTransactionId(ex));
 
-                        retryAction?.Invoke(retryAttempt);
-                        recoverAction();
+                        Thread.Sleep(retryPolicy.BackoffStrategy.CalculateDelay(new RetryPolicyContext(retryAttempt, iex)));
+
+                        if (!ex.IsSessionAlive)
+                        {
+                            if (iex is InvalidSessionException)
+                            {
+                                newSessionAction();
+                            }
+                            else
+                            {
+                                nextSessionAction();
+                            }
+                        }
+
+                        continue;
                     }
-                    else
-                    {
-                        throw last;
-                    }
+
+                    throw last;
                 }
             }
 
@@ -101,42 +101,9 @@ namespace Amazon.QLDB.Driver
                 && Regex.Match(ex.Message, @"Transaction\s.*\shas\sexpired").Success;
         }
 
-        internal bool IsRetriable(Exception ex)
-        {
-            return FindException(this.retryExceptions, ex) || FindException(this.exceptionsNeedRecover, ex);
-        }
-
-        internal bool NeedsRecover(Exception ex)
-        {
-            return FindException(this.exceptionsNeedRecover, ex);
-        }
-
         private static string TryGetTransactionId(Exception ex)
         {
             return ex is QldbTransactionException exception ? exception.TransactionId : string.Empty;
-        }
-
-        private static bool FindException(IEnumerable<Type> exceptions, Exception ex)
-        {
-            foreach (var i in exceptions)
-            {
-                if (IsSameOrSubclass(i, ex.GetType()))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private static bool IsSameOrSubclass(Type baseClass, Type childClass)
-        {
-            return baseClass == childClass || childClass.IsSubclassOf(baseClass);
-        }
-
-        private Exception UnwrappedTransactionException(Exception ex)
-        {
-            return ex is QldbTransactionException && ex.InnerException != null && this.IsRetriable(ex.InnerException) ? ex.InnerException : ex;
         }
     }
 }

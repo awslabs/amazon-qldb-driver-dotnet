@@ -604,7 +604,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             try
             {
                 // Run three threads updating the same document in parallel to trigger OCC exception.
-                const int numThreads = 10;
+                const int numThreads = 3;
                 var tasks = new List<Task>();
                 for (int i = 0; i < numThreads; i++)
                 {

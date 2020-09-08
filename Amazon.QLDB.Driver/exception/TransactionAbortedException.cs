@@ -13,6 +13,8 @@
 
 namespace Amazon.QLDB.Driver
 {
+    using System;
+
     /// <summary>
     /// Exception type representing the abort of a transaction within a lambda execution block. Signals that the lambda
     /// should cease to execute and the current transaction should be aborted.
@@ -23,8 +25,20 @@ namespace Amazon.QLDB.Driver
         /// Initializes a new instance of the <see cref="TransactionAbortedException"/> class.
         /// </summary>
         /// <param name="transactionId">The transaction ID.</param>
-        public TransactionAbortedException(string transactionId)
-            : base(transactionId)
+        /// <param name="isSessionAlive">Whether the session is alive.</param>
+        public TransactionAbortedException(string transactionId, bool isSessionAlive)
+            : base(transactionId, isSessionAlive)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TransactionAbortedException"/> class.
+        /// </summary>
+        /// <param name="transactionId">The transaction ID.</param>
+        /// <param name="isSessionAlive">Whether the session is alive.</param>
+        /// <param name="innerException">The inner exception.</param>
+        public TransactionAbortedException(string transactionId, bool isSessionAlive, Exception innerException)
+            : base(transactionId, isSessionAlive, innerException)
         {
         }
     }
