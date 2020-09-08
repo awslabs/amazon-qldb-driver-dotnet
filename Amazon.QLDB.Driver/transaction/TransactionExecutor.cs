@@ -40,9 +40,20 @@ namespace Amazon.QLDB.Driver
         /// <summary>
         /// Abort the transaction and roll back any changes.
         /// </summary>
-        public void Abort()
+        ///
+        /// <param name="cancellationToken">Propagates notification that operations should be canceled.</param>
+        ///
+        public async Task Abort(CancellationToken cancellationToken = default)
         {
-            throw new TransactionAbortedException(this.transaction.Id);
+            try
+            {
+                await this.transaction.Abort(cancellationToken);
+                throw new TransactionAbortedException(this.transaction.Id, true);
+            }
+            catch (AmazonServiceException ase)
+            {
+                throw new TransactionAbortedException(this.transaction.Id, false, ase);
+            }
         }
 
         /// <summary>

@@ -37,7 +37,8 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         public static async Task SetUp(TestContext context)
         {
             // Get AWS configuration properties from .runsettings file.
-            string region = context.Properties["region"].ToString();
+            //string region = context.Properties["region"].ToString();
+            var region = "eu-west-1";
 
             amazonQldbSessionConfig = IntegrationTestBase.CreateAmazonQLDBSessionConfig(region);
             integrationTestBase = new IntegrationTestBase(Constants.LedgerName, region);
@@ -568,8 +569,8 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             try
             {
-                // Run several threads updating the same document in parallel to trigger OCC exception.
-                const int numThreads = 10;
+                // Run three threads updating the same document in parallel to trigger OCC exception.
+                const int numThreads = 3;
                 var tasks = new List<Task>();
                 for (int i = 0; i < numThreads; i++)
                 {

@@ -46,70 +46,51 @@ namespace Amazon.QLDB.Driver
     /// </list>
     /// </para>
     /// </summary>
-    internal class QldbSession : IDisposable
+    internal class QldbSession
     {
         private readonly ILogger logger;
-        private readonly Action<QldbSession> disposeDelegate;
+        private readonly Action<QldbSession> releaseSession;
         private Session session;
-        private bool isClosed = false;
-        private bool isDisposed = false;
+        private bool isAlive;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="QldbSession"/> class.
         /// </summary>
         ///
         /// <param name="session">The session object representing a communication channel with QLDB.</param>
-        /// <param name="disposeDelegate">The delegate method to invoke upon disposal of this.</param>
+        /// <param name="releaseSession">The delegate method to release the session.</param>
         /// <param name="logger">The logger to be used by this.</param>
-        internal QldbSession(Session session, Action<QldbSession> disposeDelegate, ILogger logger)
+        internal QldbSession(Session session, Action<QldbSession> releaseSession, ILogger logger)
         {
             this.session = session;
-            this.disposeDelegate = disposeDelegate;
+            this.releaseSession = releaseSession;
             this.logger = logger;
+            this.isAlive = true;
+        }
+
+        public bool IsAlive()
+        {
+            return this.isAlive;
         }
 
         /// <summary>
-        /// Close the internal session object and mark the session closed.
+        /// Close the internal session object.
         /// </summary>
         ///
         /// <param name="cancellationToken">
         ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
         /// </param>
-        public async Task Destroy(CancellationToken cancellationToken = default)
+        public async Task Close(CancellationToken cancellationToken = default)
         {
-            if (!this.isClosed)
-            {
-                this.isClosed = true;
-                if (!this.isDisposed)
-                {
-                    this.isDisposed = true;
-                    this.disposeDelegate(null);
-                }
-
-                await this.session.End(cancellationToken);
-            }
+            await this.session.End(cancellationToken);
         }
 
         /// <summary>
-        /// End this session.
+        /// Release the session which still can be used by another transaction.
         /// </summary>
-        public void Dispose()
+        public void Release()
         {
-            if (!this.isDisposed && !this.isClosed)
-            {
-                this.isDisposed = true;
-                this.disposeDelegate(this);
-            }
-        }
-
-        /// <summary>
-        /// Renew the session and then reuse it.
-        /// </summary>
-        /// <returns>The renewed session.</returns>
-        public QldbSession Renew()
-        {
-            this.isDisposed = false;
-            return this;
+            this.releaseSession(this);
         }
 
         /// <summary>
@@ -131,7 +112,6 @@ namespace Amazon.QLDB.Driver
         /// </returns>
         ///
         /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
-        /// <exception cref="TransactionAlreadyOpenException">Thrown if the transaction has already been opened.</exception>
         /// <exception cref="QldbDriverException">Thrown when called on a disposed instance.</exception>
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
         public Task<T> Execute<T>(Func<TransactionExecutor, Task<T>> func, CancellationToken cancellationToken = default)
@@ -158,13 +138,11 @@ namespace Amazon.QLDB.Driver
         /// </returns>
         ///
         /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
-        /// <exception cref="TransactionAlreadyOpenException">Thrown if the transaction has already been opened.</exception>
         /// <exception cref="QldbDriverException">Thrown when called on a disposed instance.</exception>
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
         public async Task<T> Execute<T>(Func<TransactionExecutor, CancellationToken, Task<T>> func, CancellationToken cancellationToken = default)
         {
             ValidationUtils.AssertNotNull(func, "func");
-            this.ThrowIfDisposedOrClosed();
 
             ITransaction transaction = null;
             try
@@ -173,7 +151,7 @@ namespace Amazon.QLDB.Driver
                 T returnedValue = await func(new TransactionExecutor(transaction), cancellationToken);
                 if (returnedValue is IResult)
                 {
-                    returnedValue = (T)(object) await BufferedResult.BufferResult((IResult)returnedValue);
+                    returnedValue = (T)(object)await BufferedResult.BufferResult((IResult)returnedValue);
                 }
 
                 await transaction.Commit(cancellationToken);
@@ -181,29 +159,30 @@ namespace Amazon.QLDB.Driver
             }
             catch (InvalidSessionException ise)
             {
-                await this.Destroy(cancellationToken);
-                throw ise;
+                this.isAlive = false;
+                throw new RetriableException(transaction.Id, false, ise);
             }
             catch (OccConflictException occ)
             {
-                throw new QldbTransactionException(transaction.Id, occ);
+                throw new RetriableException(transaction.Id, occ);
             }
             catch (AmazonServiceException ase)
             {
-                await this.NoThrowAbort(transaction, cancellationToken);
-
                 if (ase.StatusCode == HttpStatusCode.InternalServerError ||
                     ase.StatusCode == HttpStatusCode.ServiceUnavailable)
                 {
-                    throw new RetriableException(transaction.Id, ase);
+                    throw new RetriableException(transaction.Id, await this.TryAbort(transaction, cancellationToken), ase);
                 }
 
-                throw ase;
+                throw new QldbTransactionException(transaction.Id, await this.TryAbort(transaction, cancellationToken), ase);
+            }
+            catch (QldbTransactionException te)
+            {
+                throw te;
             }
             catch (Exception e)
             {
-                await this.NoThrowAbort(transaction, cancellationToken);
-                throw e;
+                throw new QldbTransactionException(transaction == null ? null : transaction.Id, await this.TryAbort(transaction, cancellationToken), e);
             }
         }
 
@@ -218,8 +197,6 @@ namespace Amazon.QLDB.Driver
         /// <returns>The newly created transaction object.</returns>
         public virtual async Task<ITransaction> StartTransaction(CancellationToken cancellationToken = default)
         {
-            this.ThrowIfDisposedOrClosed();
-
             try
             {
                 var startTransactionResult = await this.session.StartTransaction(cancellationToken);
@@ -227,7 +204,7 @@ namespace Amazon.QLDB.Driver
             }
             catch (BadRequestException e)
             {
-                throw new TransactionAlreadyOpenException(string.Empty, e);
+                throw new QldbTransactionException(ExceptionMessages.TransactionAlreadyOpened, string.Empty, await this.TryAbort(null, cancellationToken), e);
             }
         }
 
@@ -242,7 +219,7 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <summary>
-        /// Send an abort which will not throw on failure.
+        /// Try to abort the transaction.
         /// </summary>
         ///
         /// <param name="transaction">The transaction to abort.</param>
@@ -250,8 +227,9 @@ namespace Amazon.QLDB.Driver
         ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
         /// </param>
         ///
+        /// <returns>Whether the abort call has succeeded.</returns>
         /// <exception cref="AmazonServiceException">If there is an error communicating with QLDB.</exception>
-        private async Task NoThrowAbort(ITransaction transaction, CancellationToken cancellationToken = default)
+        private async Task<bool> TryAbort(ITransaction transaction, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -266,22 +244,12 @@ namespace Amazon.QLDB.Driver
             }
             catch (AmazonServiceException ase)
             {
-                this.logger.LogWarning("Ignored error aborting transaction during execution: {}", ase);
+                this.logger.LogWarning("This session is invalid on ABORT: {}", ase);
+                this.isAlive = false;
+                return false;
             }
-        }
 
-        /// <summary>
-        /// If the session is closed throw an <see cref="QldbDriverException"/>.
-        /// </summary>
-        ///
-        /// <exception cref="QldbDriverException">Exception when the session is already closed.</exception>
-        private void ThrowIfDisposedOrClosed()
-        {
-            if (this.isDisposed || this.isClosed)
-            {
-                this.logger.LogError(ExceptionMessages.SessionClosed);
-                throw new QldbDriverException(ExceptionMessages.SessionClosed);
-            }
+            return true;
         }
     }
 }

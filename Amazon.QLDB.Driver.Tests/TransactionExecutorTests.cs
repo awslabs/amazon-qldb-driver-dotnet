@@ -37,9 +37,9 @@
         }
 
         [TestMethod]
-        public void TestAbortThrowsAbortException()
+        public async Task TestAbortThrowsAbortException()
         {
-            Assert.ThrowsException<TransactionAbortedException>(transactionExecutor.Abort);
+            await Assert.ThrowsExceptionAsync<TransactionAbortedException>(() => transactionExecutor.Abort());
         }
 
         [TestMethod]

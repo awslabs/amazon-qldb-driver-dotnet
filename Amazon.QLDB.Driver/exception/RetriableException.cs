@@ -14,6 +14,7 @@
 namespace Amazon.QLDB.Driver
 {
     using System;
+    using Amazon.Runtime;
 
     /// <summary>
     /// This exception is used internally to allow lower level exceptions to be retried. In some cases, only
@@ -28,7 +29,30 @@ namespace Amazon.QLDB.Driver
         /// <param name="transactionId">The transaction ID.</param>
         /// <param name="innerException">The exception that can be retried.</param>
         public RetriableException(string transactionId, Exception innerException)
-            : base("Qldb retriable exception.", transactionId, innerException)
+            : base("QLDB retriable exception.", transactionId, innerException)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RetriableException"/> class.
+        /// </summary>
+        /// <param name="transactionId">The transaction ID.</param>
+        /// <param name="isSessionAlive">Whether the session is still alive.</param>
+        /// <param name="innerException">The exception that can be retried.</param>
+        public RetriableException(string transactionId, bool isSessionAlive, Exception innerException)
+            : base("Qldb retriable exception.", transactionId, isSessionAlive, innerException)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RetriableException"/> class.
+        /// </summary>
+        /// <param name="message">Error message.</param>
+        /// <param name="transactionId">The transaction ID.</param>
+        /// <param name="isSessionAlive">Whether the session is still alive.</param>
+        /// <param name="innerException">The exception that can be retried.</param>
+        public RetriableException(string message, string transactionId, bool isSessionAlive, Exception innerException)
+            : base(message, transactionId, isSessionAlive, innerException)
         {
         }
     }

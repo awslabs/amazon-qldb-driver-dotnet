@@ -92,7 +92,7 @@ namespace Amazon.QLDB.Driver
             try
             {
                 byte[] hashBytes = this.qldbHash.Hash;
-                MemoryStream commitDigest = (await this.session.CommitTransaction(this.txnId, new MemoryStream(hashBytes)))
+                MemoryStream commitDigest = (await this.session.CommitTransaction(this.txnId, new MemoryStream(hashBytes), cancellationToken))
                     .CommitDigest;
                 if (!hashBytes.SequenceEqual(commitDigest.ToArray()))
                 {
@@ -148,7 +148,7 @@ namespace Amazon.QLDB.Driver
         /// <exception cref="QldbDriverException">Thrown when this transaction has been disposed.</exception>
         public async Task<IResult> Execute(string statement, CancellationToken cancellationToken = default)
         {
-            return await this.Execute(statement, new List<IIonValue>());
+            return await this.Execute(statement, new List<IIonValue>(), cancellationToken);
         }
 
         /// <summary>

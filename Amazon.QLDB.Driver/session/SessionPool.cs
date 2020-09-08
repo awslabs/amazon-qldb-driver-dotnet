@@ -82,9 +82,10 @@ namespace Amazon.QLDB.Driver
                 return await this.retryHandler.RetriableExecute(
                     ct => session.Execute(func, ct),
                     retryPolicy,
+                    async ct => session = await this.StartNewSession(ct),
                     async ct =>
                     {
-                        session.Dispose();
+                        this.poolPermits.Release();
                         session = await this.GetSession(ct);
                     },
                     retryAction, 
@@ -94,7 +95,7 @@ namespace Amazon.QLDB.Driver
             {
                 if (session != null)
                 {
-                    session.Dispose();
+                    session.Release();
                 }
             }
         }
@@ -125,7 +126,7 @@ namespace Amazon.QLDB.Driver
             this.isClosed = true;
             while (this.sessionPool.Count > 0)
             {
-                await this.sessionPool.Take().Destroy();
+                await this.sessionPool.Take().Close();
             }
         }
 
@@ -168,7 +169,7 @@ namespace Amazon.QLDB.Driver
                         this.logger.LogDebug("Creating new pooled session with ID {}.", session.GetSessionId());
                     }
 
-                    return session.Renew();
+                    return session;
                 }
                 catch (Exception e)
                 {
@@ -183,9 +184,14 @@ namespace Amazon.QLDB.Driver
             }
         }
 
+        internal int AvailablePermit()
+        {
+            return this.poolPermits.CurrentCount;
+        }
+
         private void ReleaseSession(QldbSession session)
         {
-            if (session != null)
+            if (session != null && session.IsAlive())
             {
                 this.sessionPool.Add(session);
             }
