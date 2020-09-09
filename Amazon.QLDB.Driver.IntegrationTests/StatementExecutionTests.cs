@@ -24,6 +24,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
     using System.Collections.Generic;
     using System.Text;
     using System.Threading.Tasks;
+    using System.Threading;
 
     [TestClass]
     public class StatementExecutionTests
@@ -604,11 +605,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             try
             {
                 // Run three threads updating the same document in parallel to trigger OCC exception.
-                const int numThreads = 3;
-                var tasks = new List<Task>();
-                for (int i = 0; i < numThreads; i++)
-                {
-                    Task task = new Task(() => driver.Execute(txn =>
+                Parallel.For(0, 3, (i) => driver.Execute(txn =>
                     {
                         // Query table.
                         var result = txn.Execute(selectQuery);
@@ -623,19 +620,6 @@ namespace Amazon.QLDB.Driver.IntegrationTests
                         var ionValue = ValueFactory.NewInt(currentValue + 5);
                         txn.Execute(updateQuery, ionValue);
                     }, RetryPolicy.Builder().WithMaxRetries(0).Build()));
-
-                    tasks.Add(task);
-                }
-
-                foreach (var task in tasks)
-                {
-                    task.Start();
-                }
-
-                foreach (var task in tasks)
-                {
-                    task.Wait();
-                }
             }
             catch (AggregateException e)
             {
