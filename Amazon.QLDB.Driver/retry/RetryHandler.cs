@@ -59,7 +59,7 @@ namespace Amazon.QLDB.Driver
                         throw iex;
                     }
 
-                    last = iex.InnerException == null ? iex : iex.InnerException;
+                    last = iex;
 
                     if (retryAttempt < retryPolicy.MaxRetries && !IsTransactionExpiry(iex))
                     {
