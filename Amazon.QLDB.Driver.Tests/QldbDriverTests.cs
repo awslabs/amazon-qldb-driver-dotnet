@@ -386,8 +386,9 @@ namespace Amazon.QLDB.Driver.Tests
         public static IEnumerable<object[]> CreateDriverExceptions()
         {
             return new List<object[]>() {
-                new object[] { new InvalidSessionException("invalid session") , false },
-                new object[] { new QldbTransactionException(string.Empty, false, new Exception()), false },
+                new object[] { new InvalidSessionException("invalid session"), false },
+                new object[] { new OccConflictException("occ"), false },
+                new object[] { new ArgumentException(), true },
                 new object[] { new QldbDriverException("generic"), true }
             };
         }
