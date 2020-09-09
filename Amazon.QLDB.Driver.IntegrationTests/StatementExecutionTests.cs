@@ -16,6 +16,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
     using Amazon.QLDB.Driver.IntegrationTests.utils;
     using Amazon.QLDBSession;
     using Amazon.QLDBSession.Model;
+    using Amazon.IonDotnet.Builders;
     using Amazon.IonDotnet.Tree;
     using Amazon.IonDotnet.Tree.Impl;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -284,6 +285,56 @@ namespace Amazon.QLDB.Driver.IntegrationTests
                 return value;
             });
             Assert.AreEqual(Constants.SingleDocumentValue, value);
+        }
+
+        [TestMethod]
+        public async Task Execute_InsertDocumentWithMultipleFields_DocumentIsInserted()
+        {
+            // Given.
+            // Create Ion struct to insert.
+            IIonValue ionStruct = ValueFactory.NewEmptyStruct();
+            ionStruct.SetField(Constants.ColumnName, ValueFactory.NewString(Constants.SingleDocumentValue));
+            ionStruct.SetField(Constants.SecondColumnName, ValueFactory.NewString(Constants.SingleDocumentValue));
+
+            // When.
+            var query = $"INSERT  INTO {Constants.TableName} ?";
+            var count = await qldbDriver.Execute(async txn =>
+            {
+                var result = await txn.Execute(query, ionStruct);
+
+                var count = 0;
+                await foreach (var row in result)
+                {
+                    count++;
+                }
+                return count;
+            });
+            Assert.AreEqual(1, count);
+
+            // Then.
+            var searchQuery = $@"SELECT {Constants.ColumnName}, {Constants.SecondColumnName} FROM {Constants.TableName} 
+                               WHERE {Constants.ColumnName} = '{Constants.SingleDocumentValue}' AND  {Constants.SecondColumnName} = '{Constants.SingleDocumentValue}'";
+            IIonValue value = await qldbDriver.Execute(async txn =>
+            {
+                var result = await txn.Execute(searchQuery);
+
+                IIonValue value = null;
+                await foreach (var row in result)
+                {
+                    value = row;
+                }
+                return value;
+            });
+
+            var ionReader = IonReaderBuilder.Build(value);
+            ionReader.MoveNext();
+            ionReader.StepIn();
+            ionReader.MoveNext();
+            Assert.AreEqual(Constants.ColumnName, ionReader.CurrentFieldName);
+            Assert.AreEqual(Constants.SingleDocumentValue, ionReader.StringValue());
+            ionReader.MoveNext();
+            Assert.AreEqual(Constants.SecondColumnName, ionReader.CurrentFieldName);
+            Assert.AreEqual(Constants.SingleDocumentValue, ionReader.StringValue());
         }
 
         [TestMethod]
