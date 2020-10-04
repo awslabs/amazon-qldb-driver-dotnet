@@ -2,6 +2,7 @@
 
 #### Bug Fixes:
 * Fixed the bug which leads to infinite number of retries on expried long running transactions.
+* Merged in the ION Hash fix on ION structs with multiple fields.
 
 ### :hammer_and_wrench:​ Improvements
 * Customized exceptions in a transaction will abort the transaction immediately.

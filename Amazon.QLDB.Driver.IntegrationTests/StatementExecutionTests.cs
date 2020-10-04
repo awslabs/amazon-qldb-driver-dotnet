@@ -640,26 +640,13 @@ namespace Amazon.QLDB.Driver.IntegrationTests
                         await txn.Execute(updateQuery, ionValue);
                     }, RetryPolicy.Builder().WithMaxRetries(0).Build());
 
-                    Task task = new Task(() => action().GetAwaiter().GetResult());
-
-                    tasks.Add(task);
+                    tasks.Add(action());
                 }
 
-                foreach (var task in tasks)
-                {
-                    task.Start();
-                }
-
-                foreach (var task in tasks)
-                {
-                    task.Wait();
-                }
+                await Task.WhenAll(tasks);
             }
-            catch (AggregateException e)
+            catch (OccConflictException e)
             {
-                // Tasks only throw AggregateException which nests the underlying exception.
-                Assert.AreEqual(typeof(OccConflictException), e.InnerException.GetType());
-
                 // Update document to make sure everything still works after the OCC exception.
                 int updatedValue = 0;
                 await driver.Execute(async txn =>

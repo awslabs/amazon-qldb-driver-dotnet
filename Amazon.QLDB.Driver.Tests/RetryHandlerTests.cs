@@ -66,8 +66,8 @@ namespace Amazon.QLDB.Driver.Tests
             var defaultPolicy = Driver.RetryPolicy.Builder().Build();
             var customerPolicy = Driver.RetryPolicy.Builder().WithMaxRetries(10).Build();
 
-            var occ = new RetriableException("txnId11111", true, new OccConflictException("qldb"));
-            var occFailedAbort = new RetriableException("txnId11111", false, new OccConflictException("qldb"));
+            var occ = new RetriableException("txnId11111", true, new OccConflictException("qldb", new BadRequestException("oops")));
+            var occFailedAbort = new RetriableException("txnId11111", false, new OccConflictException("qldb", new BadRequestException("oops")));
             var txnExpiry = new RetriableException("txnid1111111", false, new InvalidSessionException("Transaction 324weqr2314 has expired"));
             var ise = new RetriableException("txnid1111111", false, new InvalidSessionException("invalid session"));
             var http500 = new RetriableException("txnid1111111", true, new AmazonQLDBSessionException("", 0, "", "", HttpStatusCode.ServiceUnavailable));
