@@ -5,7 +5,6 @@
     <IsPackable>false</IsPackable>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\public.snk</AssemblyOriginatorKeyFile>
-    <ReleaseVersion>1.0.1</ReleaseVersion>
     <LangVersion>Latest</LangVersion>
   </PropertyGroup>
 
