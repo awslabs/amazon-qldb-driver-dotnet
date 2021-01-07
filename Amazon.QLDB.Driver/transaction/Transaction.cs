@@ -162,7 +162,7 @@ namespace Amazon.QLDB.Driver
             this.qldbHash = Dot(this.qldbHash, statement, parameters);
             ExecuteStatementResult executeStatementResult = this.session.ExecuteStatement(
                 this.txnId, statement, parameters);
-            return new Result(this.session, this.txnId, executeStatementResult.FirstPage);
+            return new Result(this.session, this.txnId, executeStatementResult);
         }
 
         /// <summary>

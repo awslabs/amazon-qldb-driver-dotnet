@@ -25,6 +25,8 @@ namespace Amazon.QLDB.Driver.Tests
         private static readonly IValueFactory valueFactory = new ValueFactory();
         private static Mock<IResult> mockResult;
         private static List<IIonValue> testList;
+        private static IOUsage testIO;
+        private static TimingInformation testTiming;
         private static BufferedResult result;
 
 
@@ -40,7 +42,11 @@ namespace Amazon.QLDB.Driver.Tests
                 valueFactory.NewInt(1),
                 valueFactory.NewInt(2)
             };
+            testIO = new IOUsage(1, 2);
+            testTiming = new TimingInformation(100);
             mockResult.Setup(x => x.GetEnumerator()).Returns(testList.GetEnumerator());
+            mockResult.Setup(x => x.GetConsumedIOs()).Returns(testIO);
+            mockResult.Setup(x => x.GetTimingInformation()).Returns(testTiming);
 
             result = BufferedResult.BufferResult(mockResult.Object);
         }
@@ -50,6 +56,15 @@ namespace Amazon.QLDB.Driver.Tests
         {
             Assert.IsNotNull(result);
             mockResult.Verify(x => x.GetEnumerator(), Times.Exactly(1));
+        }
+
+        [TestMethod]
+        public void TestBufferResultGetsMetrics()
+        {
+            Assert.AreEqual(testIO, result.GetConsumedIOs());
+            Assert.AreEqual(testTiming, result.GetTimingInformation());
+            mockResult.Verify(x => x.GetConsumedIOs(), Times.Exactly(1));
+            mockResult.Verify(x => x.GetTimingInformation(), Times.Exactly(1));
         }
 
         [TestMethod]

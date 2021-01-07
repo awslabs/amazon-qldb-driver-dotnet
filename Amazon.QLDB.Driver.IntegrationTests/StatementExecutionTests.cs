@@ -24,7 +24,6 @@ namespace Amazon.QLDB.Driver.IntegrationTests
     using System.Collections.Generic;
     using System.Text;
     using System.Threading.Tasks;
-    using System.Threading;
 
     [TestClass]
     public class StatementExecutionTests
@@ -193,7 +192,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
                 var result = txn.Execute(search_query);
 
                 // Extract the index name by querying the information_schema.
-                /* This gives: 
+                /* This gives:
                 {
                     expr: "[MyColumn]"
                 }
@@ -850,6 +849,52 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             // When.
             qldbDriver.Execute(txn => txn.Execute(query));
+        }
+
+        [TestMethod]
+        public void Execute_ExecutionMetrics()
+        {
+            qldbDriver.Execute(txn =>
+            {
+                var insertQuery = String.Format("INSERT INTO {0} << {{'col': 1}}, {{'col': 2}}, {{'col': 3}} >>",
+                    Constants.TableName);
+                txn.Execute(insertQuery);
+            });
+
+            // Given
+            var selectQuery = String.Format("SELECT * FROM {0} as a, {0} as b, {0} as c, {0} as d, {0} as e, {0} as f",
+                Constants.TableName);
+
+            // When
+            qldbDriver.Execute(txn =>
+            {
+                var result = txn.Execute(selectQuery);
+
+                foreach (IIonValue row in result)
+                {
+                    var ioUsage = result.GetConsumedIOs();
+                    var timingInfo = result.GetTimingInformation();
+
+                    Assert.IsNotNull(ioUsage);
+                    Assert.IsNotNull(timingInfo);
+                    Assert.IsTrue(ioUsage.ReadIOs > 0);
+                    Assert.IsTrue(timingInfo.ProcessingTimeMilliseconds > 0);
+                }
+            });
+
+            // When
+            var result = qldbDriver.Execute(txn =>
+            {
+                return txn.Execute(selectQuery);
+            });
+
+            var ioUsage = result.GetConsumedIOs();
+            var timingInfo = result.GetTimingInformation();
+
+            Assert.IsNotNull(ioUsage);
+            Assert.IsNotNull(timingInfo);
+            Assert.AreEqual(1092, ioUsage.ReadIOs);
+            Assert.IsTrue(timingInfo.ProcessingTimeMilliseconds > 0);
         }
 
         public static IEnumerable<object[]> CreateIonValues()

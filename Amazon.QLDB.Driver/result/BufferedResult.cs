@@ -25,15 +25,21 @@ namespace Amazon.QLDB.Driver
     public class BufferedResult : IResult
     {
         private readonly List<IIonValue> values;
+        private readonly IOUsage consumedIOs;
+        private readonly TimingInformation timingInformation;
 
         /// <summary>
         /// Prevents a default instance of the <see cref="BufferedResult"/> class from being created.
         /// </summary>
         ///
         /// <param name="values">Buffer values.</param>
-        private BufferedResult(List<IIonValue> values)
+        /// <param name="consumedIOs">IOUsage statistics.</param>
+        /// <param name="timingInformation">TimingInformation statistics.</param>
+        private BufferedResult(List<IIonValue> values, IOUsage consumedIOs, TimingInformation timingInformation)
         {
             this.values = values;
+            this.consumedIOs = consumedIOs;
+            this.timingInformation = timingInformation;
         }
 
         /// <summary>
@@ -51,7 +57,7 @@ namespace Amazon.QLDB.Driver
                 values.Add(value);
             }
 
-            return new BufferedResult(values);
+            return new BufferedResult(values, result.GetConsumedIOs(), result.GetTimingInformation());
         }
 
         /// <summary>
@@ -70,6 +76,26 @@ namespace Amazon.QLDB.Driver
         IEnumerator IEnumerable.GetEnumerator()
         {
             return this.GetEnumerator();
+        }
+
+        /// <summary>
+        /// Gets the current query statistics for the number of read and write IO requests. The statistics are stateful.
+        /// </summary>
+        ///
+        /// <returns>The current IOUsage statistics.</returns>
+        public IOUsage GetConsumedIOs()
+        {
+            return this.consumedIOs;
+        }
+
+        /// <summary>
+        /// Gets the current query statistics for server-side processing time. The statistics are stateful.
+        /// </summary>
+        ///
+        /// <returns>The current TimingInformation statistics.</returns>
+        public TimingInformation GetTimingInformation()
+        {
+            return this.timingInformation;
         }
     }
 }
