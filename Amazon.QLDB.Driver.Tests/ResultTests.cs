@@ -16,7 +16,6 @@ namespace Amazon.QLDB.Driver.Tests
     using System;
     using System.Collections.Generic;
     using System.IO;
-    using Amazon.IonDotnet.Tree;
     using Amazon.QLDBSession.Model;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
@@ -28,16 +27,50 @@ namespace Amazon.QLDB.Driver.Tests
         private static readonly Mock<Session> mockSession = new Mock<Session>(null, null, null, null, null);
         private readonly MemoryStream memoryStream = new MemoryStream();
 
-        public IIonValue IonDatagram { get; private set; }
+        private static readonly long executeReads = 1;
+        private static readonly long executeWrites = 2;
+        private static readonly long executeTime = 100;
+        private static readonly IOUsage executeIO = new IOUsage
+        {
+            ReadIOs = executeReads,
+            WriteIOs = executeWrites
+        };
+        private static readonly TimingInformation executeTiming = new TimingInformation
+        {
+            ProcessingTimeMilliseconds = executeTime
+        };
+        private static readonly long fetchReads = 10;
+        private static readonly long fetchWrites = 20;
+        private static readonly long fetchTime = 1000;
+        private static readonly IOUsage fetchIO = new IOUsage
+        {
+            ReadIOs = fetchReads,
+            WriteIOs = fetchWrites
+        };
+        private static readonly TimingInformation fetchTiming = new TimingInformation
+        {
+            ProcessingTimeMilliseconds = fetchTime
+        };
 
         [TestInitialize]
         public void SetUp()
         {
-            var valueHolder = new ValueHolder { IonBinary = memoryStream, IonText = "ionText" };
+            var valueHolder = new ValueHolder
+            {
+                IonBinary = memoryStream,
+                IonText = "ionText"
+            };
             var valueHolderList = new List<ValueHolder> { valueHolder };
-            var firstPage = new Page { NextPageToken = "hasNextPage", Values = valueHolderList };
+            var executeResult = new ExecuteStatementResult
+            {
+                FirstPage = new Page
+                {
+                    NextPageToken = "hasNextPage",
+                    Values = valueHolderList
+                }
+            };
 
-            result = new Result(mockSession.Object, "txnId", firstPage);
+            result = new Result(mockSession.Object, "txnId", executeResult);
         }
 
         [TestMethod]
@@ -53,11 +86,14 @@ namespace Amazon.QLDB.Driver.Tests
         public void TestMoveNextWithOneNextPage()
         {
             var ms = new MemoryStream();
-            var valuHolderList = new List<ValueHolder> { new ValueHolder { IonBinary = ms, IonText = "ionText" } };
-            Page nextPage = new Page { NextPageToken = null, Values = valuHolderList };
+            var valueHolderList = new List<ValueHolder> { new ValueHolder { IonBinary = ms, IonText = "ionText" } };
+            var fetchPageResult = new FetchPageResult
+            {
+                Page = new Page { NextPageToken = null, Values = valueHolderList }
+            };
 
             mockSession.Setup(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(new FetchPageResult { Page = nextPage });
+                .Returns(fetchPageResult);
 
             var results = result.GetEnumerator();
 
@@ -76,10 +112,17 @@ namespace Amazon.QLDB.Driver.Tests
         {
             Mock<Session> session = new Mock<Session>(null, null, null, null, null);
             var ms = new MemoryStream();
-            var valuHolderList = new List<ValueHolder> { new ValueHolder { IonBinary = ms, IonText = "ionText" } };
-            var firstPage = new Page { NextPageToken = null, Values = valuHolderList };
+            var valueHolderList = new List<ValueHolder> { new ValueHolder { IonBinary = ms, IonText = "ionText" } };
+            var executeResult = new ExecuteStatementResult
+            {
+                FirstPage = new Page
+                {
+                    NextPageToken = null,
+                    Values = valueHolderList
+                }
+            };
 
-            Result res = new Result(session.Object, "txnId", firstPage);
+            Result res = new Result(session.Object, "txnId", executeResult);
             var results = res.GetEnumerator();
 
             int counter = 0;
@@ -107,6 +150,202 @@ namespace Amazon.QLDB.Driver.Tests
             var results = result.GetEnumerator();
 
             Assert.ThrowsException<NotSupportedException>(results.Reset);
+        }
+
+        [TestMethod]
+        public void TestQueryStatsNullExecuteNullFetch()
+        {
+            Mock<Session> mockSession = new Mock<Session>(null, null, null, null, null);
+            var valueHolder = new ValueHolder
+            {
+                IonBinary = memoryStream,
+                IonText = "ionText"
+            };
+            var valueHolderList = new List<ValueHolder> { valueHolder };
+            var executeResult = new ExecuteStatementResult
+            {
+                FirstPage = new Page
+                {
+                    NextPageToken = "hasNextPage",
+                    Values = valueHolderList
+                }
+            };
+            var fetchPageResult = new FetchPageResult
+            {
+                Page = new Page { NextPageToken = null, Values = valueHolderList }
+            };
+
+            mockSession.Setup(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>()))
+                .Returns(fetchPageResult);
+
+            var result = new Result(mockSession.Object, "txnId", executeResult);
+
+            var io = result.GetConsumedIOs();
+            var timing = result.GetTimingInformation();
+            Assert.IsNull(io.ReadIOs);
+            Assert.IsNull(io.WriteIOs);
+            Assert.IsNull(timing.ProcessingTimeMilliseconds);
+
+            var results = result.GetEnumerator();
+            while (results.MoveNext())
+            {
+                // Fetch the next page
+            }
+
+            io = result.GetConsumedIOs();
+            timing = result.GetTimingInformation();
+            Assert.IsNull(io.ReadIOs);
+            Assert.IsNull(io.WriteIOs);
+            Assert.IsNull(timing.ProcessingTimeMilliseconds);
+        }
+
+        [TestMethod]
+        public void TestQueryStatsNullExecuteHasFetch()
+        {
+            Mock<Session> mockSession = new Mock<Session>(null, null, null, null, null);
+            var valueHolder = new ValueHolder
+            {
+                IonBinary = memoryStream,
+                IonText = "ionText"
+            };
+            var valueHolderList = new List<ValueHolder> { valueHolder };
+            var executeResult = new ExecuteStatementResult
+            {
+                FirstPage = new Page
+                {
+                    NextPageToken = "hasNextPage",
+                    Values = valueHolderList
+                }
+            };
+            var fetchPageResult = new FetchPageResult
+            {
+                Page = new Page { NextPageToken = null, Values = valueHolderList },
+                ConsumedIOs = fetchIO,
+                TimingInformation = fetchTiming
+            };
+
+            mockSession.Setup(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>()))
+                .Returns(fetchPageResult);
+
+            var result = new Result(mockSession.Object, "txnId", executeResult);
+
+            var io = result.GetConsumedIOs();
+            var timing = result.GetTimingInformation();
+            Assert.IsNull(io.ReadIOs);
+            Assert.IsNull(io.WriteIOs);
+            Assert.IsNull(timing.ProcessingTimeMilliseconds);
+
+            var results = result.GetEnumerator();
+            while (results.MoveNext())
+            {
+                // Fetch the next page
+            }
+
+            io = result.GetConsumedIOs();
+            timing = result.GetTimingInformation();
+            Assert.AreEqual(fetchReads, io.ReadIOs);
+            Assert.AreEqual(fetchWrites, io.WriteIOs);
+            Assert.AreEqual(fetchTime, timing.ProcessingTimeMilliseconds);
+        }
+
+        [TestMethod]
+        public void TestQueryStatsHasExecuteNullFetch()
+        {
+            Mock<Session> mockSession = new Mock<Session>(null, null, null, null, null);
+            var valueHolder = new ValueHolder
+            {
+                IonBinary = memoryStream,
+                IonText = "ionText"
+            };
+            var valueHolderList = new List<ValueHolder> { valueHolder };
+            var executeResult = new ExecuteStatementResult
+            {
+                FirstPage = new Page
+                {
+                    NextPageToken = "hasNextPage",
+                    Values = valueHolderList
+                },
+                ConsumedIOs = executeIO,
+                TimingInformation = executeTiming
+            };
+            var fetchPageResult = new FetchPageResult
+            {
+                Page = new Page { NextPageToken = null, Values = valueHolderList }
+            };
+
+            mockSession.Setup(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>()))
+                .Returns(fetchPageResult);
+
+            var result = new Result(mockSession.Object, "txnId", executeResult);
+
+            var io = result.GetConsumedIOs();
+            var timing = result.GetTimingInformation();
+            Assert.AreEqual(executeReads, io.ReadIOs);
+            Assert.AreEqual(executeWrites, io.WriteIOs);
+            Assert.AreEqual(executeTime, timing.ProcessingTimeMilliseconds);
+
+            var results = result.GetEnumerator();
+            while (results.MoveNext())
+            {
+                // Fetch the next page
+            }
+
+            io = result.GetConsumedIOs();
+            timing = result.GetTimingInformation();
+            Assert.AreEqual(executeReads, io.ReadIOs);
+            Assert.AreEqual(executeWrites, io.WriteIOs);
+            Assert.AreEqual(executeTime, timing.ProcessingTimeMilliseconds);
+        }
+
+        [TestMethod]
+        public void TestQueryStatsHasExecuteHasFetch()
+        {
+            Mock<Session> mockSession = new Mock<Session>(null, null, null, null, null);
+            var valueHolder = new ValueHolder
+            {
+                IonBinary = memoryStream,
+                IonText = "ionText"
+            };
+            var valueHolderList = new List<ValueHolder> { valueHolder };
+            var executeResult = new ExecuteStatementResult
+            {
+                FirstPage = new Page
+                {
+                    NextPageToken = "hasNextPage",
+                    Values = valueHolderList
+                },
+                ConsumedIOs = executeIO,
+                TimingInformation = executeTiming
+            };
+            var fetchPageResult = new FetchPageResult
+            {
+                Page = new Page { NextPageToken = null, Values = valueHolderList },
+                ConsumedIOs = fetchIO,
+                TimingInformation = fetchTiming
+            };
+
+            mockSession.Setup(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>()))
+                .Returns(fetchPageResult);
+
+            var result = new Result(mockSession.Object, "txnId", executeResult);
+
+            var io = result.GetConsumedIOs();
+            var timing = result.GetTimingInformation();
+            Assert.AreEqual(executeReads, io.ReadIOs);
+            Assert.AreEqual(executeWrites, io.WriteIOs);
+            Assert.AreEqual(executeTime, timing.ProcessingTimeMilliseconds);
+
+            var results = result.GetEnumerator();
+            while (results.MoveNext())
+            {
+                // Fetch the next page
+            }
+
+            io = result.GetConsumedIOs();
+            timing = result.GetTimingInformation();
+            Assert.AreEqual(executeReads + fetchReads, io.ReadIOs);
+            Assert.AreEqual(executeWrites + fetchWrites, io.WriteIOs);
+            Assert.AreEqual(executeTime + fetchTime, timing.ProcessingTimeMilliseconds);
         }
     }
 }

@@ -146,7 +146,6 @@ namespace Amazon.QLDB.Driver.Tests
             {
                 txn.Execute("testStatement");
                 throw new ArgumentException("some thing wrong");
-                return "result";
             };
 
             return new List<object[]>() {
