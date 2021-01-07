@@ -8,7 +8,7 @@
     <Version>1.1.0</Version>
     <PackageId>Amazon.QLDB.Driver</PackageId>
     <Description>A .NET implementation of the Amazon QLDB driver that can be used to programmatically access and interact with data in Amazon QLDB ledgers.</Description>
-    <Copyright>Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.</Copyright>
+    <Copyright>Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.</Copyright>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <RepositoryUrl>https://github.com/awslabs/amazon-qldb-driver-dotnet</RepositoryUrl>
     <RepositoryType>git</RepositoryType>

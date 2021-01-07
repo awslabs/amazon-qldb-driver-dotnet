@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"). You may not use this file except in compliance with
  * the License. A copy of the License is located at
@@ -24,7 +24,7 @@ namespace Amazon.QLDB.Driver.Tests
     public class ResultTests
     {
         private static Result result;
-        private static readonly Mock<Session> mockSession = new Mock<Session>(null, null, null, null, null);
+        private static Mock<Session> mockSession;
         private readonly MemoryStream memoryStream = new MemoryStream();
 
         private static readonly long executeReads = 1;
@@ -70,6 +70,7 @@ namespace Amazon.QLDB.Driver.Tests
                 }
             };
 
+            mockSession = new Mock<Session>(null, null, null, null, null);
             result = new Result(mockSession.Object, "txnId", executeResult);
         }
 
@@ -110,7 +111,6 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public void TestMoveNextWithNoNextPage()
         {
-            Mock<Session> session = new Mock<Session>(null, null, null, null, null);
             var ms = new MemoryStream();
             var valueHolderList = new List<ValueHolder> { new ValueHolder { IonBinary = ms, IonText = "ionText" } };
             var executeResult = new ExecuteStatementResult
@@ -122,7 +122,7 @@ namespace Amazon.QLDB.Driver.Tests
                 }
             };
 
-            Result res = new Result(session.Object, "txnId", executeResult);
+            Result res = new Result(mockSession.Object, "txnId", executeResult);
             var results = res.GetEnumerator();
 
             int counter = 0;
@@ -132,7 +132,7 @@ namespace Amazon.QLDB.Driver.Tests
             }
 
             Assert.AreEqual(1, counter);
-            session.Verify(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            mockSession.Verify(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
         [TestMethod]
@@ -155,7 +155,6 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public void TestQueryStatsNullExecuteNullFetch()
         {
-            Mock<Session> mockSession = new Mock<Session>(null, null, null, null, null);
             var valueHolder = new ValueHolder
             {
                 IonBinary = memoryStream,
@@ -202,7 +201,6 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public void TestQueryStatsNullExecuteHasFetch()
         {
-            Mock<Session> mockSession = new Mock<Session>(null, null, null, null, null);
             var valueHolder = new ValueHolder
             {
                 IonBinary = memoryStream,
@@ -251,7 +249,6 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public void TestQueryStatsHasExecuteNullFetch()
         {
-            Mock<Session> mockSession = new Mock<Session>(null, null, null, null, null);
             var valueHolder = new ValueHolder
             {
                 IonBinary = memoryStream,
@@ -300,7 +297,6 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public void TestQueryStatsHasExecuteHasFetch()
         {
-            Mock<Session> mockSession = new Mock<Session>(null, null, null, null, null);
             var valueHolder = new ValueHolder
             {
                 IonBinary = memoryStream,
