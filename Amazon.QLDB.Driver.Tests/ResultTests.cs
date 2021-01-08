@@ -25,7 +25,13 @@ namespace Amazon.QLDB.Driver.Tests
     {
         private static Result result;
         private static Mock<Session> mockSession;
-        private readonly MemoryStream memoryStream = new MemoryStream();
+        private static readonly MemoryStream memoryStream = new MemoryStream();
+        private static readonly ValueHolder valueHolder = new ValueHolder
+        {
+            IonBinary = memoryStream,
+            IonText = "ionText"
+        };
+        private static readonly List<ValueHolder> valueHolderList = new List<ValueHolder> { valueHolder };
 
         private static readonly long executeReads = 1;
         private static readonly long executeWrites = 2;
@@ -55,12 +61,6 @@ namespace Amazon.QLDB.Driver.Tests
         [TestInitialize]
         public void SetUp()
         {
-            var valueHolder = new ValueHolder
-            {
-                IonBinary = memoryStream,
-                IonText = "ionText"
-            };
-            var valueHolderList = new List<ValueHolder> { valueHolder };
             var executeResult = new ExecuteStatementResult
             {
                 FirstPage = new Page
@@ -155,12 +155,6 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public void TestQueryStatsNullExecuteNullFetch()
         {
-            var valueHolder = new ValueHolder
-            {
-                IonBinary = memoryStream,
-                IonText = "ionText"
-            };
-            var valueHolderList = new List<ValueHolder> { valueHolder };
             var executeResult = new ExecuteStatementResult
             {
                 FirstPage = new Page
@@ -201,12 +195,6 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public void TestQueryStatsNullExecuteHasFetch()
         {
-            var valueHolder = new ValueHolder
-            {
-                IonBinary = memoryStream,
-                IonText = "ionText"
-            };
-            var valueHolderList = new List<ValueHolder> { valueHolder };
             var executeResult = new ExecuteStatementResult
             {
                 FirstPage = new Page
@@ -249,12 +237,6 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public void TestQueryStatsHasExecuteNullFetch()
         {
-            var valueHolder = new ValueHolder
-            {
-                IonBinary = memoryStream,
-                IonText = "ionText"
-            };
-            var valueHolderList = new List<ValueHolder> { valueHolder };
             var executeResult = new ExecuteStatementResult
             {
                 FirstPage = new Page
@@ -297,12 +279,6 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public void TestQueryStatsHasExecuteHasFetch()
         {
-            var valueHolder = new ValueHolder
-            {
-                IonBinary = memoryStream,
-                IonText = "ionText"
-            };
-            var valueHolderList = new List<ValueHolder> { valueHolder };
             var executeResult = new ExecuteStatementResult
             {
                 FirstPage = new Page
