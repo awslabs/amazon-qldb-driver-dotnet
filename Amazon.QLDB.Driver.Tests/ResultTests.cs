@@ -155,18 +155,8 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public void TestQueryStatsNullExecuteNullFetch()
         {
-            var executeResult = new ExecuteStatementResult
-            {
-                FirstPage = new Page
-                {
-                    NextPageToken = "hasNextPage",
-                    Values = valueHolderList
-                }
-            };
-            var fetchPageResult = new FetchPageResult
-            {
-                Page = new Page { NextPageToken = null, Values = valueHolderList }
-            };
+            var executeResult = GetExecuteResultNullStats();
+            var fetchPageResult = GetFetchResultNullStats();
 
             mockSession.Setup(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>()))
                 .Returns(fetchPageResult);
@@ -195,20 +185,8 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public void TestQueryStatsNullExecuteHasFetch()
         {
-            var executeResult = new ExecuteStatementResult
-            {
-                FirstPage = new Page
-                {
-                    NextPageToken = "hasNextPage",
-                    Values = valueHolderList
-                }
-            };
-            var fetchPageResult = new FetchPageResult
-            {
-                Page = new Page { NextPageToken = null, Values = valueHolderList },
-                ConsumedIOs = fetchIO,
-                TimingInformation = fetchTiming
-            };
+            var executeResult = GetExecuteResultNullStats();
+            var fetchPageResult = GetFetchResultWithStats();
 
             mockSession.Setup(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>()))
                 .Returns(fetchPageResult);
@@ -237,20 +215,8 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public void TestQueryStatsHasExecuteNullFetch()
         {
-            var executeResult = new ExecuteStatementResult
-            {
-                FirstPage = new Page
-                {
-                    NextPageToken = "hasNextPage",
-                    Values = valueHolderList
-                },
-                ConsumedIOs = executeIO,
-                TimingInformation = executeTiming
-            };
-            var fetchPageResult = new FetchPageResult
-            {
-                Page = new Page { NextPageToken = null, Values = valueHolderList }
-            };
+            var executeResult = GetExecuteResultWithStats();
+            var fetchPageResult = GetFetchResultNullStats();
 
             mockSession.Setup(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>()))
                 .Returns(fetchPageResult);
@@ -279,22 +245,8 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public void TestQueryStatsHasExecuteHasFetch()
         {
-            var executeResult = new ExecuteStatementResult
-            {
-                FirstPage = new Page
-                {
-                    NextPageToken = "hasNextPage",
-                    Values = valueHolderList
-                },
-                ConsumedIOs = executeIO,
-                TimingInformation = executeTiming
-            };
-            var fetchPageResult = new FetchPageResult
-            {
-                Page = new Page { NextPageToken = null, Values = valueHolderList },
-                ConsumedIOs = fetchIO,
-                TimingInformation = fetchTiming
-            };
+            var executeResult = GetExecuteResultWithStats();
+            var fetchPageResult = GetFetchResultWithStats();
 
             mockSession.Setup(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>()))
                 .Returns(fetchPageResult);
@@ -318,6 +270,50 @@ namespace Amazon.QLDB.Driver.Tests
             Assert.AreEqual(executeReads + fetchReads, io.ReadIOs);
             Assert.AreEqual(executeWrites + fetchWrites, io.WriteIOs);
             Assert.AreEqual(executeTime + fetchTime, timing.ProcessingTimeMilliseconds);
+        }
+
+        private ExecuteStatementResult GetExecuteResultNullStats()
+        {
+            return new ExecuteStatementResult
+            {
+                FirstPage = new Page
+                {
+                    NextPageToken = "hasNextPage",
+                    Values = valueHolderList
+                }
+            };
+        }
+
+        private ExecuteStatementResult GetExecuteResultWithStats()
+        {
+            return new ExecuteStatementResult
+            {
+                FirstPage = new Page
+                {
+                    NextPageToken = "hasNextPage",
+                    Values = valueHolderList
+                },
+                ConsumedIOs = executeIO,
+                TimingInformation = executeTiming
+            };
+        }
+
+        private FetchPageResult GetFetchResultNullStats()
+        {
+            return new FetchPageResult
+            {
+                Page = new Page { NextPageToken = null, Values = valueHolderList }
+            };
+        }
+
+        private FetchPageResult GetFetchResultWithStats()
+        {
+            return new FetchPageResult
+            {
+                Page = new Page { NextPageToken = null, Values = valueHolderList },
+                ConsumedIOs = fetchIO,
+                TimingInformation = fetchTiming
+            };
         }
     }
 }
