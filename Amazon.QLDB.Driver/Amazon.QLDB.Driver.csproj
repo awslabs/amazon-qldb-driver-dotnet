@@ -21,7 +21,7 @@
     <PackageTags>amazon api aws database driver ledger qldb quantum</PackageTags>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\public.snk</AssemblyOriginatorKeyFile>
-    <ReleaseVersion>1.0.1</ReleaseVersion>
+    <ReleaseVersion>1.1.0</ReleaseVersion>
     <PackageIcon>product-icon_AWS_Quantum_125_squid-ink.png</PackageIcon>
   </PropertyGroup>
 
