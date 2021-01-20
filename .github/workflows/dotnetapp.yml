@@ -8,7 +8,6 @@ on:
 
 jobs:
   build:
-
     runs-on: ${{ matrix.os }}
     strategy:
       max-parallel: 1
@@ -24,18 +23,6 @@ jobs:
         aws-region: us-east-2
 
     - uses: actions/checkout@v2
-    - name: Setup dotnet 2.0.x
-      uses: actions/setup-dotnet@v1
-      with:
-          dotnet-version: '2.0.x'
-    - name: Setup dotnet 2.1.x
-      uses: actions/setup-dotnet@v1
-      with:
-          dotnet-version: '2.1.x'
-    - name: Setup dotnet 3.1.x
-      uses: actions/setup-dotnet@v1
-      with:
-          dotnet-version: '3.1.x'
 
     - name: Install dependencies
       run: dotnet restore
@@ -45,5 +32,3 @@ jobs:
       run: dotnet test Amazon.QLDB.Driver.Tests
     - name: Integration Test
       run: dotnet test Amazon.QLDB.Driver.IntegrationTests --no-restore --verbosity normal --settings Amazon.QLDB.Driver.IntegrationTests/.runsettings
-
-
