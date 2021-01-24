@@ -575,8 +575,10 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
+        [ExpectedException(typeof(OccConflictException))]
         public void Execute_UpdateSameRecordAtSameTime_ThrowsOccException()
         {
+            // Create a driver that does not retry OCC errors
             QldbDriver driver = integrationTestBase.CreateDriver(amazonQldbSessionConfig, default, default, 0);
 
             // Insert document.
@@ -601,67 +603,26 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             string selectQuery = $"SELECT VALUE {Constants.ColumnName} FROM {Constants.TableName}";
             string updateQuery = $"UPDATE {Constants.TableName} SET {Constants.ColumnName} = ?";
 
-            try
+            // For testing purposes only. Forcefully causes an OCC conflict to occur.
+            // Do not invoke QldbDriver.Execute within the lambda function under normal circumstances.
+            driver.Execute(txn =>
             {
-                // Run three threads updating the same document in parallel to trigger OCC exception.
-                Parallel.For(0, 3, (i) => driver.Execute(txn =>
-                    {
-                        // Query table.
-                        var result = txn.Execute(selectQuery);
+                // Query table.
+                var result = txn.Execute(selectQuery);
 
-                        var currentValue = 0;
-                        foreach (var row in result)
-                        {
-                            currentValue = row.IntValue;
-                        }
+                var currentValue = 0;
+                foreach (var row in result)
+                {
+                    currentValue = row.IntValue;
+                }
 
-                        // Update document.
-                        var ionValue = ValueFactory.NewInt(currentValue + 5);
-                        txn.Execute(updateQuery, ionValue);
-                    }, RetryPolicy.Builder().WithMaxRetries(0).Build()));
-            }
-            catch (AggregateException e)
-            {
-                // Tasks only throw AggregateException which nests the underlying exception.
-                Assert.AreEqual(typeof(OccConflictException), e.InnerException.GetType());
-
-                // Update document to make sure everything still works after the OCC exception.
-                int updatedValue = 0;
                 driver.Execute(txn =>
                 {
-                    var result = txn.Execute(selectQuery);
-
-                    var currentValue = 0;
-                    foreach (var row in result)
-                    {
-                        currentValue = row.IntValue;
-                    }
-
-                    updatedValue = currentValue + 5;
-
-                    var ionValue = ValueFactory.NewInt(updatedValue);
+                    // Update document.
+                    var ionValue = ValueFactory.NewInt(currentValue + 5);
                     txn.Execute(updateQuery, ionValue);
-                });
-
-                // Verify the update was successful.
-                int intVal = driver.Execute(txn =>
-                {
-                    var result = txn.Execute(selectQuery);
-
-                    int intValue = 0;
-                    foreach (var row in result)
-                    {
-                        intValue = row.IntValue;
-                    }
-
-                    return intValue;
-                });
-
-                Assert.AreEqual(updatedValue, intVal);
-
-                return;
-            }
-            Assert.Fail("Did not raise TimeoutException.");
+                }, RetryPolicy.Builder().WithMaxRetries(0).Build());
+            }, RetryPolicy.Builder().WithMaxRetries(0).Build());
         }
 
         [TestMethod]
