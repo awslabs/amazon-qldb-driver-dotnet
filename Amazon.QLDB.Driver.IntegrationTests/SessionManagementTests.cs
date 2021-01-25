@@ -18,8 +18,6 @@ namespace Amazon.QLDB.Driver.IntegrationTests
     using Amazon.QLDBSession.Model;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using System;
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
 
     [TestClass]
     public class SessionManagementTests
@@ -98,43 +96,24 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
+        [ExpectedException(typeof(QldbDriverException))]
         public void GetSession_PoolDoesNotHaveSessionAndHasHitLimit_ThrowsTimeoutException()
         {
-            try
+            string TableNameQuery = "SELECT VALUE name FROM information_schema.user_tables WHERE status = 'ACTIVE'";
+
+            // Create driver with session pool size = 1.
+            var qldbDriver = integrationTestBase.CreateDriver(amazonQldbSessionConfig, 1);
+            qldbDriver.Execute(txn =>
             {
-                // With the poolTimeout to just 1 ms, only one thread should go through.
-                // The other two threads will try to acquire the session, but because it can wait for only 1ms,
-                // they will error out.
-                using (var qldbDriver = integrationTestBase.CreateDriver(amazonQldbSessionConfig, 1))
+                txn.Execute(TableNameQuery);
+
+                // For testing purposes only. Forcefully fetch from the empty session pool.
+                // Do not invoke QldbDriver.Execute within the lambda function under normal circumstances.
+                qldbDriver.Execute(txn =>
                 {
-                    const int numThreads = 3;
-                    List<Task> tasks = new List<Task>();
-
-                    for (int i = 0; i < numThreads; i++)
-                    {
-                        Task task = new Task(() => qldbDriver.ListTableNames());
-
-                        tasks.Add(task);
-                    }
-
-                    foreach (Task task in tasks)
-                    {
-                        task.Start();
-                    }
-
-                    foreach (Task task in tasks)
-                    {
-                        task.Wait();
-                    }
-                }
-            }
-            catch (AggregateException e)
-            {
-                // Tasks only throw AggregateException which nests the underlying exeption.
-                Assert.AreEqual(e.InnerException.GetType(), typeof(QldbDriverException));
-                return;
-            }
-            Assert.Fail("Did not raise TimeoutException.");
+                    txn.Execute(TableNameQuery);
+                });
+            });
         }
 
         [TestMethod]
