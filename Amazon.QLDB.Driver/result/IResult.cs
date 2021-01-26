@@ -23,7 +23,7 @@ namespace Amazon.QLDB.Driver
     public interface IResult : IEnumerable<IIonValue>
     {
         /// <summary>
-        /// Gets the current query statistics for the number of read and write IO requests. The statistics are stateful.
+        /// Gets the current query statistics for the number of read IO requests. The statistics are stateful.
         /// </summary>
         ///
         /// <returns>The current IOUsage statistics.</returns>
