@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"). You may not use this file except in compliance with
  * the License. A copy of the License is located at
@@ -188,7 +188,7 @@
         private static void SetUserAgent(object sender, RequestEventArgs eventArgs)
         {
             const string UserAgentHeader = "User-Agent";
-            const string Version = "1.0.1";
+            const string Version = "1.1.0";
 
             if (!(eventArgs is WebServiceRequestEventArgs args) || !args.Headers.ContainsKey(UserAgentHeader))
             {

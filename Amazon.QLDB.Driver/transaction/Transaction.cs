@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"). You may not use this file except in compliance with
  * the License. A copy of the License is located at
@@ -177,7 +177,7 @@ namespace Amazon.QLDB.Driver
             this.qldbHash = Dot(this.qldbHash, statement, parameters);
             ExecuteStatementResult executeStatementResult = await this.session.ExecuteStatement(
                 this.txnId, statement, parameters, cancellationToken);
-            return new Result(this.session, this.txnId, executeStatementResult.FirstPage);
+            return new Result(this.session, this.txnId, executeStatementResult);
         }
 
         /// <summary>

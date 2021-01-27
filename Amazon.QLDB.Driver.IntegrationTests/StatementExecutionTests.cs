@@ -208,7 +208,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
                 var result = await txn.Execute(search_query);
 
                 // Extract the index name by querying the information_schema.
-                /* This gives: 
+                /* This gives:
                 {
                     expr: "[MyColumn]"
                 }
@@ -591,8 +591,10 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
+        [ExpectedException(typeof(OccConflictException))]
         public async Task Execute_UpdateSameRecordAtSameTime_ThrowsOccException()
         {
+            // Create a driver that does not retry OCC errors
             QldbDriver driver = integrationTestBase.CreateDriver(amazonQldbSessionConfig, default, default, 0);
 
             // Insert document.
@@ -617,73 +619,26 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             string selectQuery = $"SELECT VALUE {Constants.ColumnName} FROM {Constants.TableName}";
             string updateQuery = $"UPDATE {Constants.TableName} SET {Constants.ColumnName} = ?";
 
-            try
+            // For testing purposes only. Forcefully causes an OCC conflict to occur.
+            // Do not invoke QldbDriver.Execute within the lambda function under normal circumstances.
+            await driver.Execute(async txn =>
             {
-                // Run three threads updating the same document in parallel to trigger OCC exception.
-                const int numThreads = 3;
-                var tasks = new List<Task>();
-                for (int i = 0; i < numThreads; i++)
+                // Query table.
+                var result = await txn.Execute(selectQuery);
+
+                var currentValue = 0;
+                await foreach (var row in result)
                 {
-                    Func<Task> action = async () => await driver.Execute(async txn =>
-                    {
-                        // Query table.
-                        var result = await txn.Execute(selectQuery);
-
-                        var currentValue = 0;
-                        await foreach (var row in result)
-                        {
-                            currentValue = row.IntValue;
-                        }
-
-                        // Update document.
-                        var ionValue = ValueFactory.NewInt(currentValue + 5);
-                        await txn.Execute(updateQuery, ionValue);
-                    }, RetryPolicy.Builder().WithMaxRetries(0).Build());
-
-                    tasks.Add(action());
+                    currentValue = row.IntValue;
                 }
 
-                await Task.WhenAll(tasks);
-            }
-            catch (OccConflictException e)
-            {
-                // Update document to make sure everything still works after the OCC exception.
-                int updatedValue = 0;
                 await driver.Execute(async txn =>
                 {
-                    var result = await txn.Execute(selectQuery);
-
-                    var currentValue = 0;
-                    await foreach (var row in result)
-                    {
-                        currentValue = row.IntValue;
-                    }
-
-                    updatedValue = currentValue + 5;
-
-                    var ionValue = ValueFactory.NewInt(updatedValue);
+                    // Update document.
+                    var ionValue = ValueFactory.NewInt(currentValue + 5);
                     await txn.Execute(updateQuery, ionValue);
-                });
-
-                // Verify the update was successful.
-                int intVal = await driver.Execute(async txn =>
-                {
-                    var result = await txn.Execute(selectQuery);
-
-                    int intValue = 0;
-                    await foreach (var row in result)
-                    {
-                        intValue = row.IntValue;
-                    }
-
-                    return intValue;
-                });
-
-                Assert.AreEqual(updatedValue, intVal);
-
-                return;
-            }
-            Assert.Fail("Did not raise TimeoutException.");
+                }, RetryPolicy.Builder().WithMaxRetries(0).Build());
+            }, RetryPolicy.Builder().WithMaxRetries(0).Build());
         }
 
         [TestMethod]
@@ -871,6 +826,52 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             // When.
             await qldbDriver.Execute(async txn => await txn.Execute(query));
+        }
+
+        [TestMethod]
+        public async Task Execute_ExecutionMetrics()
+        {
+            await qldbDriver.Execute(async txn =>
+            {
+                var insertQuery = String.Format("INSERT INTO {0} << {{'col': 1}}, {{'col': 2}}, {{'col': 3}} >>",
+                    Constants.TableName);
+                await txn.Execute(insertQuery);
+            });
+
+            // Given
+            var selectQuery = String.Format("SELECT * FROM {0} as a, {0} as b, {0} as c, {0} as d, {0} as e, {0} as f",
+                Constants.TableName);
+
+            // When
+            await qldbDriver.Execute(async txn =>
+            {
+                var result = await txn.Execute(selectQuery);
+
+                await foreach (IIonValue row in result)
+                {
+                    var ioUsage = result.GetConsumedIOs();
+                    var timingInfo = result.GetTimingInformation();
+
+                    Assert.IsNotNull(ioUsage);
+                    Assert.IsNotNull(timingInfo);
+                    Assert.IsTrue(ioUsage.ReadIOs > 0);
+                    Assert.IsTrue(timingInfo.ProcessingTimeMilliseconds > 0);
+                }
+            });
+
+            // When
+            var result = await qldbDriver.Execute(async txn =>
+            {
+                return await txn.Execute(selectQuery);
+            });
+
+            var ioUsage = result.GetConsumedIOs();
+            var timingInfo = result.GetTimingInformation();
+
+            Assert.IsNotNull(ioUsage);
+            Assert.IsNotNull(timingInfo);
+            Assert.AreEqual(1092, ioUsage.ReadIOs);
+            Assert.IsTrue(timingInfo.ProcessingTimeMilliseconds > 0);
         }
 
         public static IEnumerable<object[]> CreateIonValues()

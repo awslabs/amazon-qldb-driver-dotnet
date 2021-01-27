@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"). You may not use this file except in compliance with
  * the License. A copy of the License is located at
@@ -31,7 +31,7 @@ namespace Amazon.QLDB.Driver
     /// </summary>
     internal class Result : IResult
     {
-        private readonly IAsyncEnumerator<IIonValue> ionEnumerator;
+        private readonly IonEnumerator ionEnumerator;
         private bool isRetrieved = false;
 
         /// <summary>
@@ -39,11 +39,11 @@ namespace Amazon.QLDB.Driver
         /// </summary>
         ///
         /// <param name="session">The parent session that represents the communication channel to QLDB.</param>
-        /// <param name="firstPage">The first chunk of the result, returned by the initial execution.</param>
+        /// <param name="statementResult">The result of the statement execution.</param>
         /// <param name="txnId">The unique ID of the transaction.</param>
-        internal Result(Session session, string txnId, Page firstPage)
+        internal Result(Session session, string txnId, ExecuteStatementResult statementResult)
         {
-            this.ionEnumerator = new IonEnumerator(session, txnId, firstPage);
+            this.ionEnumerator = new IonEnumerator(session, txnId, statementResult);
         }
 
         /// <inheritdoc/>
@@ -59,6 +59,26 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <summary>
+        /// Gets the current query statistics for the number of read IO requests. The statistics are stateful.
+        /// </summary>
+        ///
+        /// <returns>The current IOUsage statistics.</returns>
+        public IOUsage GetConsumedIOs()
+        {
+            return this.ionEnumerator.GetConsumedIOs();
+        }
+
+        /// <summary>
+        /// Gets the current query statistics for server-side processing time. The statistics are stateful.
+        /// </summary>
+        ///
+        /// <returns>The current TimingInformation statistics.</returns>
+        public TimingInformation GetTimingInformation()
+        {
+            return this.ionEnumerator.GetTimingInformation();
+        }
+
+        /// <summary>
         /// Object which allows for asynchronous iteration over the individual Ion values that make up the whole result of a statement
         /// execution against QLDB.
         /// </summary>
@@ -70,6 +90,9 @@ namespace Amazon.QLDB.Driver
             private readonly string txnId;
             private IEnumerator<ValueHolder> currentEnumerator;
             private string nextPageToken;
+            private long? readIOs = null;
+            private long? writeIOs = null;
+            private long? processingTimeMilliseconds = null;
 
             /// <summary>
             /// Initializes a new instance of the <see cref="IonEnumerator"/> class.
@@ -77,13 +100,24 @@ namespace Amazon.QLDB.Driver
             ///
             /// <param name="session">The parent session that represents the communication channel to QLDB.</param>
             /// <param name="txnId">The unique ID of the transaction.</param>
-            /// <param name="firstPage">The first chunk of the result, returned by the initial execution.</param>
-            internal IonEnumerator(Session session, string txnId, Page firstPage)
+            /// <param name="statementResult">The result of the statement execution.</param>
+            internal IonEnumerator(Session session, string txnId, ExecuteStatementResult statementResult)
             {
                 this.session = session;
                 this.txnId = txnId;
-                this.currentEnumerator = firstPage.Values.GetEnumerator();
-                this.nextPageToken = firstPage.NextPageToken;
+                this.currentEnumerator = statementResult.FirstPage.Values.GetEnumerator();
+                this.nextPageToken = statementResult.FirstPage.NextPageToken;
+
+                if (statementResult.ConsumedIOs != null)
+                {
+                    this.readIOs = statementResult.ConsumedIOs.ReadIOs;
+                    this.writeIOs = statementResult.ConsumedIOs.WriteIOs;
+                }
+
+                if (statementResult.TimingInformation != null)
+                {
+                    this.processingTimeMilliseconds = statementResult.TimingInformation.ProcessingTimeMilliseconds;
+                }
             }
 
             /// <summary>
@@ -127,13 +161,56 @@ namespace Amazon.QLDB.Driver
             }
 
             /// <summary>
+            /// Gets the current query statistics for the number of read IO requests.
+            /// The statistics are stateful.
+            /// </summary>
+            ///
+            /// <returns>The current IOUsage statistics.</returns>
+            internal IOUsage GetConsumedIOs()
+            {
+                return new IOUsage(this.readIOs, this.writeIOs);
+            }
+
+            /// <summary>
+            /// Gets the current query statistics for server-side processing time. The statistics are stateful.
+            /// </summary>
+            ///
+            /// <returns>The current TimingInformation statistics.</returns>
+            internal TimingInformation GetTimingInformation()
+            {
+                return new TimingInformation(this.processingTimeMilliseconds);
+            }
+
+            /// <summary>
             /// Fetch the next page from the session.
             /// </summary>
             private async Task FetchPage()
             {
-                Page newPage = (await this.session.FetchPage(this.txnId, this.nextPageToken)).Page;
-                this.currentEnumerator = newPage.Values.GetEnumerator();
-                this.nextPageToken = newPage.NextPageToken;
+                FetchPageResult pageResult = await this.session.FetchPage(this.txnId, this.nextPageToken);
+                this.currentEnumerator = pageResult.Page.Values.GetEnumerator();
+                this.nextPageToken = pageResult.Page.NextPageToken;
+                this.UpdateMetrics(pageResult);
+            }
+
+            /// <summary>
+            /// Update the metrics.
+            /// </summary>
+            private void UpdateMetrics(FetchPageResult pageResult)
+            {
+                if (pageResult.ConsumedIOs != null)
+                {
+                    this.readIOs = this.readIOs == null ?
+                        pageResult.ConsumedIOs.ReadIOs : this.readIOs + pageResult.ConsumedIOs.ReadIOs;
+                    this.writeIOs = this.writeIOs == null ?
+                        pageResult.ConsumedIOs.WriteIOs : this.writeIOs + pageResult.ConsumedIOs.WriteIOs;
+                }
+
+                if (pageResult.TimingInformation != null)
+                {
+                    this.processingTimeMilliseconds = this.processingTimeMilliseconds == null ?
+                        pageResult.TimingInformation.ProcessingTimeMilliseconds :
+                        this.processingTimeMilliseconds + pageResult.TimingInformation.ProcessingTimeMilliseconds;
+                }
             }
         }
     }
