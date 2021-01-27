@@ -18,18 +18,18 @@ namespace Amazon.QLDB.Driver
     /// </summary>
     public readonly struct IOUsage
     {
-        internal IOUsage(long? readIOs, long? writeIOs)
+        internal IOUsage(long readIOs, long writeIOs)
         {
             this.ReadIOs = readIOs;
             this.WriteIOs = writeIOs;
         }
 
-        public long? ReadIOs
+        public long ReadIOs
         {
             get;
         }
 
-        internal long? WriteIOs
+        internal long WriteIOs
         {
             get;
         }

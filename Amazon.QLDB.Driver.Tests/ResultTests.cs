@@ -165,9 +165,8 @@ namespace Amazon.QLDB.Driver.Tests
 
             var io = result.GetConsumedIOs();
             var timing = result.GetTimingInformation();
-            Assert.IsNull(io.ReadIOs);
-            Assert.IsNull(io.WriteIOs);
-            Assert.IsNull(timing.ProcessingTimeMilliseconds);
+            Assert.IsNull(io);
+            Assert.IsNull(timing);
 
             var results = result.GetEnumerator();
             while (results.MoveNext())
@@ -177,9 +176,8 @@ namespace Amazon.QLDB.Driver.Tests
 
             io = result.GetConsumedIOs();
             timing = result.GetTimingInformation();
-            Assert.IsNull(io.ReadIOs);
-            Assert.IsNull(io.WriteIOs);
-            Assert.IsNull(timing.ProcessingTimeMilliseconds);
+            Assert.IsNull(io);
+            Assert.IsNull(timing);
         }
 
         [TestMethod]
@@ -195,9 +193,8 @@ namespace Amazon.QLDB.Driver.Tests
 
             var io = result.GetConsumedIOs();
             var timing = result.GetTimingInformation();
-            Assert.IsNull(io.ReadIOs);
-            Assert.IsNull(io.WriteIOs);
-            Assert.IsNull(timing.ProcessingTimeMilliseconds);
+            Assert.IsNull(io);
+            Assert.IsNull(timing);
 
             var results = result.GetEnumerator();
             while (results.MoveNext())
@@ -207,9 +204,9 @@ namespace Amazon.QLDB.Driver.Tests
 
             io = result.GetConsumedIOs();
             timing = result.GetTimingInformation();
-            Assert.AreEqual(fetchReads, io.ReadIOs);
-            Assert.AreEqual(fetchWrites, io.WriteIOs);
-            Assert.AreEqual(fetchTime, timing.ProcessingTimeMilliseconds);
+            Assert.AreEqual(fetchReads, io?.ReadIOs);
+            Assert.AreEqual(fetchWrites, io?.WriteIOs);
+            Assert.AreEqual(fetchTime, timing?.ProcessingTimeMilliseconds);
         }
 
         [TestMethod]
@@ -225,9 +222,9 @@ namespace Amazon.QLDB.Driver.Tests
 
             var io = result.GetConsumedIOs();
             var timing = result.GetTimingInformation();
-            Assert.AreEqual(executeReads, io.ReadIOs);
-            Assert.AreEqual(executeWrites, io.WriteIOs);
-            Assert.AreEqual(executeTime, timing.ProcessingTimeMilliseconds);
+            Assert.AreEqual(executeReads, io?.ReadIOs);
+            Assert.AreEqual(executeWrites, io?.WriteIOs);
+            Assert.AreEqual(executeTime, timing?.ProcessingTimeMilliseconds);
 
             var results = result.GetEnumerator();
             while (results.MoveNext())
@@ -237,9 +234,9 @@ namespace Amazon.QLDB.Driver.Tests
 
             io = result.GetConsumedIOs();
             timing = result.GetTimingInformation();
-            Assert.AreEqual(executeReads, io.ReadIOs);
-            Assert.AreEqual(executeWrites, io.WriteIOs);
-            Assert.AreEqual(executeTime, timing.ProcessingTimeMilliseconds);
+            Assert.AreEqual(executeReads, io?.ReadIOs);
+            Assert.AreEqual(executeWrites, io?.WriteIOs);
+            Assert.AreEqual(executeTime, timing?.ProcessingTimeMilliseconds);
         }
 
         [TestMethod]
@@ -255,9 +252,9 @@ namespace Amazon.QLDB.Driver.Tests
 
             var io = result.GetConsumedIOs();
             var timing = result.GetTimingInformation();
-            Assert.AreEqual(executeReads, io.ReadIOs);
-            Assert.AreEqual(executeWrites, io.WriteIOs);
-            Assert.AreEqual(executeTime, timing.ProcessingTimeMilliseconds);
+            Assert.AreEqual(executeReads, io?.ReadIOs);
+            Assert.AreEqual(executeWrites, io?.WriteIOs);
+            Assert.AreEqual(executeTime, timing?.ProcessingTimeMilliseconds);
 
             var results = result.GetEnumerator();
             while (results.MoveNext())
@@ -267,9 +264,9 @@ namespace Amazon.QLDB.Driver.Tests
 
             io = result.GetConsumedIOs();
             timing = result.GetTimingInformation();
-            Assert.AreEqual(executeReads + fetchReads, io.ReadIOs);
-            Assert.AreEqual(executeWrites + fetchWrites, io.WriteIOs);
-            Assert.AreEqual(executeTime + fetchTime, timing.ProcessingTimeMilliseconds);
+            Assert.AreEqual(executeReads + fetchReads, io?.ReadIOs);
+            Assert.AreEqual(executeWrites + fetchWrites, io?.WriteIOs);
+            Assert.AreEqual(executeTime + fetchTime, timing?.ProcessingTimeMilliseconds);
         }
 
         private ExecuteStatementResult GetExecuteResultNullStats()

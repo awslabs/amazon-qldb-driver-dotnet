@@ -18,12 +18,12 @@ namespace Amazon.QLDB.Driver
     /// </summary>
     public readonly struct TimingInformation
     {
-        internal TimingInformation(long? processingTimeMilliseconds)
+        internal TimingInformation(long processingTimeMilliseconds)
         {
             this.ProcessingTimeMilliseconds = processingTimeMilliseconds;
         }
 
-        public long? ProcessingTimeMilliseconds
+        public long ProcessingTimeMilliseconds
         {
             get;
         }
