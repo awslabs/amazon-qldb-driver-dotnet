@@ -25,8 +25,8 @@ namespace Amazon.QLDB.Driver
     public class BufferedResult : IResult
     {
         private readonly List<IIonValue> values;
-        private readonly IOUsage consumedIOs;
-        private readonly TimingInformation timingInformation;
+        private readonly IOUsage? consumedIOs;
+        private readonly TimingInformation? timingInformation;
 
         /// <summary>
         /// Prevents a default instance of the <see cref="BufferedResult"/> class from being created.
@@ -35,7 +35,7 @@ namespace Amazon.QLDB.Driver
         /// <param name="values">Buffer values.</param>
         /// <param name="consumedIOs">IOUsage statistics.</param>
         /// <param name="timingInformation">TimingInformation statistics.</param>
-        private BufferedResult(List<IIonValue> values, IOUsage consumedIOs, TimingInformation timingInformation)
+        private BufferedResult(List<IIonValue> values, IOUsage? consumedIOs, TimingInformation? timingInformation)
         {
             this.values = values;
             this.consumedIOs = consumedIOs;
@@ -83,7 +83,7 @@ namespace Amazon.QLDB.Driver
         /// </summary>
         ///
         /// <returns>The current IOUsage statistics.</returns>
-        public IOUsage GetConsumedIOs()
+        public IOUsage? GetConsumedIOs()
         {
             return this.consumedIOs;
         }
@@ -93,7 +93,7 @@ namespace Amazon.QLDB.Driver
         /// </summary>
         ///
         /// <returns>The current TimingInformation statistics.</returns>
-        public TimingInformation GetTimingInformation()
+        public TimingInformation? GetTimingInformation()
         {
             return this.timingInformation;
         }

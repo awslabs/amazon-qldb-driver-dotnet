@@ -27,13 +27,13 @@ namespace Amazon.QLDB.Driver
         /// </summary>
         ///
         /// <returns>The current IOUsage statistics.</returns>
-        IOUsage GetConsumedIOs();
+        IOUsage? GetConsumedIOs();
 
         /// <summary>
         /// Gets the current query statistics for server-side processing time. The statistics are stateful.
         /// </summary>
         ///
         /// <returns>The current TimingInformation statistics.</returns>
-        TimingInformation GetTimingInformation();
+        TimingInformation? GetTimingInformation();
     }
 }

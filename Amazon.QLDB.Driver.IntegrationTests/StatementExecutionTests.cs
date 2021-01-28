@@ -838,8 +838,8 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
                     Assert.IsNotNull(ioUsage);
                     Assert.IsNotNull(timingInfo);
-                    Assert.IsTrue(ioUsage.ReadIOs > 0);
-                    Assert.IsTrue(timingInfo.ProcessingTimeMilliseconds > 0);
+                    Assert.IsTrue(ioUsage?.ReadIOs > 0);
+                    Assert.IsTrue(timingInfo?.ProcessingTimeMilliseconds > 0);
                 }
             });
 
@@ -854,8 +854,8 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             Assert.IsNotNull(ioUsage);
             Assert.IsNotNull(timingInfo);
-            Assert.AreEqual(1092, ioUsage.ReadIOs);
-            Assert.IsTrue(timingInfo.ProcessingTimeMilliseconds > 0);
+            Assert.AreEqual(1092, ioUsage?.ReadIOs);
+            Assert.IsTrue(timingInfo?.ProcessingTimeMilliseconds > 0);
         }
 
         public static IEnumerable<object[]> CreateIonValues()
