@@ -5,9 +5,9 @@ v1.1 adds support for obtaining basic server-side statistics on individual state
 ### :hammer_and_wrench: Improvements
 
 * Added `IOUsage` and `TimingInformation` struct types containing information on server-side statistics
-  * IOUsage contains `long? ReadIOs`
-  * TimingInformation contains `long? ProcessingTimeMilliseconds`
-* Added `IOUsage GetConsumedIOs()` and `TimingInformation GetTimingInformation()` to the `IResult` interface
+  * IOUsage contains `long ReadIOs`
+  * TimingInformation contains `long ProcessingTimeMilliseconds`
+* Added `IOUsage? GetConsumedIOs()` and `TimingInformation? GetTimingInformation()` to the `IResult` interface
   * IOUsage and TimingInformation are stateful, meaning the statistics returned by the method reflect the state at the time of method execution
 
 ## Release v1.0.1
