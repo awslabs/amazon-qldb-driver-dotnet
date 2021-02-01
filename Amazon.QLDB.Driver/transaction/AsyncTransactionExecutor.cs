@@ -23,14 +23,14 @@ namespace Amazon.QLDB.Driver
     /// </summary>
     public class AsyncTransactionExecutor : IAsyncExecutable
     {
-        private readonly ITransaction transaction;
+        private readonly IAsyncTransaction transaction;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AsyncTransactionExecutor"/> class.
         /// </summary>
         ///
         /// <param name="transaction">The <see cref="ITransaction"/> object the <see cref="AsyncTransactionExecutor"/> wraps.</param>
-        internal AsyncTransactionExecutor(ITransaction transaction)
+        internal AsyncTransactionExecutor(IAsyncTransaction transaction)
         {
             this.transaction = transaction;
         }
@@ -60,7 +60,7 @@ namespace Amazon.QLDB.Driver
         /// <returns>Result from executed statement.</returns>
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        public IResult Execute(string statement)
+        public IAsyncResult Execute(string statement)
         {
             return this.transaction.Execute(statement);
         }
@@ -75,7 +75,7 @@ namespace Amazon.QLDB.Driver
         /// <returns>Result from executed statement.</returns>
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        public IResult Execute(string statement, List<IIonValue> parameters)
+        public IAsyncResult Execute(string statement, List<IIonValue> parameters)
         {
             return this.transaction.Execute(statement, parameters);
         }
@@ -90,7 +90,7 @@ namespace Amazon.QLDB.Driver
         /// <returns>Result from executed statement.</returns>
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        public IResult Execute(string statement, params IIonValue[] parameters)
+        public IAsyncResult Execute(string statement, params IIonValue[] parameters)
         {
             return this.transaction.Execute(statement, parameters);
         }

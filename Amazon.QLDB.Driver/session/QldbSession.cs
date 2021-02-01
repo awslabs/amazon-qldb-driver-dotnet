@@ -73,6 +73,54 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <summary>
+        /// Create a transaction object which allows for granular control over when a transaction is aborted or committed.
+        /// </summary>
+        ///
+        /// <returns>The newly created transaction object.</returns>
+        public virtual ITransaction StartTransaction()
+        {
+            try
+            {
+                var startTransactionResult = this.session.StartTransaction();
+                return new Transaction(this.session, startTransactionResult.TransactionId, this.logger);
+            }
+            catch (BadRequestException e)
+            {
+                throw new QldbTransactionException(ExceptionMessages.TransactionAlreadyOpened, string.Empty, this.TryAbort(null), e);
+            }
+        }
+
+        /// <summary>
+        /// Try to abort the transaction.
+        /// </summary>
+        ///
+        /// <param name="transaction">The transaction to abort.</param>
+        /// <returns>Whether the abort call has succeeded.</returns>
+        /// <exception cref="AmazonServiceException">If there is an error communicating with QLDB.</exception>
+        protected bool TryAbort(ITransaction transaction)
+        {
+            try
+            {
+                if (transaction != null)
+                {
+                    transaction.Abort();
+                }
+                else
+                {
+                    this.session.AbortTransaction();
+                }
+            }
+            catch (AmazonServiceException ase)
+            {
+                this.logger.LogWarning("This session is invalid on ABORT: {}", ase);
+                this.isAlive = false;
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
         /// Execute the Executor lambda against QLDB and retrieve the result within a transaction.
         /// </summary>
         ///

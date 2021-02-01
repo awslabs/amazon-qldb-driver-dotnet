@@ -126,10 +126,10 @@ namespace Amazon.QLDB.Driver
         /// transaction is committed.</param>
         /// <typeparam name="T">The return type.</typeparam>
         ///
-        /// <returns>The return value of executing the executor. Note that if you directly return a <see cref="IResult"/>, this will
+        /// <returns>The return value of executing the executor. Note that if you directly return a <see cref="IAsyncResult"/>, this will
         /// be automatically buffered in memory before the implicit commit to allow reading, as the commit will close
-        /// any open results. Any other <see cref="IResult"/> instances created within the executor block will be
-        /// invalidated, including if the return value is an object which nests said <see cref="IResult"/> instances within it.
+        /// any open results. Any other <see cref="IAsyncResult"/> instances created within the executor block will be
+        /// invalidated, including if the return value is an object which nests said <see cref="IAsyncResult"/> instances within it.
         /// </returns>
         ///
         /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="AsyncTransactionExecutor.Abort"/>.</exception>
@@ -152,10 +152,10 @@ namespace Amazon.QLDB.Driver
         /// a retriable error. Can be null if not applicable.</param>
         /// <typeparam name="T">The return type.</typeparam>
         ///
-        /// <returns>The return value of executing the executor. Note that if you directly return a <see cref="IResult"/>, this will
+        /// <returns>The return value of executing the executor. Note that if you directly return a <see cref="IAsyncResult"/>, this will
         /// be automatically buffered in memory before the implicit commit to allow reading, as the commit will close
-        /// any open results. Any other <see cref="IResult"/> instances created within the executor block will be
-        /// invalidated, including if the return value is an object which nests said <see cref="IResult"/> instances within it.
+        /// any open results. Any other <see cref="IAsyncResult"/> instances created within the executor block will be
+        /// invalidated, including if the return value is an object which nests said <see cref="IAsyncResult"/> instances within it.
         /// </returns>
         ///
         /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="AsyncTransactionExecutor.Abort"/>.</exception>
@@ -179,10 +179,10 @@ namespace Amazon.QLDB.Driver
         /// will be used when retrying the transaction.</param>
         /// <typeparam name="T">The return type.</typeparam>
         ///
-        /// <returns>The return value of executing the executor. Note that if you directly return a <see cref="IResult"/>, this will
+        /// <returns>The return value of executing the executor. Note that if you directly return a <see cref="IAsyncResult"/>, this will
         /// be automatically buffered in memory before the implicit commit to allow reading, as the commit will close
-        /// any open results. Any other <see cref="IResult"/> instances created within the executor block will be
-        /// invalidated, including if the return value is an object which nests said <see cref="IResult"/> instances within it.
+        /// any open results. Any other <see cref="IAsyncResult"/> instances created within the executor block will be
+        /// invalidated, including if the return value is an object which nests said <see cref="IAsyncResult"/> instances within it.
         /// </returns>
         ///
         /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="AsyncTransactionExecutor.Abort"/>.</exception>

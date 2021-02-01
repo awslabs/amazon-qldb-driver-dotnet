@@ -49,7 +49,7 @@ namespace Amazon.QLDB.Driver
         /// <param name="result">The result which is to be buffered into memory and closed.</param>
         ///
         /// <returns>The <see cref="AsyncBufferedResult"/> object.</returns>
-        public static AsyncBufferedResult AsyncBufferResult(IResult result)
+        public static AsyncBufferedResult AsyncBufferResult(IAsyncResult result)
         {
             var values = new List<IIonValue>();
             foreach (IIonValue value in result)
