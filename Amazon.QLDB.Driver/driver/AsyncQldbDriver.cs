@@ -20,35 +20,35 @@ namespace Amazon.QLDB.Driver
 
     /// <summary>
     /// <para>Represents a factory for accessing a specific ledger within QLDB. This class or
-    /// <see cref="QldbDriver"/> should be the main entry points to any interaction with QLDB.
+    /// <see cref="AsyncQldbDriver"/> should be the main entry points to any interaction with QLDB.
     ///
     /// <para>This factory pools sessions and attempts to return unused but available sessions when getting new sessions.
     /// The pool does not remove stale sessions until a new session is retrieved. The default pool size is the maximum
     /// amount of connections the session client allows set in the <see cref="ClientConfig"/>. <see cref="Dispose"/>
     /// should be called when this factory is no longer needed in order to clean up resources, ending all sessions in the pool.</para>
     /// </summary>
-    public class QldbDriver : BaseQldbDriver, IQldbDriver
+    public class AsyncQldbDriver : BaseQldbDriver, IAsyncQldbDriver
     {
-        private readonly SessionPool sessionPool;
+        private readonly AsyncSessionPool sessionPool;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="QldbDriver"/> class.
+        /// Initializes a new instance of the <see cref="AsyncQldbDriver"/> class.
         /// </summary>
         ///
         /// <param name="sessionPool">The ledger to create sessions to.</param>
-        internal QldbDriver(SessionPool sessionPool)
+        internal AsyncQldbDriver(AsyncSessionPool sessionPool)
         {
             this.sessionPool = sessionPool;
         }
 
         /// <summary>
-        /// Retrieve a builder object for creating a <see cref="QldbDriver"/>.
+        /// Retrieve a builder object for creating a <see cref="AsyncQldbDriver"/>.
         /// </summary>
         ///
-        /// <returns>The builder object for creating a <see cref="QldbDriver"/>.</returns>.
-        public static QldbDriverBuilder Builder()
+        /// <returns>The builder object for creating a <see cref="AsyncQldbDriver"/>.</returns>.
+        public static AsyncQldbDriverBuilder Builder()
         {
-            return new QldbDriverBuilder();
+            return new AsyncQldbDriverBuilder();
         }
 
         /// <summary>
@@ -59,10 +59,10 @@ namespace Amazon.QLDB.Driver
         /// <param name="action">The Executor lambda with no return value representing the block of code to be executed within the transaction.
         /// This cannot have any side effects as it may be invoked multiple times.</param>
         ///
-        /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
+        /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="AsyncTransactionExecutor.Abort"/>.</exception>
         /// <exception cref="QldbDriverException">Thrown when called on a disposed instance.</exception>
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        public void Execute(Action<TransactionExecutor> action)
+        public void Execute(Action<AsyncTransactionExecutor> action)
         {
             this.Execute(action, DefaultRetryPolicy);
         }
@@ -77,11 +77,11 @@ namespace Amazon.QLDB.Driver
         /// <param name="retryAction">A lambda that is invoked when the Executor lambda is about to be retried due to
         /// a retriable error. Can be null if not applicable.</param>
         ///
-        /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
+        /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="AsyncTransactionExecutor.Abort"/>.</exception>
         /// <exception cref="QldbDriverException">Thrown when called on a disposed instance.</exception>
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception
         [Obsolete("As of release 1.0, replaced by 'retryPolicy'. Will be removed in the next major release.")]
-        public void Execute(Action<TransactionExecutor> action, Action<int> retryAction)
+        public void Execute(Action<AsyncTransactionExecutor> action, Action<int> retryAction)
         {
             this.Execute(
                 txn =>
@@ -102,10 +102,10 @@ namespace Amazon.QLDB.Driver
         /// <param name="retryPolicy">A <see cref="RetryPolicy"/> that overrides the RetryPolicy set when creating the driver. The given retry policy
         /// will be used when retrying the transaction.</param>
         ///
-        /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
+        /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="AsyncTransactionExecutor.Abort"/>.</exception>
         /// <exception cref="QldbDriverException">Thrown when called on a disposed instance.</exception>
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        public void Execute(Action<TransactionExecutor> action, RetryPolicy retryPolicy)
+        public void Execute(Action<AsyncTransactionExecutor> action, RetryPolicy retryPolicy)
         {
             this.Execute(
                 txn =>
@@ -132,10 +132,10 @@ namespace Amazon.QLDB.Driver
         /// invalidated, including if the return value is an object which nests said <see cref="IResult"/> instances within it.
         /// </returns>
         ///
-        /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
+        /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="AsyncTransactionExecutor.Abort"/>.</exception>
         /// <exception cref="QldbDriverException">Thrown when called on a disposed instance.</exception>
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        public T Execute<T>(Func<TransactionExecutor, T> func)
+        public T Execute<T>(Func<AsyncTransactionExecutor, T> func)
         {
             return this.Execute(func, DefaultRetryPolicy);
         }
@@ -158,11 +158,11 @@ namespace Amazon.QLDB.Driver
         /// invalidated, including if the return value is an object which nests said <see cref="IResult"/> instances within it.
         /// </returns>
         ///
-        /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
+        /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="AsyncTransactionExecutor.Abort"/>.</exception>
         /// <exception cref="QldbDriverException">Thrown when called on a disposed instance.</exception>
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
         [Obsolete("As of release 1.0, replaced by 'retryPolicy'. Will be removed in the next major release.")]
-        public T Execute<T>(Func<TransactionExecutor, T> func, Action<int> retryAction)
+        public T Execute<T>(Func<AsyncTransactionExecutor, T> func, Action<int> retryAction)
         {
             return this.Execute(func, DefaultRetryPolicy, retryAction);
         }
@@ -185,15 +185,15 @@ namespace Amazon.QLDB.Driver
         /// invalidated, including if the return value is an object which nests said <see cref="IResult"/> instances within it.
         /// </returns>
         ///
-        /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
+        /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="AsyncTransactionExecutor.Abort"/>.</exception>
         /// <exception cref="QldbDriverException">Thrown when called on a disposed instance.</exception>
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        public T Execute<T>(Func<TransactionExecutor, T> func, RetryPolicy retryPolicy)
+        public T Execute<T>(Func<AsyncTransactionExecutor, T> func, RetryPolicy retryPolicy)
         {
             return this.Execute(func, retryPolicy, null);
         }
 
-        internal T Execute<T>(Func<TransactionExecutor, T> func, RetryPolicy retryPolicy, Action<int> retryAction)
+        internal T Execute<T>(Func<AsyncTransactionExecutor, T> func, RetryPolicy retryPolicy, Action<int> retryAction)
         {
             return this.sessionPool.Execute(func, retryPolicy, retryAction);
         }

@@ -24,18 +24,18 @@ namespace Amazon.QLDB.Driver
     ///
     /// This implementation should be used by default to avoid excess memory consumption and to improve performance.
     /// </summary>
-    internal class Result : BaseResult, IResult
+    internal class AsyncResult : BaseResult, IAsyncResult
     {
         private readonly IonEnumerator ionEnumerator;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Result"/> class.
+        /// Initializes a new instance of the <see cref="AsyncResult"/> class.
         /// </summary>
         ///
         /// <param name="session">The parent session that represents the communication channel to QLDB.</param>
         /// <param name="statementResult">The result of the statement execution.</param>
         /// <param name="txnId">The unique ID of the transaction.</param>
-        internal Result(Session session, string txnId, ExecuteStatementResult statementResult)
+        internal AsyncResult(Session session, string txnId, ExecuteStatementResult statementResult)
         {
             this.ionEnumerator = new IonEnumerator(session, txnId, statementResult);
         }
@@ -44,26 +44,6 @@ namespace Amazon.QLDB.Driver
         IEnumerator IEnumerable.GetEnumerator()
         {
             return this.GetEnumerator();
-        }
-
-        /// <summary>
-        /// Gets the current query statistics for the number of read IO requests. The statistics are stateful.
-        /// </summary>
-        ///
-        /// <returns>The current IOUsage statistics.</returns>
-        public IOUsage? GetConsumedIOs()
-        {
-            return this.ionEnumerator.GetConsumedIOs();
-        }
-
-        /// <summary>
-        /// Gets the current query statistics for server-side processing time. The statistics are stateful.
-        /// </summary>
-        ///
-        /// <returns>The current TimingInformation statistics.</returns>
-        public TimingInformation? GetTimingInformation()
-        {
-            return this.ionEnumerator.GetTimingInformation();
         }
     }
 }

@@ -11,22 +11,22 @@
  * and limitations under the License.
  */
 
- namespace Amazon.QLDB.Driver
+namespace Amazon.QLDB.Driver
 {
     using Amazon.QLDBSession;
     using Amazon.Runtime;
     using Microsoft.Extensions.Logging;
 
     /// <summary>
-    /// Builder object for creating a <see cref="QldbDriver"/>, allowing for configuration of the parameters of
+    /// Builder object for creating a <see cref="AsyncQldbDriver"/>, allowing for configuration of the parameters of
     /// construction.
     /// </summary>
-    public class QldbDriverBuilder : BaseQldbDriverBuilder
+    public class AsyncQldbDriverBuilder : BaseQldbDriverBuilder
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="QldbDriverBuilder"/> class.
+        /// Initializes a new instance of the <see cref="AsyncQldbDriverBuilder"/> class.
         /// </summary>
-        internal QldbDriverBuilder()
+        internal AsyncQldbDriverBuilder()
         {
         }
 
@@ -37,7 +37,7 @@
         /// <param name="credentials">The credentials to create a driver with.</param>
         ///
         /// <returns>This builder object.</returns>
-        public QldbDriverBuilder WithAWSCredentials(AWSCredentials credentials)
+        public AsyncQldbDriverBuilder WithAWSCredentials(AWSCredentials credentials)
         {
             this.Credentials = credentials;
             return this;
@@ -50,7 +50,7 @@
         /// <param name="ledgerName">The name of the ledger to create a driver with.</param>
         ///
         /// <returns>This builder object.</returns>
-        public QldbDriverBuilder WithLedger(string ledgerName)
+        public AsyncQldbDriverBuilder WithLedger(string ledgerName)
         {
             ValidationUtils.AssertStringNotEmpty(ledgerName, "ledgerName");
             this.LedgerName = ledgerName;
@@ -64,7 +64,7 @@
         /// <param name="logger">The logger to create a driver with.</param>
         ///
         /// <returns>This builder object.</returns>
-        public QldbDriverBuilder WithLogger(ILogger logger)
+        public AsyncQldbDriverBuilder WithLogger(ILogger logger)
         {
             ValidationUtils.AssertNotNull(logger, "logger");
             this.Logger = logger;
@@ -78,7 +78,7 @@
         /// <param name="sessionConfig">The configuration to create a driver with.</param>
         ///
         /// <returns>This builder object.</returns>
-        public QldbDriverBuilder WithQLDBSessionConfig(AmazonQLDBSessionConfig sessionConfig)
+        public AsyncQldbDriverBuilder WithQLDBSessionConfig(AmazonQLDBSessionConfig sessionConfig)
         {
             this.SessionConfig = sessionConfig;
             return this;
@@ -96,7 +96,7 @@
         /// cannot exceed the amount set in the <see cref="Amazon.Runtime.ClientConfig"/> used for this builder.
         /// </param>
         /// <returns>This builder object.</returns>
-        public QldbDriverBuilder WithMaxConcurrentTransactions(int maxConcurrentTransactions)
+        public AsyncQldbDriverBuilder WithMaxConcurrentTransactions(int maxConcurrentTransactions)
         {
             ValidationUtils.AssertNotNegative(maxConcurrentTransactions, "maxConcurrentTransactions");
             this.maxConcurrentTransactions = maxConcurrentTransactions;
@@ -107,7 +107,7 @@
         /// Enable loggging driver retries at the WARN level.
         /// </summary>
         /// <returns>This builder object.</returns>
-        public QldbDriverBuilder WithRetryLogging()
+        public AsyncQldbDriverBuilder WithRetryLogging()
         {
             this.logRetries = true;
             return this;
@@ -118,7 +118,7 @@
         /// </summary>
         ///
         /// <returns>A newly created driver.</returns>
-        public QldbDriver Build()
+        public AsyncQldbDriver Build()
         {
             if (this.SessionConfig == null)
             {
@@ -138,8 +138,8 @@
                     int.MaxValue : this.GetMaxConn();
             }
 
-            return new QldbDriver(
-                new SessionPool(
+            return new AsyncQldbDriver(
+                new AsyncSessionPool(
                     () => Session.StartSession(this.LedgerName, this.sessionClient, this.Logger),
                     CreateDefaultRetryHandler(this.logRetries ? this.Logger : null),
                     this.maxConcurrentTransactions,
@@ -147,13 +147,13 @@
         }
 
         /// <summary>
-        /// Create a RetryHandler object with the default set of retriable exceptions.
+        /// Create a AsyncRetryHandler object with the default set of retriable exceptions.
         /// </summary>
         /// <param name="logger">The logger.</param>
-        /// <returns>The constructed IRetryHandler instance.</returns>
-        internal static IRetryHandler CreateDefaultRetryHandler(ILogger logger)
+        /// <returns>The constructed IAsyncRetryHandler instance.</returns>
+        internal static IAsyncRetryHandler CreateDefaultRetryHandler(ILogger logger)
         {
-            return new RetryHandler(logger);
+            return new AsyncRetryHandler(logger);
         }
     }
 }

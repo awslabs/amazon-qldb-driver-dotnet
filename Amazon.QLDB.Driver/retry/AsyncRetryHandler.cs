@@ -20,20 +20,20 @@ namespace Amazon.QLDB.Driver
     using Microsoft.Extensions.Logging;
 
     /// <summary>
-    /// <para>The synchronous implementation of Retry Handler.</para>
+    /// <para>The asynchronous implementation of Retry Handler.</para>
     ///
     /// <para>The driver retries in two scenarios: retrying inside a session, and retrying with another session. In the second case,
     /// it would require a <i>recover</i> action to reset the session into a working state.
     /// </summary>
-    internal class RetryHandler : IRetryHandler
+    internal class AsyncRetryHandler : IAsyncRetryHandler
     {
         private readonly ILogger logger;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="RetryHandler"/> class.
+        /// Initializes a new instance of the <see cref="AsyncRetryHandler"/> class.
         /// </summary>
         /// <param name="logger">The logger to record retries.</param>
-        public RetryHandler(ILogger logger)
+        public AsyncRetryHandler(ILogger logger)
         {
             this.logger = logger;
         }

@@ -44,19 +44,19 @@ namespace Amazon.QLDB.Driver
     /// </list>
     /// </para>
     /// </summary>
-    internal class QldbSession : BaseQldbSession
+    internal class AsyncQldbSession : BaseQldbSession
     {
         private readonly ILogger logger;
-        private readonly Action<QldbSession> releaseSession;
+        private readonly Action<AsyncQldbSession> releaseSession;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="QldbSession"/> class.
+        /// Initializes a new instance of the <see cref="AsyncQldbSession"/> class.
         /// </summary>
         ///
         /// <param name="session">The session object representing a communication channel with QLDB.</param>
         /// <param name="releaseSession">The delegate method to release the session.</param>
         /// <param name="logger">The logger to be used by this.</param>
-        internal QldbSession(Session session, Action<QldbSession> releaseSession, ILogger logger)
+        internal AsyncQldbSession(Session session, Action<AsyncQldbSession> releaseSession, ILogger logger)
         {
             this.session = session;
             this.releaseSession = releaseSession;
@@ -81,17 +81,17 @@ namespace Amazon.QLDB.Driver
         /// transaction is committed.</param>
         /// <typeparam name="T">The return type.</typeparam>
         ///
-        /// <returns>The return value of executing the executor. Note that if you directly return a <see cref="IResult"/>, this will
+        /// <returns>The return value of executing the executor. Note that if you directly return a <see cref="IAsyncResult"/>, this will
         /// be automatically buffered in memory before the implicit commit to allow reading, as the commit will close
-        /// any open results. Any other <see cref="IResult"/> instances created within the executor block will be
-        /// invalidated, including if the return value is an object which nests said <see cref="IResult"/> instances within it.
+        /// any open results. Any other <see cref="IAsyncResult"/> instances created within the executor block will be
+        /// invalidated, including if the return value is an object which nests said <see cref="IAsyncResult"/> instances within it.
         /// </returns>
         ///
-        /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
+        /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="AsyncTransactionExecutor.Abort"/>.</exception>
         /// <exception cref="TransactionAlreadyOpenException">Thrown if the transaction has already been opened.</exception>
         /// <exception cref="QldbDriverException">Thrown when called on a disposed instance.</exception>
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        public T Execute<T>(Func<TransactionExecutor, T> func)
+        public T Execute<T>(Func<AsyncTransactionExecutor, T> func)
         {
             ValidationUtils.AssertNotNull(func, "func");
 
@@ -99,7 +99,7 @@ namespace Amazon.QLDB.Driver
             try
             {
                 transaction = this.StartTransaction();
-                T returnedValue = func(new TransactionExecutor(transaction));
+                T returnedValue = func(new AsyncTransactionExecutor(transaction));
                 if (returnedValue is IResult)
                 {
                     returnedValue = (T)(object)BufferedResult.BufferResult((IResult)returnedValue);

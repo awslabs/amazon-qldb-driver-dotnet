@@ -29,20 +29,20 @@ namespace Amazon.QLDB.Driver
     ///
     /// Child Result objects will be closed when the transaction is aborted or committed.
     /// </summary>
-    internal class Transaction : BaseTransaction, ITransaction
+    internal class AsyncTransaction : BaseTransaction, ITransaction
     {
         private readonly Session session;
         private readonly string txnId;
         private readonly ILogger logger;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Transaction"/> class.
+        /// Initializes a new instance of the <see cref="AsyncTransaction"/> class.
         /// </summary>
         ///
         /// <param name="session">The parent session that represents the communication channel to QLDB.</param>
         /// <param name="txnId">Transaction identifier.</param>
         /// <param name="logger">Logger to be used by this.</param>
-        internal Transaction(Session session, string txnId, ILogger logger)
+        internal AsyncTransaction(Session session, string txnId, ILogger logger)
         {
             this.session = session;
             this.txnId = txnId;

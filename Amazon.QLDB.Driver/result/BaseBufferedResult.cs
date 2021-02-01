@@ -22,51 +22,19 @@ namespace Amazon.QLDB.Driver
     /// This implementation should only be used when the result is to be returned after the parent transaction is to be
     /// committed.
     /// </summary>
-    public class BufferedResult : BaseBufferedResult, IResult
+    public abstract class BaseBufferedResult
     {
-        private readonly List<IIonValue> values;
-        private readonly IOUsage? consumedIOs;
-        private readonly TimingInformation? timingInformation;
-
-        /// <summary>
-        /// Prevents a default instance of the <see cref="BufferedResult"/> class from being created.
-        /// </summary>
-        ///
-        /// <param name="values">Buffer values.</param>
-        /// <param name="consumedIOs">IOUsage statistics.</param>
-        /// <param name="timingInformation">TimingInformation statistics.</param>
-        private BufferedResult(List<IIonValue> values, IOUsage? consumedIOs, TimingInformation? timingInformation)
-        {
-            this.values = values;
-            this.consumedIOs = consumedIOs;
-            this.timingInformation = timingInformation;
-        }
-
-        /// <summary>
-        /// Constructor for the result which buffers into the memory the supplied result before closing it.
-        /// </summary>
-        ///
-        /// <param name="result">The result which is to be buffered into memory and closed.</param>
-        ///
-        /// <returns>The <see cref="BufferedResult"/> object.</returns>
-        public static BufferedResult BufferResult(IResult result)
-        {
-            var values = new List<IIonValue>();
-            foreach (IIonValue value in result)
-            {
-                values.Add(value);
-            }
-
-            return new BufferedResult(values, result.GetConsumedIOs(), result.GetTimingInformation());
-        }
+        protected readonly List<IIonValue> values;
+        protected readonly IOUsage? consumedIOs;
+        protected readonly TimingInformation? timingInformation;
 
         /// <summary>
         /// Returns an enumerator that iterates through a collection.
         /// </summary>
         /// <returns>An <see cref="IEnumerator"/> object that can be used to iterate through the collection.</returns>
-        IEnumerator IEnumerable.GetEnumerator()
+        public IEnumerator<IIonValue> GetEnumerator()
         {
-            return this.GetEnumerator();
+            return this.values.GetEnumerator();
         }
 
         /// <summary>
