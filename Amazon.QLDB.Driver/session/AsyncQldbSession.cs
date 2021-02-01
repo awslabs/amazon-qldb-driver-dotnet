@@ -47,22 +47,9 @@ namespace Amazon.QLDB.Driver
             this.releaseSession(this);
         }
 
-        /// <summary>
-        /// Create a transaction object which allows for granular control over when a transaction is aborted or committed.
-        /// </summary>
-        ///
-        /// <returns>The newly created transaction object.</returns>
         public virtual IAsyncTransaction StartTransaction()
         {
-            try
-            {
-                var startTransactionResult = this.session.StartTransaction();
-                return new AsyncTransaction(this.session, startTransactionResult.TransactionId, this.logger);
-            }
-            catch (BadRequestException e)
-            {
-                throw new QldbTransactionException(ExceptionMessages.TransactionAlreadyOpened, string.Empty, this.TryAbort(null), e);
-            }
+            throw new NotImplementedException();
         }
 
         /// <summary>

@@ -13,28 +13,17 @@
 
 namespace Amazon.QLDB.Driver
 {
-    using System.Collections;
+    using System;
     using System.Collections.Generic;
+    using System.Threading;
     using Amazon.IonDotnet.Tree;
 
-    /// <summary>
-    /// Implementation of a result which buffers all values in memory, rather than stream them from QLDB during retrieval.
-    /// This implementation should only be used when the result is to be returned after the parent transaction is to be
-    /// committed.
-    /// </summary>
     public class AsyncBufferedResult : BaseBufferedResult, IAsyncResult
     {
         private readonly List<IIonValue> values;
         private readonly IOUsage? consumedIOs;
         private readonly TimingInformation? timingInformation;
 
-        /// <summary>
-        /// Prevents a default instance of the <see cref="AsyncBufferedResult"/> class from being created.
-        /// </summary>
-        ///
-        /// <param name="values">Buffer values.</param>
-        /// <param name="consumedIOs">IOUsage statistics.</param>
-        /// <param name="timingInformation">TimingInformation statistics.</param>
         private AsyncBufferedResult(List<IIonValue> values, IOUsage? consumedIOs, TimingInformation? timingInformation)
         {
             this.values = values;
@@ -42,31 +31,14 @@ namespace Amazon.QLDB.Driver
             this.timingInformation = timingInformation;
         }
 
-        /// <summary>
-        /// Constructor for the result which buffers into the memory the supplied result before closing it.
-        /// </summary>
-        ///
-        /// <param name="result">The result which is to be buffered into memory and closed.</param>
-        ///
-        /// <returns>The <see cref="AsyncBufferedResult"/> object.</returns>
         public static AsyncBufferedResult AsyncBufferResult(IAsyncResult result)
         {
-            var values = new List<IIonValue>();
-            foreach (IIonValue value in result)
-            {
-                values.Add(value);
-            }
-
-            return new AsyncBufferedResult(values, result.GetConsumedIOs(), result.GetTimingInformation());
+            throw new NotImplementedException();
         }
 
-        /// <summary>
-        /// Returns an enumerator that iterates through a collection.
-        /// </summary>
-        /// <returns>An <see cref="IEnumerator"/> object that can be used to iterate through the collection.</returns>
-        IEnumerator IEnumerable.GetEnumerator()
+        public IAsyncEnumerator<IIonValue> GetAsyncEnumerator(CancellationToken cancellationToken = default(CancellationToken))
         {
-            return this.GetEnumerator();
+            throw new NotImplementedException();
         }
     }
 }

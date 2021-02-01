@@ -43,7 +43,7 @@ namespace Amazon.QLDB.Driver
             this.logger = logger;
         }
 
-        public Task<T> Execute<T>(Func<AsyncTransactionExecutor, T> func, RetryPolicy retryPolicy, Action<int> retryAction)
+        public Task<T> Execute<T>(Func<AsyncTransactionExecutor, Task> func, RetryPolicy retryPolicy, Action<int> retryAction)
         {
             throw new NotImplementedException();
         }

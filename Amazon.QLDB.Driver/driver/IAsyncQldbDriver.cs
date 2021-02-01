@@ -23,9 +23,9 @@ namespace Amazon.QLDB.Driver
 
         Task Execute(Action<AsyncTransactionExecutor> action, RetryPolicy retryPolicy);
 
-        Task<T> Execute<T>(Func<AsyncTransactionExecutor, T> func);
+        Task<T> Execute<T>(Func<AsyncTransactionExecutor, Task<T>> func);
 
-        Task<T> Execute<T>(Func<AsyncTransactionExecutor, T> func, RetryPolicy retryPolicy);
+        Task<T> Execute<T>(Func<AsyncTransactionExecutor, Task<T>> func, RetryPolicy retryPolicy);
 
         IEnumerable<string> ListTableNames();
     }

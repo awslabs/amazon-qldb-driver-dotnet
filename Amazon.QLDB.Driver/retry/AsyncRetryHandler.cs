@@ -30,7 +30,7 @@ namespace Amazon.QLDB.Driver
             this.logger = logger;
         }
 
-        public Task<T> RetriableExecute<T>(Func<T> func, RetryPolicy retryPolicy, Action newSessionAction, Action nextSessionAction, Action<int> retryAction)
+        public Task<T> RetriableExecute<T>(Func<Task> func, RetryPolicy retryPolicy, Action newSessionAction, Action nextSessionAction, Action<int> retryAction)
         {
             throw new NotImplementedException();
         }

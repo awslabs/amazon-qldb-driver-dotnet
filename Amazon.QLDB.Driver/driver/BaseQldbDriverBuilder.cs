@@ -27,8 +27,8 @@ namespace Amazon.QLDB.Driver
     {
         private protected AmazonQLDBSessionClient sessionClient;
 
-        protected int maxConcurrentTransactions = 0;
-        protected bool logRetries = false;
+        private protected int maxConcurrentTransactions = 0;
+        private protected bool logRetries = false;
 
         /// <summary>
         /// Gets or sets the AWS credentials to construct the <see cref="AmazonQLDBSessionClient"/> object.
@@ -50,7 +50,7 @@ namespace Amazon.QLDB.Driver
         /// </summary>
         private protected AmazonQLDBSessionConfig SessionConfig { get; set; } = null;
 
-        protected void PrepareForBuild()
+        private protected void PrepareForBuild()
         {
             if (this.SessionConfig == null)
             {

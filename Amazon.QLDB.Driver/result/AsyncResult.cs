@@ -13,7 +13,11 @@
 
 namespace Amazon.QLDB.Driver
 {
-    using System.Collections;
+    using System;
+    using System.Collections.Generic;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Amazon.IonDotnet.Tree;
     using Amazon.QLDBSession.Model;
 
     internal class AsyncResult : BaseResult, IAsyncResult
@@ -32,10 +36,9 @@ namespace Amazon.QLDB.Driver
             this.ionEnumerator = new IonEnumerator(session, txnId, statementResult);
         }
 
-        /// <inheritdoc/>
-        IEnumerator IEnumerable.GetEnumerator()
+        public IAsyncEnumerator<IIonValue> GetAsyncEnumerator(CancellationToken cancellationToken = default(CancellationToken))
         {
-            return this.GetEnumerator();
+            throw new NotImplementedException();
         }
     }
 }

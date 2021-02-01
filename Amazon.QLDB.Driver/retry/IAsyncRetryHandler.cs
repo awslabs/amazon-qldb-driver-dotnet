@@ -18,6 +18,6 @@ namespace Amazon.QLDB.Driver
 
     internal interface IAsyncRetryHandler
     {
-        Task<T> RetriableExecute<T>(Func<T> func, RetryPolicy retryPolicy, Action newSessionAction, Action nextSessionAction, Action<int> retryAction);
+        Task<T> RetriableExecute<T>(Func<Task> func, RetryPolicy retryPolicy, Action newSessionAction, Action nextSessionAction, Action<int> retryAction);
     }
 }
