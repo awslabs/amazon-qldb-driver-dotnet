@@ -141,5 +141,17 @@ namespace Amazon.QLDB.Driver
         {
             return new QldbSession(this.sessionCreator.Invoke(), this.ReleaseSession, this.logger);
         }
+
+        /// <summary>
+        /// Dispose the session pool and all sessions.
+        /// </summary>
+        public void Dispose()
+        {
+            this.isClosed = true;
+            while (this.sessionPool.Count > 0)
+            {
+                this.sessionPool.Take().Close();
+            }
+        }
     }
 }

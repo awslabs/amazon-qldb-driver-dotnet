@@ -24,7 +24,6 @@ namespace Amazon.QLDB.Driver
     internal abstract class BaseQldbSession
     {
         protected readonly ILogger logger;
-        protected readonly Action<QldbSession> releaseSession;
         protected Session session;
         protected bool isAlive;
 

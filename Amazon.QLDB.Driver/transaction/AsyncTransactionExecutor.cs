@@ -29,7 +29,7 @@ namespace Amazon.QLDB.Driver
         /// Initializes a new instance of the <see cref="AsyncTransactionExecutor"/> class.
         /// </summary>
         ///
-        /// <param name="transaction">The <see cref="ITransaction"/> object the <see cref="AsyncTransactionExecutor"/> wraps.</param>
+        /// <param name="transaction">The <see cref="IAsyncTransaction"/> object the <see cref="AsyncTransactionExecutor"/> wraps.</param>
         internal AsyncTransactionExecutor(IAsyncTransaction transaction)
         {
             this.transaction = transaction;

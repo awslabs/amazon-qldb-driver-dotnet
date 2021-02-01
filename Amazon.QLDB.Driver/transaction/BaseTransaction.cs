@@ -42,12 +42,12 @@ namespace Amazon.QLDB.Driver
 
         /// <summary>
         /// Abort the transaction and roll back any changes. No-op if closed.
-        /// Any open <see cref="IResult"/> created by the transaction will be invalidated.
+        /// Any open result created by the transaction will be invalidated.
         /// </summary>
         public abstract void Abort();
 
         /// <summary>
-        /// Commit the transaction. Any open <see cref="IResult"/> created by the transaction will be invalidated.
+        /// Commit the transaction. Any open result created by the transaction will be invalidated.
         /// </summary>
         ///
         /// <exception cref="InvalidOperationException">Thrown when Hash returned from QLDB is not equal.</exception>

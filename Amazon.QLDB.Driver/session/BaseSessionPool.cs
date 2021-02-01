@@ -14,7 +14,6 @@
 namespace Amazon.QLDB.Driver
 {
     using System;
-    using System.Collections.Concurrent;
     using System.Threading;
     using Microsoft.Extensions.Logging;
 
@@ -24,24 +23,10 @@ namespace Amazon.QLDB.Driver
     internal abstract class BaseSessionPool
     {
         protected const int DefaultTimeoutInMs = 1;
-        protected readonly BlockingCollection<QldbSession> sessionPool;
         private readonly SemaphoreSlim poolPermits;
         protected readonly Func<Session> sessionCreator;
-        protected readonly IRetryHandler retryHandler;
         protected readonly ILogger logger;
         protected bool isClosed = false;
-
-        /// <summary>
-        /// Dispose the session pool and all sessions.
-        /// </summary>
-        public void Dispose()
-        {
-            this.isClosed = true;
-            while (this.sessionPool.Count > 0)
-            {
-                this.sessionPool.Take().Close();
-            }
-        }
 
         internal int AvailablePermit()
         {
