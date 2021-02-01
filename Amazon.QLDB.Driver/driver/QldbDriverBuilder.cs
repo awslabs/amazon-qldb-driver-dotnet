@@ -120,23 +120,7 @@
         /// <returns>A newly created driver.</returns>
         public QldbDriver Build()
         {
-            if (this.SessionConfig == null)
-            {
-                this.SessionConfig = new AmazonQLDBSessionConfig();
-            }
-
-            this.SessionConfig.MaxErrorRetry = 0;
-            this.sessionClient = this.Credentials == null ? new AmazonQLDBSessionClient(this.SessionConfig)
-                : new AmazonQLDBSessionClient(this.Credentials, this.SessionConfig);
-            this.sessionClient.BeforeRequestEvent += SetUserAgent;
-
-            ValidationUtils.AssertStringNotEmpty(this.LedgerName, "ledgerName");
-
-            if (this.maxConcurrentTransactions == 0)
-            {
-                this.maxConcurrentTransactions = this.SessionConfig.GetType().GetProperty("MaxConnectionsPerServer") == null ?
-                    int.MaxValue : this.GetMaxConn();
-            }
+            this.PrepareForBuild();
 
             return new QldbDriver(
                 new SessionPool(

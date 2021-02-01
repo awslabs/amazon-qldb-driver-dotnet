@@ -16,11 +16,9 @@ namespace Amazon.QLDB.Driver
     using System;
     using System.Collections.Concurrent;
     using System.Threading;
+    using System.Threading.Tasks;
     using Microsoft.Extensions.Logging;
 
-    /// <summary>
-    /// The asynchronous implementation of the session pool.
-    /// </summary>
     internal class AsyncSessionPool : BaseSessionPool
     {
         private readonly BlockingCollection<AsyncQldbSession> sessionPool;
@@ -45,85 +43,14 @@ namespace Amazon.QLDB.Driver
             this.logger = logger;
         }
 
-        /// <summary>
-        /// Execute a function in session pool.
-        /// </summary>
-        /// <typeparam name="T">The return type of the function.</typeparam>
-        /// <param name="func">The function to be executed in the session pool.</param>
-        /// <param name="retryPolicy">The policy on retry.</param>
-        /// <param name="retryAction">The customer retry action.</param>
-        /// <returns>The result from the function.</returns>
-        public T Execute<T>(Func<AsyncTransactionExecutor, T> func, RetryPolicy retryPolicy, Action<int> retryAction)
+        public Task<T> Execute<T>(Func<AsyncTransactionExecutor, T> func, RetryPolicy retryPolicy, Action<int> retryAction)
         {
-            AsyncQldbSession session = null;
-            try
-            {
-                session = this.GetSession();
-                return this.retryHandler.RetriableExecute(
-                    () => session.Execute(func),
-                    retryPolicy,
-                    () => session = this.StartNewSession(),
-                    () =>
-                    {
-                        this.poolPermits.Release();
-                        session = this.GetSession();
-                    },
-                    retryAction);
-            }
-            finally
-            {
-                if (session != null)
-                {
-                    session.Release();
-                }
-            }
+            throw new NotImplementedException();
         }
 
-        /// <summary>
-        /// <para>Get a <see cref="AsyncQldbSession"/> object.</para>
-        ///
-        /// <para>This will attempt to retrieve an active existing session, or it will start a new session with QLDB unless the
-        /// number of allocated sessions has exceeded the pool size limit.</para>
-        /// </summary>
-        /// <returns>The <see cref="AsyncQldbSession"/> object.</returns>
-        ///
-        /// <exception cref="QldbDriverException">Thrown when this driver has been disposed or timeout.</exception>
         internal AsyncQldbSession GetSession()
         {
-            if (this.isClosed)
-            {
-                this.logger.LogError(ExceptionMessages.DriverClosed);
-                throw new QldbDriverException(ExceptionMessages.DriverClosed);
-            }
-
-            this.logger.LogDebug(
-                "Getting session. There are {} free sessions and {} available permits.",
-                this.sessionPool.Count,
-                this.sessionPool.BoundedCapacity - this.poolPermits.CurrentCount);
-
-            if (this.poolPermits.Wait(DefaultTimeoutInMs))
-            {
-                try
-                {
-                    var session = this.sessionPool.Count > 0 ? this.sessionPool.Take() : null;
-
-                    if (session == null)
-                    {
-                        session = this.StartNewSession();
-                        this.logger.LogDebug("Creating new pooled session with ID {}.", session.GetSessionId());
-                    }
-
-                    return session;
-                }
-                catch (Exception e)
-                {
-                    this.poolPermits.Release();
-                    throw e;
-                }
-            }
-
-            this.logger.LogError(ExceptionMessages.SessionPoolEmpty);
-            throw new QldbDriverException(ExceptionMessages.SessionPoolEmpty);
+            throw new NotImplementedException();
         }
 
         private void ReleaseSession(AsyncQldbSession session)

@@ -14,22 +14,10 @@
 namespace Amazon.QLDB.Driver
 {
     using System;
+    using System.Threading.Tasks;
 
-    /// <summary>
-    /// Interface of Retry Handler.
-    /// </summary>
     internal interface IAsyncRetryHandler
     {
-        /// <summary>
-        /// Execute a retriable function.
-        /// </summary>
-        /// <typeparam name="T">The return type of the executed function.</typeparam>
-        /// <param name="func">The function to be executed and retried if needed.</param>
-        /// <param name="retryPolicy">The retry policy.</param>
-        /// <param name="newSessionAction">The action to move to a new session.</param>
-        /// <param name="nextSessionAction">The action to get the next session.</param>
-        /// <param name="retryAction">The custom retry action.</param>
-        /// <returns>The return value of the executed function.</returns>
-        T RetriableExecute<T>(Func<T> func, RetryPolicy retryPolicy, Action newSessionAction, Action nextSessionAction, Action<int> retryAction);
+        Task<T> RetriableExecute<T>(Func<T> func, RetryPolicy retryPolicy, Action newSessionAction, Action nextSessionAction, Action<int> retryAction);
     }
 }

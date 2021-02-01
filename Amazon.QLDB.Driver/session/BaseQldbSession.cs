@@ -13,9 +13,6 @@
 
 namespace Amazon.QLDB.Driver
 {
-    using System;
-    using Amazon.QLDBSession.Model;
-    using Amazon.Runtime;
     using Microsoft.Extensions.Logging;
 
     /// <summary>

@@ -21,8 +21,8 @@ namespace Amazon.QLDB.Driver
         internal const string TableNameQuery =
             "SELECT VALUE name FROM information_schema.user_tables WHERE status = 'ACTIVE'";
 
-        protected static readonly RetryPolicy DefaultRetryPolicy = RetryPolicy.Builder().Build();
-        internal readonly SessionPool sessionPool;
+        private protected static readonly RetryPolicy DefaultRetryPolicy = RetryPolicy.Builder().Build();
+        private protected readonly SessionPool sessionPool;
 
         /// <summary>
         /// Close this driver and end all sessions in the current pool. No-op if already closed.

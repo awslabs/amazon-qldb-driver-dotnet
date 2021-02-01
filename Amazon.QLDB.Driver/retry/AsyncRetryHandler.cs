@@ -14,17 +14,9 @@
 namespace Amazon.QLDB.Driver
 {
     using System;
-    using System.Text.RegularExpressions;
-    using System.Threading;
-    using Amazon.QLDBSession.Model;
+    using System.Threading.Tasks;
     using Microsoft.Extensions.Logging;
 
-    /// <summary>
-    /// <para>The asynchronous implementation of Retry Handler.</para>
-    ///
-    /// <para>The driver retries in two scenarios: retrying inside a session, and retrying with another session. In the second case,
-    /// it would require a <i>recover</i> action to reset the session into a working state.
-    /// </summary>
     internal class AsyncRetryHandler : IAsyncRetryHandler
     {
         private readonly ILogger logger;
@@ -38,72 +30,9 @@ namespace Amazon.QLDB.Driver
             this.logger = logger;
         }
 
-        /// <inheritdoc/>
-        public T RetriableExecute<T>(Func<T> func, RetryPolicy retryPolicy, Action newSessionAction, Action nextSessionAction, Action<int> retryAction)
+        public Task<T> RetriableExecute<T>(Func<T> func, RetryPolicy retryPolicy, Action newSessionAction, Action nextSessionAction, Action<int> retryAction)
         {
-            Exception last = null;
-            int retryAttempt = 0;
-
-            while (true)
-            {
-                try
-                {
-                    return func();
-                }
-                catch (QldbTransactionException ex)
-                {
-                    var iex = ex.InnerException != null ? ex.InnerException : ex;
-
-                    if (!(ex is RetriableException))
-                    {
-                        throw iex;
-                    }
-
-                    last = iex;
-
-                    if (retryAttempt < retryPolicy.MaxRetries && !IsTransactionExpiry(iex))
-                    {
-                        this.logger?.LogWarning(
-                                iex,
-                                "A recoverable exception has occurred. Attempting retry {}. Errored Transaction ID: {}.",
-                                ++retryAttempt,
-                                TryGetTransactionId(ex));
-
-                        retryAction?.Invoke(retryAttempt);
-
-                        Thread.Sleep(retryPolicy.BackoffStrategy.CalculateDelay(new RetryPolicyContext(retryAttempt, iex)));
-
-                        if (!ex.IsSessionAlive)
-                        {
-                            if (iex is InvalidSessionException)
-                            {
-                                newSessionAction();
-                            }
-                            else
-                            {
-                                nextSessionAction();
-                            }
-                        }
-
-                        continue;
-                    }
-
-                    throw last;
-                }
-            }
-
-            throw last;
-        }
-
-        internal static bool IsTransactionExpiry(Exception ex)
-        {
-            return ex is InvalidSessionException
-                && Regex.Match(ex.Message, @"Transaction\s.*\shas\sexpired").Success;
-        }
-
-        private static string TryGetTransactionId(Exception ex)
-        {
-            return ex is QldbTransactionException exception ? exception.TransactionId : string.Empty;
+            throw new NotImplementedException();
         }
     }
 }

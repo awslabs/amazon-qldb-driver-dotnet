@@ -15,18 +15,8 @@ namespace Amazon.QLDB.Driver
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
-    using Amazon.Runtime;
+    using System.Threading.Tasks;
 
-    /// <summary>
-    /// <para>Represents a factory for accessing a specific ledger within QLDB. This class or
-    /// <see cref="AsyncQldbDriver"/> should be the main entry points to any interaction with QLDB.
-    ///
-    /// <para>This factory pools sessions and attempts to return unused but available sessions when getting new sessions.
-    /// The pool does not remove stale sessions until a new session is retrieved. The default pool size is the maximum
-    /// amount of connections the session client allows set in the <see cref="ClientConfig"/>. <see cref="Dispose"/>
-    /// should be called when this factory is no longer needed in order to clean up resources, ending all sessions in the pool.</para>
-    /// </summary>
     public class AsyncQldbDriver : BaseQldbDriver, IAsyncQldbDriver
     {
         private readonly AsyncSessionPool sessionPool;
@@ -51,164 +41,34 @@ namespace Amazon.QLDB.Driver
             return new AsyncQldbDriverBuilder();
         }
 
-        /// <summary>
-        /// Start a session, then execute the Executor lambda against QLDB within a transaction where no result is expected,
-        /// and end the session.
-        /// </summary>
-        ///
-        /// <param name="action">The Executor lambda with no return value representing the block of code to be executed within the transaction.
-        /// This cannot have any side effects as it may be invoked multiple times.</param>
-        ///
-        /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="AsyncTransactionExecutor.Abort"/>.</exception>
-        /// <exception cref="QldbDriverException">Thrown when called on a disposed instance.</exception>
-        /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        public void Execute(Action<AsyncTransactionExecutor> action)
+        public Task Execute(Action<AsyncTransactionExecutor> action)
         {
-            this.Execute(action, DefaultRetryPolicy);
+            throw new NotImplementedException();
         }
 
-        /// <summary>
-        /// Start a session, then execute the Executor lambda against QLDB within a transaction where no result is expected,
-        /// and end the session.
-        /// </summary>
-        ///
-        /// <param name="action">The Executor lambda with no return value representing the block of code to be executed within the transaction.
-        /// This cannot have any side effects as it may be invoked multiple times.</param>
-        /// <param name="retryAction">A lambda that is invoked when the Executor lambda is about to be retried due to
-        /// a retriable error. Can be null if not applicable.</param>
-        ///
-        /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="AsyncTransactionExecutor.Abort"/>.</exception>
-        /// <exception cref="QldbDriverException">Thrown when called on a disposed instance.</exception>
-        /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception
-        [Obsolete("As of release 1.0, replaced by 'retryPolicy'. Will be removed in the next major release.")]
-        public void Execute(Action<AsyncTransactionExecutor> action, Action<int> retryAction)
+        public Task Execute(Action<AsyncTransactionExecutor> action, RetryPolicy retryPolicy)
         {
-            this.Execute(
-                txn =>
-                {
-                    action.Invoke(txn);
-                    return false;
-                },
-                retryAction);
+            throw new NotImplementedException();
         }
 
-        /// <summary>
-        /// Start a session, then execute the Executor lambda against QLDB within a transaction where no result is expected,
-        /// and end the session.
-        /// </summary>
-        ///
-        /// <param name="action">The Executor lambda with no return value representing the block of code to be executed within the transaction.
-        /// This cannot have any side effects as it may be invoked multiple times.</param>
-        /// <param name="retryPolicy">A <see cref="RetryPolicy"/> that overrides the RetryPolicy set when creating the driver. The given retry policy
-        /// will be used when retrying the transaction.</param>
-        ///
-        /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="AsyncTransactionExecutor.Abort"/>.</exception>
-        /// <exception cref="QldbDriverException">Thrown when called on a disposed instance.</exception>
-        /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        public void Execute(Action<AsyncTransactionExecutor> action, RetryPolicy retryPolicy)
+        public Task<T> Execute<T>(Func<AsyncTransactionExecutor, T> func)
         {
-            this.Execute(
-                txn =>
-                {
-                    action.Invoke(txn);
-                    return false;
-                },
-                retryPolicy);
+            throw new NotImplementedException();
         }
 
-        /// <summary>
-        /// Start a session, then execute the Executor lambda against QLDB and retrieve the result within a transaction,
-        /// and end the session.
-        /// </summary>
-        ///
-        /// <param name="func">The Executor lambda representing the block of code to be executed within the transaction. This cannot have any
-        /// side effects as it may be invoked multiple times, and the result cannot be trusted until the
-        /// transaction is committed.</param>
-        /// <typeparam name="T">The return type.</typeparam>
-        ///
-        /// <returns>The return value of executing the executor. Note that if you directly return a <see cref="IAsyncResult"/>, this will
-        /// be automatically buffered in memory before the implicit commit to allow reading, as the commit will close
-        /// any open results. Any other <see cref="IAsyncResult"/> instances created within the executor block will be
-        /// invalidated, including if the return value is an object which nests said <see cref="IAsyncResult"/> instances within it.
-        /// </returns>
-        ///
-        /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="AsyncTransactionExecutor.Abort"/>.</exception>
-        /// <exception cref="QldbDriverException">Thrown when called on a disposed instance.</exception>
-        /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        public T Execute<T>(Func<AsyncTransactionExecutor, T> func)
+        public Task<T> Execute<T>(Func<AsyncTransactionExecutor, T> func, RetryPolicy retryPolicy)
         {
-            return this.Execute(func, DefaultRetryPolicy);
+            throw new NotImplementedException();
         }
 
-        /// <summary>
-        /// Start a session, then execute the Executor lambda against QLDB and retrieve the result within a transaction,
-        /// and end the session.
-        /// </summary>
-        ///
-        /// <param name="func">The Executor lambda representing the block of code to be executed within the transaction. This cannot have any
-        /// side effects as it may be invoked multiple times, and the result cannot be trusted until the
-        /// transaction is committed.</param>
-        /// <param name="retryAction">A lambda that is invoked when the Executor lambda is about to be retried due to
-        /// a retriable error. Can be null if not applicable.</param>
-        /// <typeparam name="T">The return type.</typeparam>
-        ///
-        /// <returns>The return value of executing the executor. Note that if you directly return a <see cref="IAsyncResult"/>, this will
-        /// be automatically buffered in memory before the implicit commit to allow reading, as the commit will close
-        /// any open results. Any other <see cref="IAsyncResult"/> instances created within the executor block will be
-        /// invalidated, including if the return value is an object which nests said <see cref="IAsyncResult"/> instances within it.
-        /// </returns>
-        ///
-        /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="AsyncTransactionExecutor.Abort"/>.</exception>
-        /// <exception cref="QldbDriverException">Thrown when called on a disposed instance.</exception>
-        /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        [Obsolete("As of release 1.0, replaced by 'retryPolicy'. Will be removed in the next major release.")]
-        public T Execute<T>(Func<AsyncTransactionExecutor, T> func, Action<int> retryAction)
+        internal Task<T> Execute<T>(Func<AsyncTransactionExecutor, T> func, RetryPolicy retryPolicy, Action<int> retryAction)
         {
-            return this.Execute(func, DefaultRetryPolicy, retryAction);
+            throw new NotImplementedException();
         }
 
-        /// <summary>
-        /// Start a session, then execute the Executor lambda against QLDB and retrieve the result within a transaction,
-        /// and end the session.
-        /// </summary>
-        ///
-        /// <param name="func">The Executor lambda representing the block of code to be executed within the transaction. This cannot have any
-        /// side effects as it may be invoked multiple times, and the result cannot be trusted until the
-        /// transaction is committed.</param>
-        /// <param name="retryPolicy">A <see cref="RetryPolicy"/> that overrides the RetryPolicy set when creating the driver. The given retry policy
-        /// will be used when retrying the transaction.</param>
-        /// <typeparam name="T">The return type.</typeparam>
-        ///
-        /// <returns>The return value of executing the executor. Note that if you directly return a <see cref="IAsyncResult"/>, this will
-        /// be automatically buffered in memory before the implicit commit to allow reading, as the commit will close
-        /// any open results. Any other <see cref="IAsyncResult"/> instances created within the executor block will be
-        /// invalidated, including if the return value is an object which nests said <see cref="IAsyncResult"/> instances within it.
-        /// </returns>
-        ///
-        /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="AsyncTransactionExecutor.Abort"/>.</exception>
-        /// <exception cref="QldbDriverException">Thrown when called on a disposed instance.</exception>
-        /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        public T Execute<T>(Func<AsyncTransactionExecutor, T> func, RetryPolicy retryPolicy)
-        {
-            return this.Execute(func, retryPolicy, null);
-        }
-
-        internal T Execute<T>(Func<AsyncTransactionExecutor, T> func, RetryPolicy retryPolicy, Action<int> retryAction)
-        {
-            return this.sessionPool.Execute(func, retryPolicy, retryAction);
-        }
-
-        /// <summary>
-        /// Retrieve the table names that are available within the ledger.
-        /// </summary>
-        ///
-        /// <returns>The Enumerable over the table names in the ledger.</returns>
         public IEnumerable<string> ListTableNames()
         {
-            return this.Execute((txn) =>
-            {
-                return txn.Execute(TableNameQuery);
-            }).Select(i => i.StringValue);
+            throw new NotImplementedException();
         }
     }
 }

@@ -50,6 +50,27 @@ namespace Amazon.QLDB.Driver
         /// </summary>
         private protected AmazonQLDBSessionConfig SessionConfig { get; set; } = null;
 
+        protected void PrepareForBuild()
+        {
+            if (this.SessionConfig == null)
+            {
+                this.SessionConfig = new AmazonQLDBSessionConfig();
+            }
+
+            this.SessionConfig.MaxErrorRetry = 0;
+            this.sessionClient = this.Credentials == null ? new AmazonQLDBSessionClient(this.SessionConfig)
+                : new AmazonQLDBSessionClient(this.Credentials, this.SessionConfig);
+            this.sessionClient.BeforeRequestEvent += SetUserAgent;
+
+            ValidationUtils.AssertStringNotEmpty(this.LedgerName, "ledgerName");
+
+            if (this.maxConcurrentTransactions == 0)
+            {
+                this.maxConcurrentTransactions = this.SessionConfig.GetType().GetProperty("MaxConnectionsPerServer") == null ?
+                    int.MaxValue : this.GetMaxConn();
+            }
+        }
+
         protected static void SetUserAgent(object sender, RequestEventArgs eventArgs)
         {
             const string UserAgentHeader = "User-Agent";

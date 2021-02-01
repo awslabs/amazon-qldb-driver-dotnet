@@ -17,22 +17,6 @@ namespace Amazon.QLDB.Driver
     using Amazon.QLDBSession.Model;
     using Amazon.Runtime;
 
-    /// <summary>
-    /// <para>Interface that represents an active transaction with QLDB.</para>
-    ///
-    /// <para>Every transaction is tied to the parent <see cref="IQldbSession"/>, meaning that if the parent session is closed or
-    /// invalidated, the child transaction is automatically closed and cannot be used. Only one transaction can be active at
-    /// any given time per parent session, and thus every transaction should call <see cref="Abort"/> or <see cref="Commit"/> when
-    /// it is no longer needed, or when a new transaction is wanted from the parent session.</para>
-    ///
-    /// <para>Any unexpected errors that occur within a transaction should not be retried using the same transaction, as the
-    /// state of the transaction is now ambiguous.</para>
-    ///
-    /// <para>When an OCC conflict occurs, the transaction is closed and must be handled manually by creating a new transaction
-    /// and re-executing the desired queries.</para>
-    ///
-    /// <para>Child Result objects will be closed when the transaction is aborted or committed.</para>
-    /// </summary>
     internal interface IAsyncTransaction : IDisposable, IAsyncExecutable
     {
         string Id { get; }

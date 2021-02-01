@@ -16,14 +16,6 @@ namespace Amazon.QLDB.Driver
     using System.Collections;
     using Amazon.QLDBSession.Model;
 
-    /// <summary>
-    /// Result implementation which streams data from QLDB, discarding chunks as they are read.
-    ///
-    /// Note that due to the fact that a result can only be retrieved from QLDB once, the Result may only be iterated
-    /// over once. Attempts to do so multiple times will result in an exception.
-    ///
-    /// This implementation should be used by default to avoid excess memory consumption and to improve performance.
-    /// </summary>
     internal class AsyncResult : BaseResult, IAsyncResult
     {
         private readonly IonEnumerator ionEnumerator;

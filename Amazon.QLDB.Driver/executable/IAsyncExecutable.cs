@@ -14,44 +14,15 @@
 namespace Amazon.QLDB.Driver
 {
     using System.Collections.Generic;
+    using System.Threading.Tasks;
     using Amazon.IonDotnet.Tree;
-    using Amazon.Runtime;
 
-    /// <summary>
-    /// Interface for executions of a statement within an active transaction to QLDB.
-    /// </summary>
     public interface IAsyncExecutable
     {
-        /// <summary>
-        /// Execute the statement against QLDB and retrieve the result.
-        /// </summary>
-        ///
-        /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
-        ///
-        /// <returns>Result from executed statement.</returns>
-        /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        IAsyncResult Execute(string statement);
+        Task<IAsyncResult> Execute(string statement);
 
-        /// <summary>
-        /// Execute the statement using the specified parameters against QLDB and retrieve the result.
-        /// </summary>
-        ///
-        /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
-        /// <param name="parameters">Parameters to execute.</param>
-        ///
-        /// <returns>Result from executed statement.</returns>
-        /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        IAsyncResult Execute(string statement, List<IIonValue> parameters);
+        Task<IAsyncResult> Execute(string statement, List<IIonValue> parameters);
 
-        /// <summary>
-        /// Execute the statement using the specified parameters against QLDB and retrieve the result.
-        /// </summary>
-        ///
-        /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
-        /// <param name="parameters">Parameters to execute.</param>
-        ///
-        /// <returns>Result from executed statement.</returns>
-        /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        IAsyncResult Execute(string statement, params IIonValue[] parameters);
+        Task<IAsyncResult> Execute(string statement, params IIonValue[] parameters);
     }
 }
