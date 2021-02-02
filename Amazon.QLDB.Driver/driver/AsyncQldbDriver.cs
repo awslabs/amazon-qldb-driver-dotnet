@@ -19,7 +19,7 @@ namespace Amazon.QLDB.Driver
 
     public class AsyncQldbDriver
     {
-        public IEnumerable<string> ListTableNames()
+        public Task<IEnumerable<string>> ListTableNames()
         {
             throw new NotImplementedException();
         }
