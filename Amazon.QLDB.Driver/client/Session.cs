@@ -13,8 +13,11 @@
 
 namespace Amazon.QLDB.Driver
 {
+    using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Threading;
+    using System.Threading.Tasks;
     using Amazon.IonDotnet.Builders;
     using Amazon.IonDotnet.Tree;
     using Amazon.QLDBSession;
@@ -86,6 +89,12 @@ namespace Amazon.QLDB.Driver
                 logger);
         }
 
+        internal static async Task<Session> StartSession(string ledgerName, AmazonQLDBSessionClient sessionClient,
+            ILogger logger, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
         /// <summary>
         /// Send an abort request to QLDB, rolling back any active changes and closing any open results.
         /// </summary>
@@ -100,6 +109,11 @@ namespace Amazon.QLDB.Driver
             };
             var response = this.SendCommand(request);
             return response.AbortTransaction;
+        }
+
+        internal virtual async Task<AbortTransactionResult> AbortTransaction(CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -117,6 +131,11 @@ namespace Amazon.QLDB.Driver
             }
         }
 
+        internal virtual async Task End(CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
         /// <summary>
         /// Send an end session request to QLDB, closing all open results and transactions.
         /// </summary>
@@ -131,6 +150,11 @@ namespace Amazon.QLDB.Driver
             };
             var response = this.SendCommand(request);
             return response.EndSession;
+        }
+
+        internal virtual async Task<EndSessionResult> EndSession(CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -156,6 +180,11 @@ namespace Amazon.QLDB.Driver
             };
             var response = this.SendCommand(request);
             return response.CommitTransaction;
+        }
+
+        internal virtual async Task<CommitTransactionResult> CommitTransaction(string txnId, MemoryStream commitDigest, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -218,6 +247,11 @@ namespace Amazon.QLDB.Driver
             }
         }
 
+        internal virtual async Task<ExecuteStatementResult> ExecuteStatement(string txnId, string statement, List<IIonValue> parameters, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
         /// <summary>
         /// Send a fetch result request to QLDB, retrieving the next chunk of data for the result.
         /// </summary>
@@ -241,6 +275,11 @@ namespace Amazon.QLDB.Driver
             return response.FetchPage;
         }
 
+        internal virtual async Task<FetchPageResult> FetchPage(string txnId, string nextPageToken, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
         /// <summary>
         /// Send a start transaction request to QLDB.
         /// </summary>
@@ -257,6 +296,11 @@ namespace Amazon.QLDB.Driver
             return response.StartTransaction;
         }
 
+        internal virtual async Task<StartTransactionResult> StartTransaction(CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
         /// <summary>
         /// Send a request to QLDB.
         /// </summary>
@@ -269,6 +313,11 @@ namespace Amazon.QLDB.Driver
             request.SessionToken = this.sessionToken;
             this.logger.LogDebug("Sending request: {}", request);
             return this.SessionClient.SendCommandAsync(request).GetAwaiter().GetResult();
+        }
+
+        private async Task<SendCommandResponse> SendCommand(SendCommandRequest request, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
         }
     }
 }
