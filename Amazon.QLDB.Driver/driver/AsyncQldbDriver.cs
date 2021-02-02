@@ -15,41 +15,54 @@ namespace Amazon.QLDB.Driver
 {
     using System;
     using System.Collections.Generic;
+    using System.Threading;
     using System.Threading.Tasks;
 
-    public class AsyncQldbDriver
+    public class AsyncQldbDriver : IAsyncDisposable
     {
-        public Task<IEnumerable<string>> ListTableNames()
+        public async Task<IEnumerable<string>> ListTableNamesAsync(CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
-        public void Dispose()
+        public ValueTask DisposeAsync()
         {
             throw new NotImplementedException();
         }
 
-        public Task Execute(Action<AsyncTransactionExecutor> action)
+        public async Task Execute(
+            Func<TransactionExecutor, CancellationToken, Task> action, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
-        public Task Execute(Action<AsyncTransactionExecutor> action, RetryPolicy retryPolicy)
+        public async Task Execute(
+            Func<TransactionExecutor, CancellationToken, Task> action,
+            RetryPolicy retryPolicy,
+            CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
-        public Task<T> Execute<T>(Func<AsyncTransactionExecutor, Task<T>> func)
+        public async Task<T> Execute<T>(
+            Func<TransactionExecutor, CancellationToken, Task<T>> func, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
-        public Task<T> Execute<T>(Func<AsyncTransactionExecutor, Task<T>> func, RetryPolicy retryPolicy)
+        public async Task<T> Execute<T>(
+            Func<TransactionExecutor, CancellationToken, Task<T>> func,
+            RetryPolicy retryPolicy,
+            CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
-        internal Task<T> Execute<T>(Func<AsyncTransactionExecutor, Task<T>> func, RetryPolicy retryPolicy, Action<int> retryAction)
+        internal async Task<T> Execute<T>(
+            Func<AsyncTransactionExecutor, CancellationToken, Task<T>> func,
+            RetryPolicy retryPolicy,
+            Action<int> retryAction,
+            CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
