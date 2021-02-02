@@ -18,7 +18,7 @@ namespace Amazon.QLDB.Driver
     using System.Threading.Tasks;
     using Amazon.IonDotnet.Tree;
 
-    internal class AsyncTransactionExecutor : IAsyncExecutable
+    public class AsyncTransactionExecutor : IAsyncExecutable
     {
         public Task<IAsyncResult> Execute(string statement)
         {
