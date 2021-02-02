@@ -18,13 +18,8 @@ namespace Amazon.QLDB.Driver
     using System.Threading.Tasks;
     using Amazon.IonDotnet.Tree;
 
-    public class AsyncTransactionExecutor : IAsyncExecutable
+    internal class AsyncTransactionExecutor : IAsyncExecutable
     {
-        public void Abort()
-        {
-            throw new NotImplementedException();
-        }
-
         public Task<IAsyncResult> Execute(string statement)
         {
             throw new NotImplementedException();
@@ -36,6 +31,11 @@ namespace Amazon.QLDB.Driver
         }
 
         public Task<IAsyncResult> Execute(string statement, params IIonValue[] parameters)
+        {
+            throw new NotImplementedException();
+        }
+
+        internal void Abort()
         {
             throw new NotImplementedException();
         }

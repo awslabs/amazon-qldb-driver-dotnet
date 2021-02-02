@@ -23,7 +23,7 @@ namespace Amazon.QLDB.Driver
             throw new NotImplementedException();
         }
 
-        public async Task<T> Execute<T>(Func<AsyncTransactionExecutor, T> func)
+        public async Task<T> Execute<T>(Func<AsyncTransactionExecutor, Task<T>> func)
         {
             throw new NotImplementedException();
         }

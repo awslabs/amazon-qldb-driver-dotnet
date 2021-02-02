@@ -18,7 +18,7 @@ namespace Amazon.QLDB.Driver
 
     internal class AsyncRetryHandler : IAsyncRetryHandler
     {
-        public Task<T> RetriableExecute<T>(Func<Task> func, RetryPolicy retryPolicy, Action newSessionAction, Action nextSessionAction, Action<int> retryAction)
+        public Task<T> RetriableExecute<T>(Func<Task<T>> func, RetryPolicy retryPolicy, Action newSessionAction, Action nextSessionAction, Action<int> retryAction)
         {
             throw new NotImplementedException();
         }

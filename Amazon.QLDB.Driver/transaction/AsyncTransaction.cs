@@ -20,27 +20,27 @@ namespace Amazon.QLDB.Driver
 
     internal class AsyncTransaction
     {
-        public void Abort()
+        internal void Abort()
         {
             throw new NotImplementedException();
         }
 
-        public void Commit()
+        internal void Commit()
         {
             throw new NotImplementedException();
         }
 
-        public Task<IAsyncResult> Execute(string statement)
+        internal Task<IAsyncResult> Execute(string statement)
         {
             throw new NotImplementedException();
         }
 
-        public Task<IAsyncResult> Execute(string statement, List<IIonValue> parameters)
+        internal Task<IAsyncResult> Execute(string statement, List<IIonValue> parameters)
         {
             throw new NotImplementedException();
         }
 
-        public Task<IAsyncResult> Execute(string statement, params IIonValue[] parameters)
+        internal Task<IAsyncResult> Execute(string statement, params IIonValue[] parameters)
         {
             throw new NotImplementedException();
         }
