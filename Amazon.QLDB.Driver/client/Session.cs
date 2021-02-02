@@ -13,10 +13,8 @@
 
 namespace Amazon.QLDB.Driver
 {
-    using System;
     using System.Collections.Generic;
     using System.IO;
-    using System.Threading;
     using System.Threading.Tasks;
     using Amazon.IonDotnet.Builders;
     using Amazon.IonDotnet.Tree;
@@ -60,7 +58,7 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <summary>
-        /// Factory method for constructing a new Session, creating a new session to QLDB on construction.
+        /// Async factory method for constructing a new Session, creating a new session to QLDB on construction.
         /// </summary>
         ///
         /// <param name="ledgerName">The name of the ledger to create a session to.</param>
@@ -68,7 +66,7 @@ namespace Amazon.QLDB.Driver
         /// <param name="logger">The logger to inject any logging framework.</param>
         ///
         /// <returns>A newly created <see cref="Session"/>.</returns>
-        internal static Session StartSession(string ledgerName, AmazonQLDBSessionClient sessionClient, ILogger logger)
+        internal static async Task<Session> StartSessionAsync(string ledgerName, AmazonQLDBSessionClient sessionClient, ILogger logger)
         {
             var startSessionRequest = new StartSessionRequest
             {
@@ -80,7 +78,7 @@ namespace Amazon.QLDB.Driver
             };
 
             logger.LogDebug("Sending start session request: {}", request);
-            var response = sessionClient.SendCommandAsync(request).GetAwaiter().GetResult();
+            var response = await sessionClient.SendCommandAsync(request);
             return new Session(
                 ledgerName,
                 sessionClient,
@@ -89,10 +87,34 @@ namespace Amazon.QLDB.Driver
                 logger);
         }
 
-        internal static async Task<Session> StartSession(string ledgerName, AmazonQLDBSessionClient sessionClient,
-            ILogger logger, CancellationToken cancellationToken = default)
+        /// <summary>
+        /// Factory method for constructing a new Session, creating a new session to QLDB on construction.
+        /// </summary>
+        ///
+        /// <param name="ledgerName">The name of the ledger to create a session to.</param>
+        /// <param name="sessionClient">The low-level session used for communication with QLDB.</param>
+        /// <param name="logger">The logger to inject any logging framework.</param>
+        ///
+        /// <returns>A newly created <see cref="Session"/>.</returns>
+        internal static Session StartSession(string ledgerName, AmazonQLDBSessionClient sessionClient, ILogger logger)
         {
-            throw new NotImplementedException();
+            return StartSessionAsync(ledgerName, sessionClient, logger).GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Send an asynchronous abort request to QLDB, rolling back any active changes and closing any open results.
+        /// </summary>
+        ///
+        /// <returns>The result of the abort transaction request.</returns>
+        internal virtual async Task<AbortTransactionResult> AbortTransactionAsync()
+        {
+            var abortTransactionRequest = new AbortTransactionRequest();
+            var request = new SendCommandRequest
+            {
+                AbortTransaction = abortTransactionRequest,
+            };
+            var response = await this.SendCommandAsync(request);
+            return response.AbortTransaction;
         }
 
         /// <summary>
@@ -102,28 +124,17 @@ namespace Amazon.QLDB.Driver
         /// <returns>The result of the abort transaction request.</returns>
         internal virtual AbortTransactionResult AbortTransaction()
         {
-            var abortTransactionRequest = new AbortTransactionRequest();
-            var request = new SendCommandRequest
-            {
-                AbortTransaction = abortTransactionRequest,
-            };
-            var response = this.SendCommand(request);
-            return response.AbortTransaction;
-        }
-
-        internal virtual async Task<AbortTransactionResult> AbortTransaction(CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
+            return this.AbortTransactionAsync().GetAwaiter().GetResult();
         }
 
         /// <summary>
-        /// Send an end session request to QLDB and ignore exceptions.
+        /// Send an asynchronous end session request to QLDB and ignore exceptions.
         /// </summary>
-        internal virtual void End()
+        internal virtual async Task EndAsync()
         {
             try
             {
-                this.EndSession();
+                await this.EndSessionAsync();
             }
             catch (AmazonServiceException ase)
             {
@@ -131,9 +142,28 @@ namespace Amazon.QLDB.Driver
             }
         }
 
-        internal virtual async Task End(CancellationToken cancellationToken = default)
+        /// <summary>
+        /// Send an end session request to QLDB and ignore exceptions.
+        /// </summary>
+        internal virtual void End()
         {
-            throw new NotImplementedException();
+            this.EndAsync().GetAwaiter();
+        }
+
+        /// <summary>
+        /// Send an asynchronous end session request to QLDB, closing all open results and transactions.
+        /// </summary>
+        ///
+        /// <returns>The result of the end session request.</returns>
+        internal virtual async Task<EndSessionResult> EndSessionAsync()
+        {
+            var endSessionRequest = new EndSessionRequest();
+            var request = new SendCommandRequest
+            {
+                EndSession = endSessionRequest,
+            };
+            var response = await this.SendCommandAsync(request);
+            return response.EndSession;
         }
 
         /// <summary>
@@ -143,18 +173,32 @@ namespace Amazon.QLDB.Driver
         /// <returns>The result of the end session request.</returns>
         internal virtual EndSessionResult EndSession()
         {
-            var endSessionRequest = new EndSessionRequest();
-            var request = new SendCommandRequest
-            {
-                EndSession = endSessionRequest,
-            };
-            var response = this.SendCommand(request);
-            return response.EndSession;
+            return this.EndSessionAsync().GetAwaiter().GetResult();
         }
 
-        internal virtual async Task<EndSessionResult> EndSession(CancellationToken cancellationToken = default)
+        /// <summary>
+        /// Send an asynchronous commit request to QLDB, committing any active changes and closing any open results.
+        /// </summary>
+        ///
+        /// <param name="txnId">The unique ID of the transaction to commit.</param>
+        /// <param name="commitDigest">The digest hash of the transaction to commit.</param>
+        ///
+        /// <returns>The result of the commit transaction request.</returns>
+        ///
+        /// <exception cref="OccConflictException">Thrown if an OCC conflict has been detected within the transaction.</exception>
+        internal virtual async Task<CommitTransactionResult> CommitTransactionAsync(string txnId, MemoryStream commitDigest)
         {
-            throw new NotImplementedException();
+            var commitTransactionRequest = new CommitTransactionRequest
+            {
+                TransactionId = txnId,
+                CommitDigest = commitDigest,
+            };
+            var request = new SendCommandRequest
+            {
+                CommitTransaction = commitTransactionRequest,
+            };
+            var response = await this.SendCommandAsync(request);
+            return response.CommitTransaction;
         }
 
         /// <summary>
@@ -169,26 +213,11 @@ namespace Amazon.QLDB.Driver
         /// <exception cref="OccConflictException">Thrown if an OCC conflict has been detected within the transaction.</exception>
         internal virtual CommitTransactionResult CommitTransaction(string txnId, MemoryStream commitDigest)
         {
-            var commitTransactionRequest = new CommitTransactionRequest
-            {
-                TransactionId = txnId,
-                CommitDigest = commitDigest,
-            };
-            var request = new SendCommandRequest
-            {
-                CommitTransaction = commitTransactionRequest,
-            };
-            var response = this.SendCommand(request);
-            return response.CommitTransaction;
-        }
-
-        internal virtual async Task<CommitTransactionResult> CommitTransaction(string txnId, MemoryStream commitDigest, CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
+            return this.CommitTransactionAsync(txnId, commitDigest).GetAwaiter().GetResult();
         }
 
         /// <summary>
-        /// Send an execute request with parameters to QLDB.
+        /// Send an asynchronous execute request with parameters to QLDB.
         /// </summary>
         ///
         /// <param name="txnId">The unique ID of the transaction to execute.</param>
@@ -196,7 +225,7 @@ namespace Amazon.QLDB.Driver
         /// <param name="parameters">The parameters to use with the PartiQL statement for execution.</param>
         ///
         /// <returns>The result of the execution, which contains a <see cref="Page"/> representing the first data chunk.</returns>
-        internal virtual ExecuteStatementResult ExecuteStatement(string txnId, string statement, List<IIonValue> parameters)
+        internal virtual async Task<ExecuteStatementResult> ExecuteStatementAsync(string txnId, string statement, List<IIonValue> parameters)
         {
             List<ValueHolder> valueHolders = null;
 
@@ -228,7 +257,7 @@ namespace Amazon.QLDB.Driver
                 {
                     ExecuteStatement = executeStatementRequest,
                 };
-                var response = this.SendCommand(request);
+                var response = await this.SendCommandAsync(request);
                 return response.ExecuteStatement;
             }
             catch (IOException e)
@@ -247,9 +276,42 @@ namespace Amazon.QLDB.Driver
             }
         }
 
-        internal virtual async Task<ExecuteStatementResult> ExecuteStatement(string txnId, string statement, List<IIonValue> parameters, CancellationToken cancellationToken = default)
+        /// <summary>
+        /// Send an execute request with parameters to QLDB.
+        /// </summary>
+        ///
+        /// <param name="txnId">The unique ID of the transaction to execute.</param>
+        /// <param name="statement">The PartiQL statement to execute.</param>
+        /// <param name="parameters">The parameters to use with the PartiQL statement for execution.</param>
+        ///
+        /// <returns>The result of the execution, which contains a <see cref="Page"/> representing the first data chunk.</returns>
+        internal virtual ExecuteStatementResult ExecuteStatement(string txnId, string statement,
+            List<IIonValue> parameters)
         {
-            throw new NotImplementedException();
+            return this.ExecuteStatementAsync(txnId, statement, parameters).GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Send an asynchronous fetch result request to QLDB, retrieving the next chunk of data for the result.
+        /// </summary>
+        ///
+        /// <param name="txnId">The unique ID of the transaction to execute.</param>
+        /// <param name="nextPageToken">The token that indicates what the next expected page is.</param>
+        ///
+        /// <returns>The result of the <see cref="FetchPageRequest"/>.</returns>
+        internal virtual async Task<FetchPageResult> FetchPageAsync(string txnId, string nextPageToken)
+        {
+            var fetchPageRequest = new FetchPageRequest
+            {
+                TransactionId = txnId,
+                NextPageToken = nextPageToken,
+            };
+            var request = new SendCommandRequest
+            {
+                FetchPage = fetchPageRequest,
+            };
+            var response = await this.SendCommandAsync(request);
+            return response.FetchPage;
         }
 
         /// <summary>
@@ -262,22 +324,23 @@ namespace Amazon.QLDB.Driver
         /// <returns>The result of the <see cref="FetchPageRequest"/>.</returns>
         internal virtual FetchPageResult FetchPage(string txnId, string nextPageToken)
         {
-            var fetchPageRequest = new FetchPageRequest
-            {
-                TransactionId = txnId,
-                NextPageToken = nextPageToken,
-            };
-            var request = new SendCommandRequest
-            {
-                FetchPage = fetchPageRequest,
-            };
-            var response = this.SendCommand(request);
-            return response.FetchPage;
+            return this.FetchPageAsync(txnId, nextPageToken).GetAwaiter().GetResult();
         }
 
-        internal virtual async Task<FetchPageResult> FetchPage(string txnId, string nextPageToken, CancellationToken cancellationToken = default)
+        /// <summary>
+        /// Send an asynchronous start transaction request to QLDB.
+        /// </summary>
+        ///
+        /// <returns>The result of the start transaction request.</returns>
+        internal virtual async Task<StartTransactionResult> StartTransactionAsync()
         {
-            throw new NotImplementedException();
+            var startTransactionRequest = new StartTransactionRequest();
+            var request = new SendCommandRequest
+            {
+                StartTransaction = startTransactionRequest,
+            };
+            var response = await this.SendCommandAsync(request);
+            return response.StartTransaction;
         }
 
         /// <summary>
@@ -287,18 +350,21 @@ namespace Amazon.QLDB.Driver
         /// <returns>The result of the start transaction request.</returns>
         internal virtual StartTransactionResult StartTransaction()
         {
-            var startTransactionRequest = new StartTransactionRequest();
-            var request = new SendCommandRequest
-            {
-                StartTransaction = startTransactionRequest,
-            };
-            var response = this.SendCommand(request);
-            return response.StartTransaction;
+            return this.StartTransactionAsync().GetAwaiter().GetResult();
         }
 
-        internal virtual async Task<StartTransactionResult> StartTransaction(CancellationToken cancellationToken = default)
+        /// <summary>
+        /// Send an asynchronous request to QLDB.
+        /// </summary>
+        ///
+        /// <param name="request">The request to send.</param>
+        ///
+        /// <returns>The result returned by QLDB for the request.</returns>
+        private async Task<SendCommandResponse> SendCommandAsync(SendCommandRequest request)
         {
-            throw new NotImplementedException();
+            request.SessionToken = this.sessionToken;
+            this.logger.LogDebug("Sending request: {}", request);
+            return await this.SessionClient.SendCommandAsync(request);
         }
 
         /// <summary>
@@ -310,14 +376,7 @@ namespace Amazon.QLDB.Driver
         /// <returns>The result returned by QLDB for the request.</returns>
         private SendCommandResponse SendCommand(SendCommandRequest request)
         {
-            request.SessionToken = this.sessionToken;
-            this.logger.LogDebug("Sending request: {}", request);
-            return this.SessionClient.SendCommandAsync(request).GetAwaiter().GetResult();
-        }
-
-        private async Task<SendCommandResponse> SendCommand(SendCommandRequest request, CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
+            return this.SendCommandAsync(request).GetAwaiter().GetResult();
         }
     }
 }
