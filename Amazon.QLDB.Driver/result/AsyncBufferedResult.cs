@@ -16,39 +16,26 @@ namespace Amazon.QLDB.Driver
     using System;
     using System.Collections.Generic;
     using System.Threading;
-    using System.Threading.Tasks;
     using Amazon.IonDotnet.Tree;
 
-    internal class AsyncTransaction : IAsyncTransaction
+    public class AsyncBufferedResult : IAsyncResult
     {
-        public string Id => throw new NotImplementedException();
-
-        public async Task Abort(CancellationToken cancellationToken = default)
+        public static AsyncBufferedResult AsyncBufferResult(IAsyncResult result)
         {
             throw new NotImplementedException();
         }
 
-        public async Task Commit(CancellationToken cancellationToken = default)
+        public IAsyncEnumerator<IIonValue> GetAsyncEnumerator(CancellationToken cancellationToken = default(CancellationToken))
         {
             throw new NotImplementedException();
         }
 
-        public async ValueTask DisposeAsync()
+        public IOUsage? GetConsumedIOs()
         {
             throw new NotImplementedException();
         }
 
-        public async Task<IAsyncResult> Execute(string statement)
-        {
-            throw new NotImplementedException();
-        }
-
-        public async Task<IAsyncResult> Execute(string statement, List<IIonValue> parameters)
-        {
-            throw new NotImplementedException();
-        }
-
-        public async Task<IAsyncResult> Execute(string statement, params IIonValue[] parameters)
+        public TimingInformation? GetTimingInformation()
         {
             throw new NotImplementedException();
         }
