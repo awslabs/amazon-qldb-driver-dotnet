@@ -31,7 +31,7 @@ namespace Amazon.QLDB.Driver
         }
 
         public async Task Execute(
-            Func<TransactionExecutor, CancellationToken, Task> action, CancellationToken cancellationToken = default)
+            Func<TransactionExecutor, Task> action)
         {
             throw new NotImplementedException();
         }

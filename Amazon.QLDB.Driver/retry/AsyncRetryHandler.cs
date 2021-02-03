@@ -14,18 +14,16 @@
 namespace Amazon.QLDB.Driver
 {
     using System;
-    using System.Threading;
     using System.Threading.Tasks;
 
     internal class AsyncRetryHandler : IAsyncRetryHandler
     {
         public async Task<T> RetriableExecute<T>(
-            Func<CancellationToken, Task<T>> func,
+            Func<Task<T>> func,
             RetryPolicy retryPolicy,
-            Func<CancellationToken, Task> newSessionAction,
-            Func<CancellationToken, Task> nextSessionAction,
-            Func<int, CancellationToken, Task> retryAction,
-            CancellationToken cancellationToken = default)
+            Func<Task> newSessionAction,
+            Func<Task> nextSessionAction,
+            Action<int> retryAction)
         {
             throw new NotImplementedException();
         }

@@ -14,7 +14,6 @@
 namespace Amazon.QLDB.Driver
 {
     using System;
-    using System.Threading;
     using System.Threading.Tasks;
 
     internal class AsyncQldbSession
@@ -25,7 +24,7 @@ namespace Amazon.QLDB.Driver
         }
 
         public async Task<T> Execute<T>(
-            Func<AsyncTransactionExecutor, Task<T>> func, CancellationToken cancellationToken = default)
+            Func<AsyncTransactionExecutor, Task<T>> func)
         {
             throw new NotImplementedException();
         }
