@@ -126,7 +126,7 @@ namespace Amazon.QLDB.Driver
             {
                 AbortTransaction = abortTransactionRequest,
             };
-            var response = await this.SendCommandAsync(request, cancellationToken);
+            var response = await this.SendCommand(request, cancellationToken);
             return response.AbortTransaction;
         }
 
@@ -143,7 +143,7 @@ namespace Amazon.QLDB.Driver
         /// <summary>
         /// Send an asynchronous end session request to QLDB and ignore exceptions.
         /// </summary>
-        internal virtual async Task End()
+        internal virtual async void End()
         {
             try
             {
@@ -171,7 +171,7 @@ namespace Amazon.QLDB.Driver
             {
                 EndSession = endSessionRequest,
             };
-            var response = await this.SendCommandAsync(request, cancellationToken);
+            var response = await this.SendCommand(request, cancellationToken);
             return response.EndSession;
         }
 
@@ -210,7 +210,7 @@ namespace Amazon.QLDB.Driver
             {
                 CommitTransaction = commitTransactionRequest,
             };
-            var response = await this.SendCommandAsync(request, cancellationToken);
+            var response = await this.SendCommand(request, cancellationToken);
             return response.CommitTransaction;
         }
 
@@ -274,7 +274,7 @@ namespace Amazon.QLDB.Driver
                 {
                     ExecuteStatement = executeStatementRequest,
                 };
-                var response = await this.SendCommandAsync(request, cancellationToken);
+                var response = await this.SendCommand(request, cancellationToken);
                 return response.ExecuteStatement;
             }
             catch (IOException e)
@@ -331,7 +331,7 @@ namespace Amazon.QLDB.Driver
             {
                 FetchPage = fetchPageRequest,
             };
-            var response = await this.SendCommandAsync(request, cancellationToken);
+            var response = await this.SendCommand(request, cancellationToken);
             return response.FetchPage;
         }
 
@@ -365,7 +365,7 @@ namespace Amazon.QLDB.Driver
             {
                 StartTransaction = startTransactionRequest,
             };
-            var response = await this.SendCommandAsync(request, cancellationToken);
+            var response = await this.SendCommand(request, cancellationToken);
             return response.StartTransaction;
         }
 
@@ -389,24 +389,12 @@ namespace Amazon.QLDB.Driver
         /// </param>
         ///
         /// <returns>The result returned by QLDB for the request.</returns>
-        private async Task<SendCommandResponse> SendCommandAsync(
+        private async Task<SendCommandResponse> SendCommand(
             SendCommandRequest request, CancellationToken cancellationToken = default)
         {
             request.SessionToken = this.sessionToken;
             this.logger.LogDebug("Sending request: {}", request);
             return await this.SessionClient.SendCommandAsync(request, cancellationToken);
-        }
-
-        /// <summary>
-        /// Send a request to QLDB.
-        /// </summary>
-        ///
-        /// <param name="request">The request to send.</param>
-        ///
-        /// <returns>The result returned by QLDB for the request.</returns>
-        private SendCommandResponse SendCommand(SendCommandRequest request)
-        {
-            return this.SendCommandAsync(request).GetAwaiter().GetResult();
         }
     }
 }

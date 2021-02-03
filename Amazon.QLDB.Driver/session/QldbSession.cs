@@ -76,7 +76,7 @@ namespace Amazon.QLDB.Driver
         /// </summary>
         public void Close()
         {
-            this.session.End().GetAwaiter();
+            this.session.End();
         }
 
         /// <summary>
