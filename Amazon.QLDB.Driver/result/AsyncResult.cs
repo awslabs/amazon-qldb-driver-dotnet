@@ -20,7 +20,7 @@ namespace Amazon.QLDB.Driver
 
     internal class AsyncResult : IAsyncResult
     {
-        public IAsyncEnumerator<IIonValue> GetAsyncEnumerator(CancellationToken cancellationToken = default(CancellationToken))
+        public IAsyncEnumerator<IIonValue> GetAsyncEnumerator(CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }

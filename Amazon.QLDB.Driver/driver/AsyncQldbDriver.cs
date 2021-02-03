@@ -30,14 +30,13 @@ namespace Amazon.QLDB.Driver
             throw new NotImplementedException();
         }
 
-        public async Task Execute(
-            Func<TransactionExecutor, Task> action)
+        public async Task Execute(Func<TransactionExecutor, Task> action, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
         public async Task Execute(
-            Func<TransactionExecutor, CancellationToken, Task> action,
+            Func<TransactionExecutor, Task> action,
             RetryPolicy retryPolicy,
             CancellationToken cancellationToken = default)
         {
@@ -45,13 +44,13 @@ namespace Amazon.QLDB.Driver
         }
 
         public async Task<T> Execute<T>(
-            Func<TransactionExecutor, CancellationToken, Task<T>> func, CancellationToken cancellationToken = default)
+            Func<TransactionExecutor, Task<T>> func, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
         public async Task<T> Execute<T>(
-            Func<TransactionExecutor, CancellationToken, Task<T>> func,
+            Func<TransactionExecutor, Task<T>> func,
             RetryPolicy retryPolicy,
             CancellationToken cancellationToken = default)
         {
@@ -59,7 +58,7 @@ namespace Amazon.QLDB.Driver
         }
 
         internal async Task<T> Execute<T>(
-            Func<AsyncTransactionExecutor, CancellationToken, Task<T>> func,
+            Func<AsyncTransactionExecutor, Task<T>> func,
             RetryPolicy retryPolicy,
             Action<int> retryAction,
             CancellationToken cancellationToken = default)
