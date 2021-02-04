@@ -19,7 +19,7 @@ namespace Amazon.QLDB.Driver
     using System.Threading.Tasks;
     using Amazon.IonDotnet.Tree;
 
-    internal class AsyncTransaction : IAsyncTransaction
+    internal class AsyncTransaction
     {
         public string Id => throw new NotImplementedException();
 
