@@ -38,17 +38,19 @@ namespace Amazon.QLDB.Driver
             throw new NotImplementedException();
         }
 
-        public async Task<IAsyncResult> Execute(string statement)
+        public async Task<IAsyncResult> Execute(string statement, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
-        public async Task<IAsyncResult> Execute(string statement, List<IIonValue> parameters)
+        public async Task<IAsyncResult> Execute(
+            string statement, List<IIonValue> parameters, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
-        public async Task<IAsyncResult> Execute(string statement, params IIonValue[] parameters)
+        public async Task<IAsyncResult> Execute(
+            string statement, CancellationToken cancellationToken = default, params IIonValue[] parameters)
         {
             throw new NotImplementedException();
         }

@@ -14,15 +14,18 @@
 namespace Amazon.QLDB.Driver
 {
     using System.Collections.Generic;
+    using System.Threading;
     using System.Threading.Tasks;
     using Amazon.IonDotnet.Tree;
 
     public interface IAsyncExecutable
     {
-        Task<IAsyncResult> Execute(string statement);
+        Task<IAsyncResult> Execute(string statement, CancellationToken cancellationToken = default);
 
-        Task<IAsyncResult> Execute(string statement, List<IIonValue> parameters);
+        Task<IAsyncResult> Execute(
+            string statement, List<IIonValue> parameters, CancellationToken cancellationToken = default);
 
-        Task<IAsyncResult> Execute(string statement, params IIonValue[] parameters);
+        Task<IAsyncResult> Execute(
+            string statement, CancellationToken cancellationToken = default, params IIonValue[] parameters);
     }
 }

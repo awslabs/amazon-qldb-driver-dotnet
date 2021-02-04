@@ -15,22 +15,25 @@ namespace Amazon.QLDB.Driver
 {
     using System;
     using System.Collections.Generic;
+    using System.Threading;
     using System.Threading.Tasks;
     using Amazon.IonDotnet.Tree;
 
     public class AsyncTransactionExecutor : IAsyncExecutable
     {
-        public Task<IAsyncResult> Execute(string statement)
+        public Task<IAsyncResult> Execute(string statement, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
-        public Task<IAsyncResult> Execute(string statement, List<IIonValue> parameters)
+        public Task<IAsyncResult> Execute(
+            string statement, List<IIonValue> parameters, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
-        public Task<IAsyncResult> Execute(string statement, params IIonValue[] parameters)
+        public Task<IAsyncResult> Execute(
+            string statement, CancellationToken cancellationToken = default, params IIonValue[] parameters)
         {
             throw new NotImplementedException();
         }

@@ -14,6 +14,7 @@
 namespace Amazon.QLDB.Driver
 {
     using System;
+    using System.Threading;
     using System.Threading.Tasks;
 
     internal interface IAsyncRetryHandler
@@ -23,6 +24,7 @@ namespace Amazon.QLDB.Driver
             RetryPolicy retryPolicy,
             Func<Task> newSessionAction,
             Func<Task> nextSessionAction,
-            Action<int> retryAction);
+            Action<int> retryAction,
+            CancellationToken cancellationToken = default);
     }
 }

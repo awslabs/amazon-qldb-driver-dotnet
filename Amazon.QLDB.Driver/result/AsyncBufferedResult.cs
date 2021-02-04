@@ -16,16 +16,17 @@ namespace Amazon.QLDB.Driver
     using System;
     using System.Collections.Generic;
     using System.Threading;
+    using System.Threading.Tasks;
     using Amazon.IonDotnet.Tree;
 
     public class AsyncBufferedResult : IAsyncResult
     {
-        public static AsyncBufferedResult AsyncBufferResult(IAsyncResult result)
+        public static async Task<AsyncBufferedResult> BufferResultAsync(IAsyncResult result)
         {
             throw new NotImplementedException();
         }
 
-        public IAsyncEnumerator<IIonValue> GetAsyncEnumerator(CancellationToken cancellationToken = default(CancellationToken))
+        public IAsyncEnumerator<IIonValue> GetAsyncEnumerator(CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
