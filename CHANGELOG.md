@@ -1,3 +1,7 @@
+## Release v1.1.1
+
+* Update the minimum version of the driver's logging dependency to 2.0.0
+
 ## Release v1.1.0
 
 v1.1 adds support for obtaining basic server-side statistics on individual statement executions.
