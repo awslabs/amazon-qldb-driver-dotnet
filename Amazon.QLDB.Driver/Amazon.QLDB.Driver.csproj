@@ -34,7 +34,7 @@
     <PackageReference Include="AWSSDK.QLDBSession" Version="3.5.1.4" />
     <PackageReference Include="Amazon.IonDotnet" Version="1.1.0" />
     <PackageReference Include="Amazon.IonHashDotnet" Version="1.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="2.0.0" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
