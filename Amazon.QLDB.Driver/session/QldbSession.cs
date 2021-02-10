@@ -111,7 +111,7 @@ namespace Amazon.QLDB.Driver
             ValidationUtils.AssertNotNull(func, "func");
 
             ITransaction transaction = null;
-            string transactionId = null;
+            string transactionId = "None";
             try
             {
                 transaction = this.StartTransaction();

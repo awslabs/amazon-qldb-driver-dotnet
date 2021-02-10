@@ -103,7 +103,7 @@ namespace Amazon.QLDB.Driver
 
         private static string TryGetTransactionId(Exception ex)
         {
-            return ex is QldbTransactionException exception ? exception.TransactionId : string.Empty;
+            return ex is QldbTransactionException exception ? exception.TransactionId : "None";
         }
     }
 }
