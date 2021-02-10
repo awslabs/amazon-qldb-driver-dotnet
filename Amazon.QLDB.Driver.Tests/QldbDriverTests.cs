@@ -388,8 +388,9 @@ namespace Amazon.QLDB.Driver.Tests
             return new List<object[]>() {
                 new object[] { new InvalidSessionException("invalid session"), false },
                 new object[] { new OccConflictException("occ"), false },
+                new object[] { new CapacityExceededException("capacity exceeded"), false },
                 new object[] { new ArgumentException(), true },
-                new object[] { new QldbDriverException("generic"), true }
+                new object[] { new QldbDriverException("generic"), true },
             };
         }
     }
