@@ -111,9 +111,11 @@ namespace Amazon.QLDB.Driver
             ValidationUtils.AssertNotNull(func, "func");
 
             ITransaction transaction = null;
+            string transactionId = "None";
             try
             {
                 transaction = this.StartTransaction();
+                transactionId = transaction.Id;
                 T returnedValue = func(new TransactionExecutor(transaction));
                 if (returnedValue is IResult)
                 {
@@ -126,21 +128,21 @@ namespace Amazon.QLDB.Driver
             catch (InvalidSessionException ise)
             {
                 this.isAlive = false;
-                throw new RetriableException(transaction.Id, false, ise);
+                throw new RetriableException(transactionId, false, ise);
             }
             catch (OccConflictException occ)
             {
-                throw new RetriableException(transaction.Id, occ);
+                throw new RetriableException(transactionId, occ);
             }
             catch (AmazonServiceException ase)
             {
                 if (ase.StatusCode == HttpStatusCode.InternalServerError ||
                     ase.StatusCode == HttpStatusCode.ServiceUnavailable)
                 {
-                    throw new RetriableException(transaction.Id, this.TryAbort(transaction), ase);
+                    throw new RetriableException(transactionId, this.TryAbort(transaction), ase);
                 }
 
-                throw new QldbTransactionException(transaction.Id, this.TryAbort(transaction), ase);
+                throw new QldbTransactionException(transactionId, this.TryAbort(transaction), ase);
             }
             catch (QldbTransactionException te)
             {
@@ -148,7 +150,7 @@ namespace Amazon.QLDB.Driver
             }
             catch (Exception e)
             {
-                throw new QldbTransactionException(transaction == null ? null : transaction.Id, this.TryAbort(transaction), e);
+                throw new QldbTransactionException(transactionId, this.TryAbort(transaction), e);
             }
         }
 

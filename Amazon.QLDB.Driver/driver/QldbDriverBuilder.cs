@@ -133,7 +133,7 @@
         }
 
         /// <summary>
-        /// Enable loggging driver retries at the WARN level.
+        /// Enable logging driver retries at the WARN level.
         /// </summary>
         /// <returns>This builder object.</returns>
         public QldbDriverBuilder WithRetryLogging()
