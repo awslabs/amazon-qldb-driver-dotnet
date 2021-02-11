@@ -134,10 +134,6 @@ namespace Amazon.QLDB.Driver
             {
                 throw new RetriableException(transactionId, occ);
             }
-            catch (CapacityExceededException cee)
-            {
-                throw new RetriableException(transaction.Id, this.TryAbort(transaction), cee);
-            }
             catch (AmazonServiceException ase)
             {
                 if (ase.StatusCode == HttpStatusCode.InternalServerError ||

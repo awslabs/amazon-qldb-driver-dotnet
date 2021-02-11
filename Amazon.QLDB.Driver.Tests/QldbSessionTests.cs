@@ -191,7 +191,7 @@ namespace Amazon.QLDB.Driver.Tests
         public static IEnumerable<object[]> CreateExceptionTestData()
         {
             return new List<object[]>() {
-                new object[] { new CapacityExceededException("Capacity Exceeded Exception"),
+                new object[] { new CapacityExceededException("Capacity Exceeded Exception", ErrorType.Receiver, "errorCode", "requestId", HttpStatusCode.ServiceUnavailable),
                     typeof(RetriableException), typeof(CapacityExceededException),
                     Times.Once()},
                 new object[] { new AmazonQLDBSessionException("", 0, "", "", HttpStatusCode.InternalServerError),
@@ -300,6 +300,7 @@ namespace Amazon.QLDB.Driver.Tests
                 new object[] { new AmazonServiceException("message", new Exception(), HttpStatusCode.ServiceUnavailable) },
                 new object[] { new AmazonServiceException("message", new Exception(), HttpStatusCode.Conflict) },
                 new object[] { new Exception("message")},
+                new object[] { new CapacityExceededException("message", ErrorType.Receiver, "errorCode", "requestId", HttpStatusCode.ServiceUnavailable) },
             };
         }
     }

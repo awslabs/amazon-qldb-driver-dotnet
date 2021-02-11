@@ -6,6 +6,7 @@ namespace Amazon.QLDB.Driver.Tests
     using System.Net;
     using Amazon.QLDBSession;
     using Amazon.QLDBSession.Model;
+    using Amazon.Runtime;
     using Microsoft.Extensions.Logging.Abstractions;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
@@ -62,7 +63,7 @@ namespace Amazon.QLDB.Driver.Tests
             var defaultPolicy = Driver.RetryPolicy.Builder().Build();
             var customerPolicy = Driver.RetryPolicy.Builder().WithMaxRetries(10).Build();
 
-            var cee = new RetriableException("txnId11111", true, new CapacityExceededException("qldb"));
+            var cee = new RetriableException("txnId11111", true, new CapacityExceededException("qldb", ErrorType.Receiver, "errorCode", "requestId", HttpStatusCode.ServiceUnavailable));
             var occ = new RetriableException("txnId11111", true, new OccConflictException("qldb", new BadRequestException("oops")));
             var occFailedAbort = new RetriableException("txnId11111", false, new OccConflictException("qldb", new BadRequestException("oops")));
             var txnExpiry = new RetriableException("txnid1111111", false, new InvalidSessionException("Transaction 324weqr2314 has expired"));
