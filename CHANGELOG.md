@@ -1,7 +1,6 @@
 ## Release v1.1.1
 
 * Update the minimum version of the driver's logging dependency to 2.0.0
-* Update the minimum version of the driver's SDK dependency to 3.5.1
 * Update the minimum version of the driver's AWS SDK dependency to 3.5.2
 * Fixed a bug where it was throwing NullReferenceException after session expiry.
 
