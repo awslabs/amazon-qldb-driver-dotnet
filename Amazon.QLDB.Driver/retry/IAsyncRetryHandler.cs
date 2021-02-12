@@ -30,7 +30,6 @@ namespace Amazon.QLDB.Driver
         /// <param name="retryPolicy">The retry policy.</param>
         /// <param name="newSessionAction">The action to move to a new session.</param>
         /// <param name="nextSessionAction">The action to get the next session.</param>
-        /// <param name="retryAction">The custom retry action.</param>
         /// <param name="cancellationToken">
         /// A cancellation token that can be used by other objects or threads to receive notice of cancellation.
         /// </param>
@@ -41,7 +40,6 @@ namespace Amazon.QLDB.Driver
             RetryPolicy retryPolicy,
             Func<CancellationToken, Task> newSessionAction,
             Func<CancellationToken, Task> nextSessionAction,
-            Func<int, CancellationToken, Task> retryAction,
             CancellationToken cancellationToken = default);
     }
 }

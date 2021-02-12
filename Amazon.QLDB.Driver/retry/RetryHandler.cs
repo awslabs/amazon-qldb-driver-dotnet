@@ -54,7 +54,7 @@ namespace Amazon.QLDB.Driver
                 }
                 catch (QldbTransactionException ex)
                 {
-                    var iex = ex.InnerException != null ? ex.InnerException : ex;
+                    var iex = ex.InnerException ?? ex;
 
                     if (!(ex is RetriableException))
                     {

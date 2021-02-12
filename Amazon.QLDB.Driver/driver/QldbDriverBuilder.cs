@@ -190,7 +190,7 @@
             const string UserAgentHeader = "User-Agent";
             const string Version = "1.1.1";
 
-            if (!(eventArgs is WebServiceRequestEventArgs args) || !args.Headers.ContainsKey(UserAgentHeader))
+            if (eventArgs is not WebServiceRequestEventArgs args || !args.Headers.ContainsKey(UserAgentHeader))
             {
                 return;
             }

@@ -42,7 +42,6 @@ namespace Amazon.QLDB.Driver
             RetryPolicy retryPolicy,
             Func<CancellationToken, Task> newSessionAction,
             Func<CancellationToken, Task> nextSessionAction,
-            Func<int, CancellationToken, Task> retryAction,
             CancellationToken cancellationToken = default)
         {
             int retryAttempt = 0;
@@ -55,7 +54,7 @@ namespace Amazon.QLDB.Driver
                 }
                 catch (QldbTransactionException ex)
                 {
-                    var iex = ex.InnerException != null ? ex.InnerException : ex;
+                    var iex = ex.InnerException ?? ex;
 
                     if (!(ex is RetriableException))
                     {
@@ -69,11 +68,6 @@ namespace Amazon.QLDB.Driver
                             "A recoverable exception has occurred. Attempting retry {}. Errored Transaction ID: {}.",
                             ++retryAttempt,
                             TryGetTransactionId(ex));
-
-                        if (retryAction != null)
-                        {
-                            await retryAction(retryAttempt, cancellationToken);
-                        }
 
                         var backoffDelay =
                             retryPolicy.BackoffStrategy.CalculateDelay(new RetryPolicyContext(retryAttempt, iex));

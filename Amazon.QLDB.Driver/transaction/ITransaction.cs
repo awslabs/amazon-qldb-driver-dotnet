@@ -20,7 +20,7 @@ namespace Amazon.QLDB.Driver
     /// <summary>
     /// <para>Interface that represents an active transaction with QLDB.</para>
     ///
-    /// <para>Every transaction is tied to the parent <see cref="IQldbSession"/>, meaning that if the parent session is closed or
+    /// <para>Every transaction is tied to the parent <see cref="QldbSession"/>, meaning that if the parent session is closed or
     /// invalidated, the child transaction is automatically closed and cannot be used. Only one transaction can be active at
     /// any given time per parent session, and thus every transaction should call <see cref="Abort"/> or <see cref="Commit"/> when
     /// it is no longer needed, or when a new transaction is wanted from the parent session.</para>
