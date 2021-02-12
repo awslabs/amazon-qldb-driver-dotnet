@@ -13,7 +13,7 @@
 
  namespace Amazon.QLDB.Driver
 {
-    using Amazon.Runtime;
+    using Microsoft.Extensions.Logging;
 
     /// <summary>
     /// Builder object for creating a <see cref="QldbDriver"/>, allowing for configuration of the parameters of
@@ -47,7 +47,15 @@
                     this.maxConcurrentTransactions,
                     this.Logger));
         }
-            const string Version = "1.1.0";
-            if (!(eventArgs is WebServiceRequestEventArgs args) || !args.Headers.ContainsKey(UserAgentHeader))
+
+        /// <summary>
+        /// Create a RetryHandler object with the default set of retriable exceptions.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
+        /// <returns>The constructed IRetryHandler instance.</returns>
+        internal static IRetryHandler CreateDefaultRetryHandler(ILogger logger)
+        {
+            return new RetryHandler(logger);
+        }
     }
 }

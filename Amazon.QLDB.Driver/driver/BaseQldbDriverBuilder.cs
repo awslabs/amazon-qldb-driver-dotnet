@@ -125,7 +125,7 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <summary>
-        /// Enable loggging driver retries at the WARN level.
+        /// Enable logging driver retries at the WARN level.
         /// </summary>
         /// <returns>This builder object.</returns>
         public TBuilder WithRetryLogging()
@@ -162,7 +162,7 @@ namespace Amazon.QLDB.Driver
         {
             const string UserAgentHeader = "User-Agent";
 
-            if (!(eventArgs is WebServiceRequestEventArgs args) || !args.Headers.ContainsKey(UserAgentHeader))
+            if (eventArgs is not WebServiceRequestEventArgs args || !args.Headers.ContainsKey(UserAgentHeader))
             {
                 return;
             }

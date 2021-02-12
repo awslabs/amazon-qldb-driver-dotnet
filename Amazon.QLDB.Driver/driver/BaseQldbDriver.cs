@@ -15,7 +15,7 @@ namespace Amazon.QLDB.Driver
 {
     public abstract class BaseQldbDriver
     {
-        private protected const string TableNameQuery =
+        internal const string TableNameQuery =
                 "SELECT VALUE name FROM information_schema.user_tables WHERE status = 'ACTIVE'";
 
         private protected static readonly RetryPolicy DefaultRetryPolicy = RetryPolicy.Builder().Build();
