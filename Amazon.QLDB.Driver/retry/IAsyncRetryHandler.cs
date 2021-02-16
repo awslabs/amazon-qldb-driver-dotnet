@@ -17,14 +17,29 @@ namespace Amazon.QLDB.Driver
     using System.Threading;
     using System.Threading.Tasks;
 
+    /// <summary>
+    /// Interface of Async Retry Handler.
+    /// </summary>
     internal interface IAsyncRetryHandler
     {
+        /// <summary>
+        /// Execute a retriable function asynchronously.
+        /// </summary>
+        /// <typeparam name="T">The return type of the executed function.</typeparam>
+        /// <param name="func">The function to be executed and retried if needed.</param>
+        /// <param name="retryPolicy">The retry policy.</param>
+        /// <param name="newSessionAction">The action to move to a new session.</param>
+        /// <param name="nextSessionAction">The action to get the next session.</param>
+        /// <param name="cancellationToken">
+        /// A cancellation token that can be used by other objects or threads to receive notice of cancellation.
+        /// </param>
+        ///
+        /// <returns>The return value of the executed function.</returns>
         Task<T> RetriableExecute<T>(
-            Func<Task<T>> func,
+            Func<CancellationToken, Task<T>> func,
             RetryPolicy retryPolicy,
-            Func<Task> newSessionAction,
-            Func<Task> nextSessionAction,
-            Action<int> retryAction,
+            Func<CancellationToken, Task> newSessionAction,
+            Func<CancellationToken, Task> nextSessionAction,
             CancellationToken cancellationToken = default);
     }
 }

@@ -1,3 +1,13 @@
+## Release v1.2.0
+
+* C# version updated to 9.0.0 minimum
+
+## Release v1.1.1
+
+* Update the minimum version of the driver's logging dependency to 2.0.0
+* Update the minimum version of the driver's AWS SDK dependency to 3.5.2
+* Fixed a bug where it was throwing NullReferenceException after session expiry.
+
 ## Release v1.1.0
 
 v1.1 adds support for obtaining basic server-side statistics on individual statement executions.

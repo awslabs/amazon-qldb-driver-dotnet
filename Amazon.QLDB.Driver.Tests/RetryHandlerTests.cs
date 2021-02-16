@@ -10,7 +10,6 @@ namespace Amazon.QLDB.Driver.Tests
     using Microsoft.Extensions.Logging.Abstractions;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
-    using Moq.Language;
 
     [TestClass]
     public class RetryHandlerTests
@@ -64,6 +63,7 @@ namespace Amazon.QLDB.Driver.Tests
             var defaultPolicy = Driver.RetryPolicy.Builder().Build();
             var customerPolicy = Driver.RetryPolicy.Builder().WithMaxRetries(10).Build();
 
+            var cee = new RetriableException("txnId11111", true, new CapacityExceededException("qldb", ErrorType.Receiver, "errorCode", "requestId", HttpStatusCode.ServiceUnavailable));
             var occ = new RetriableException("txnId11111", true, new OccConflictException("qldb", new BadRequestException("oops")));
             var occFailedAbort = new RetriableException("txnId11111", false, new OccConflictException("qldb", new BadRequestException("oops")));
             var txnExpiry = new RetriableException("txnid1111111", false, new InvalidSessionException("Transaction 324weqr2314 has expired"));
@@ -95,6 +95,9 @@ namespace Amazon.QLDB.Driver.Tests
                 // Retry OCC exceed limit.
                 new object[] { defaultPolicy, new Exception[] { occ, ise, http500, ise, occ }, typeof(OccConflictException), null,
                     Times.Exactly(5), Times.Exactly(2), Times.Never(), Times.Exactly(4) },
+                // Retry CapacityExceededException exceed limit.
+                new object[] { defaultPolicy, new Exception[] { cee, cee, cee, cee, cee }, typeof(CapacityExceededException), null,
+                    Times.Exactly(5), Times.Never(), Times.Never(), Times.Exactly(4) },
                 // Retry OCC with abort txn failures.
                 new object[] { defaultPolicy, new Exception[] { occFailedAbort, occ, occFailedAbort }, null, null,
                     Times.Exactly(4), Times.Never(), Times.Exactly(2), Times.Exactly(3) },

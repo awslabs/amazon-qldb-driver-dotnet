@@ -16,7 +16,6 @@ namespace Amazon.QLDB.Driver
     using System;
     using System.Collections;
     using System.Collections.Generic;
-    using Amazon.IonDotnet.Builders;
     using Amazon.IonDotnet.Tree;
     using Amazon.QLDBSession.Model;
 
@@ -38,8 +37,8 @@ namespace Amazon.QLDB.Driver
         /// </summary>
         ///
         /// <param name="session">The parent session that represents the communication channel to QLDB.</param>
+        /// <param name="txnId">The ID of the parent transaction.</param>
         /// <param name="statementResult">The result of the statement execution.</param>
-        /// <param name="txnId">The unique ID of the transaction.</param>
         internal Result(Session session, string txnId, ExecuteStatementResult statementResult)
         {
             this.ionEnumerator = new IonEnumerator(session, txnId, statementResult);
@@ -87,18 +86,8 @@ namespace Amazon.QLDB.Driver
         /// Object which allows for iteration over the individual Ion values that make up the whole result of a statement
         /// execution against QLDB.
         /// </summary>
-        private class IonEnumerator : IEnumerator<IIonValue>
+        private class IonEnumerator : BaseIonEnumerator, IEnumerator<IIonValue>
         {
-            private static readonly IonLoader IonLoader = IonLoader.Default;
-
-            private readonly Session session;
-            private readonly string txnId;
-            private IEnumerator<ValueHolder> currentEnumerator;
-            private string nextPageToken;
-            private long? readIOs = null;
-            private long? writeIOs = null;
-            private long? processingTimeMilliseconds = null;
-
             /// <summary>
             /// Initializes a new instance of the <see cref="IonEnumerator"/> class.
             /// </summary>
@@ -107,35 +96,8 @@ namespace Amazon.QLDB.Driver
             /// <param name="txnId">The unique ID of the transaction.</param>
             /// <param name="statementResult">The result of the statement execution.</param>
             internal IonEnumerator(Session session, string txnId, ExecuteStatementResult statementResult)
+                : base(session, txnId, statementResult)
             {
-                this.session = session;
-                this.txnId = txnId;
-                this.currentEnumerator = statementResult.FirstPage.Values.GetEnumerator();
-                this.nextPageToken = statementResult.FirstPage.NextPageToken;
-
-                if (statementResult.ConsumedIOs != null)
-                {
-                    this.readIOs = statementResult.ConsumedIOs.ReadIOs;
-                    this.writeIOs = statementResult.ConsumedIOs.WriteIOs;
-                }
-
-                if (statementResult.TimingInformation != null)
-                {
-                    this.processingTimeMilliseconds = statementResult.TimingInformation.ProcessingTimeMilliseconds;
-                }
-            }
-
-            /// <summary>
-            /// Gets current IIonValue.
-            /// </summary>
-            ///
-            /// <returns>The current IIonValue.</returns>
-            public IIonValue Current
-            {
-                get
-                {
-                    return IonLoader.Load(this.currentEnumerator.Current.IonBinary).GetElementAt(0);
-                }
             }
 
             object IEnumerator.Current => this.Current;
@@ -169,45 +131,6 @@ namespace Amazon.QLDB.Driver
             }
 
             /// <summary>
-            /// Reset. Not supported.
-            /// </summary>
-            public void Reset()
-            {
-                throw new NotSupportedException();
-            }
-
-            /// <summary>
-            /// Gets the current query statistics for the number of read IO requests.
-            /// The statistics are stateful.
-            /// </summary>
-            ///
-            /// <returns>The current IOUsage statistics.</returns>
-            internal IOUsage? GetConsumedIOs()
-            {
-                if (this.readIOs != null || this.writeIOs != null)
-                {
-                    return new IOUsage(this.readIOs.GetValueOrDefault(), this.writeIOs.GetValueOrDefault());
-                }
-
-                return null;
-            }
-
-            /// <summary>
-            /// Gets the current query statistics for server-side processing time. The statistics are stateful.
-            /// </summary>
-            ///
-            /// <returns>The current TimingInformation statistics.</returns>
-            internal TimingInformation? GetTimingInformation()
-            {
-                if (this.processingTimeMilliseconds != null)
-                {
-                    return new TimingInformation(this.processingTimeMilliseconds.Value);
-                }
-
-                return null;
-            }
-
-            /// <summary>
             /// Fetch the next page from the session.
             /// </summary>
             private void FetchPage()
@@ -216,27 +139,6 @@ namespace Amazon.QLDB.Driver
                 this.currentEnumerator = pageResult.Page.Values.GetEnumerator();
                 this.nextPageToken = pageResult.Page.NextPageToken;
                 this.UpdateMetrics(pageResult);
-            }
-
-            /// <summary>
-            /// Update the metrics.
-            /// </summary>
-            private void UpdateMetrics(FetchPageResult pageResult)
-            {
-                if (pageResult.ConsumedIOs != null)
-                {
-                    this.readIOs = this.readIOs == null ?
-                        pageResult.ConsumedIOs.ReadIOs : this.readIOs + pageResult.ConsumedIOs.ReadIOs;
-                    this.writeIOs = this.writeIOs == null ?
-                        pageResult.ConsumedIOs.WriteIOs : this.writeIOs + pageResult.ConsumedIOs.WriteIOs;
-                }
-
-                if (pageResult.TimingInformation != null)
-                {
-                    this.processingTimeMilliseconds = this.processingTimeMilliseconds == null ?
-                        pageResult.TimingInformation.ProcessingTimeMilliseconds :
-                        this.processingTimeMilliseconds + pageResult.TimingInformation.ProcessingTimeMilliseconds;
-                }
             }
         }
     }

@@ -16,6 +16,7 @@ namespace Amazon.QLDB.Driver.Tests
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
     using Amazon.QLDBSession;
@@ -388,8 +389,9 @@ namespace Amazon.QLDB.Driver.Tests
             return new List<object[]>() {
                 new object[] { new InvalidSessionException("invalid session"), false },
                 new object[] { new OccConflictException("occ"), false },
+                new object[] { new CapacityExceededException("capacity exceeded", ErrorType.Receiver, "errorCode", "requestId", HttpStatusCode.ServiceUnavailable), false },
                 new object[] { new ArgumentException(), true },
-                new object[] { new QldbDriverException("generic"), true }
+                new object[] { new QldbDriverException("generic"), true },
             };
         }
     }

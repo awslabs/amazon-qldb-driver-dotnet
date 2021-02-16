@@ -14,7 +14,6 @@
 namespace Amazon.QLDB.Driver
 {
     using System;
-    using System.Text.RegularExpressions;
     using System.Threading;
     using Amazon.QLDBSession.Model;
     using Microsoft.Extensions.Logging;
@@ -22,26 +21,29 @@ namespace Amazon.QLDB.Driver
     /// <summary>
     /// <para>The default implementation of Retry Handler.</para>
     ///
-    /// <para>The driver retries in two scenarios: retrying inside a session, and retrying with another session. In the second case,
-    /// it would require a <i>recover</i> action to reset the session into a working state.
+    /// <para>The driver retries in two scenarios: retrying inside a session, and retrying with another session. In the
+    /// second case, it would require a <i>recover</i> action to reset the session into a working state.
     /// </summary>
-    internal class RetryHandler : IRetryHandler
+    internal class RetryHandler : BaseRetryHandler, IRetryHandler
     {
-        private readonly ILogger logger;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="RetryHandler"/> class.
         /// </summary>
+        ///
         /// <param name="logger">The logger to record retries.</param>
         public RetryHandler(ILogger logger)
+            : base(logger)
         {
-            this.logger = logger;
         }
 
         /// <inheritdoc/>
-        public T RetriableExecute<T>(Func<T> func, RetryPolicy retryPolicy, Action newSessionAction, Action nextSessionAction, Action<int> retryAction)
+        public T RetriableExecute<T>(
+            Func<T> func,
+            RetryPolicy retryPolicy,
+            Action newSessionAction,
+            Action nextSessionAction,
+            Action<int> retryAction)
         {
-            Exception last = null;
             int retryAttempt = 0;
 
             while (true)
@@ -52,26 +54,25 @@ namespace Amazon.QLDB.Driver
                 }
                 catch (QldbTransactionException ex)
                 {
-                    var iex = ex.InnerException != null ? ex.InnerException : ex;
+                    var iex = ex.InnerException ?? ex;
 
                     if (!(ex is RetriableException))
                     {
                         throw iex;
                     }
 
-                    last = iex;
-
                     if (retryAttempt < retryPolicy.MaxRetries && !IsTransactionExpiry(iex))
                     {
                         this.logger?.LogWarning(
-                                iex,
-                                "A recoverable exception has occurred. Attempting retry {}. Errored Transaction ID: {}.",
-                                ++retryAttempt,
-                                TryGetTransactionId(ex));
+                            iex,
+                            "A recoverable exception has occurred. Attempting retry {}. Errored Transaction ID: {}.",
+                            ++retryAttempt,
+                            TryGetTransactionId(ex));
 
                         retryAction?.Invoke(retryAttempt);
 
-                        Thread.Sleep(retryPolicy.BackoffStrategy.CalculateDelay(new RetryPolicyContext(retryAttempt, iex)));
+                        Thread.Sleep(
+                            retryPolicy.BackoffStrategy.CalculateDelay(new RetryPolicyContext(retryAttempt, iex)));
 
                         if (!ex.IsSessionAlive)
                         {
@@ -88,22 +89,9 @@ namespace Amazon.QLDB.Driver
                         continue;
                     }
 
-                    throw last;
+                    throw iex;
                 }
             }
-
-            throw last;
-        }
-
-        internal static bool IsTransactionExpiry(Exception ex)
-        {
-            return ex is InvalidSessionException
-                && Regex.Match(ex.Message, @"Transaction\s.*\shas\sexpired").Success;
-        }
-
-        private static string TryGetTransactionId(Exception ex)
-        {
-            return ex is QldbTransactionException exception ? exception.TransactionId : string.Empty;
         }
     }
 }

@@ -27,7 +27,6 @@ namespace Amazon.QLDB.Driver.Tests
     using Amazon.QLDBSession;
     using Amazon.QLDBSession.Model;
     using Amazon.Runtime;
-    using Castle.DynamicProxy.Generators.Emitters.SimpleAST;
     using Microsoft.Extensions.Logging.Abstractions;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
@@ -74,7 +73,7 @@ namespace Amazon.QLDB.Driver.Tests
 
         [DataTestMethod]
         [DynamicData(nameof(CreateExecuteTestData), DynamicDataSourceType.Method)]
-        public void Exectue_CustomerTransactionTest(Func<TransactionExecutor, Object> transaction, Object expected, Type expectedExceptionType, Type innerExceptionType,
+        public void Execute_CustomerTransactionTest(Func<TransactionExecutor, Object> transaction, Object expected, Type expectedExceptionType, Type innerExceptionType,
             Times startTxnTimes, Times executeTimes, Times commitTimes, Times abortTimes, Times retryTimes)
         {
             mockSession.Setup(x => x.StartTransaction()).Returns(new StartTransactionResult
@@ -192,6 +191,9 @@ namespace Amazon.QLDB.Driver.Tests
         public static IEnumerable<object[]> CreateExceptionTestData()
         {
             return new List<object[]>() {
+                new object[] { new CapacityExceededException("Capacity Exceeded Exception", ErrorType.Receiver, "errorCode", "requestId", HttpStatusCode.ServiceUnavailable),
+                    typeof(RetriableException), typeof(CapacityExceededException),
+                    Times.Once()},
                 new object[] { new AmazonQLDBSessionException("", 0, "", "", HttpStatusCode.InternalServerError),
                     typeof(RetriableException), null,
                     Times.Once()},
@@ -250,6 +252,26 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
+        [DynamicData(nameof(CreateExceptions), DynamicDataSourceType.Method)]
+        public void Execute_StartTransactionThrowExceptions(Exception exception)
+        {
+            mockSession.Setup(x => x.StartTransaction()).Throws(exception);
+
+            if (exception.GetType() == typeof(Exception) ||
+                (exception.GetType() == typeof(AmazonServiceException) && ((AmazonServiceException)exception).StatusCode != HttpStatusCode.InternalServerError && ((AmazonServiceException)exception).StatusCode != HttpStatusCode.ServiceUnavailable))
+            {
+                Assert.ThrowsException<QldbTransactionException>(
+                    () => qldbSession.Execute(
+                        (TransactionExecutor txn) => { txn.Execute("testStatement"); return true; }));
+
+            } else {
+                Assert.ThrowsException<RetriableException>(
+                    () => qldbSession.Execute(
+                        (TransactionExecutor txn) => { txn.Execute("testStatement"); return true; }));
+            }
+        }
+
+        [TestMethod]
         public void TestStartTransactionReturnsANewTransaction()
         {
             mockSession.Setup(x => x.StartTransaction()).Returns(new StartTransactionResult
@@ -266,6 +288,20 @@ namespace Amazon.QLDB.Driver.Tests
             public virtual void DisposeDelegate(QldbSession session)
             {
             }
+        }
+
+        public static IEnumerable<Object[]> CreateExceptions()
+        {
+            return new List<object[]>()
+            {
+                new object[] { new InvalidSessionException("message") },
+                new object[] { new OccConflictException("message") },
+                new object[] { new AmazonServiceException("message", new Exception(), HttpStatusCode.InternalServerError) },
+                new object[] { new AmazonServiceException("message", new Exception(), HttpStatusCode.ServiceUnavailable) },
+                new object[] { new AmazonServiceException("message", new Exception(), HttpStatusCode.Conflict) },
+                new object[] { new Exception("message")},
+                new object[] { new CapacityExceededException("message", ErrorType.Receiver, "errorCode", "requestId", HttpStatusCode.ServiceUnavailable) },
+            };
         }
     }
 }
