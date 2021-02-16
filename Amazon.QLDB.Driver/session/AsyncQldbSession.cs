@@ -148,8 +148,7 @@ namespace Amazon.QLDB.Driver
                 return new AsyncTransaction(
                     this.session,
                     startTransactionResult.TransactionId,
-                    this.logger,
-                    cancellationToken);
+                    this.logger);
             }
             catch (BadRequestException e)
             {
