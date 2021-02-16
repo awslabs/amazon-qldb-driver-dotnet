@@ -42,14 +42,13 @@ namespace Amazon.QLDB.Driver
         /// </summary>
         ///
         /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
-        /// <param name="cancellationToken">Propagates notification that operations should be canceled.</param>
         ///
         /// <returns>Result from executed statement.</returns>
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        public Task<IAsyncResult> Execute(string statement, CancellationToken cancellationToken = default)
+        public Task<IAsyncResult> Execute(string statement)
         {
-            return this.transaction.Execute(statement, cancellationToken);
+            return this.transaction.Execute(statement);
         }
 
         /// <summary>
@@ -58,15 +57,14 @@ namespace Amazon.QLDB.Driver
         ///
         /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
         /// <param name="parameters">Parameters to execute.</param>
-        /// <param name="cancellationToken">Propagates notification that operations should be canceled.</param>
         ///
         /// <returns>Result from executed statement.</returns>
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
         public Task<IAsyncResult> Execute(
-            string statement, List<IIonValue> parameters, CancellationToken cancellationToken = default)
+            string statement, List<IIonValue> parameters)
         {
-            return this.transaction.Execute(statement, parameters, cancellationToken);
+            return this.transaction.Execute(statement, parameters);
         }
 
         /// <summary>
@@ -74,29 +72,26 @@ namespace Amazon.QLDB.Driver
         /// </summary>
         ///
         /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
-        /// <param name="cancellationToken">Propagates notification that operations should be canceled.</param>
         /// <param name="parameters">Parameters to execute.</param>
         ///
         /// <returns>Result from executed statement.</returns>
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        public Task<IAsyncResult> Execute(
-            string statement, CancellationToken cancellationToken = default, params IIonValue[] parameters)
+        public Task<IAsyncResult> Execute(string statement, params IIonValue[] parameters)
         {
-            return this.transaction.Execute(statement, cancellationToken, parameters);
+            return this.transaction.Execute(statement, parameters);
         }
 
         /// <summary>
         /// Abort the transaction and roll back any changes.
         /// </summary>
         ///
-        /// <param name="cancellationToken">Propagates notification that operations should be canceled.</param>
         ///
-        public async Task Abort(CancellationToken cancellationToken = default)
+        public async Task Abort()
         {
             try
             {
-                await this.transaction.Abort(cancellationToken);
+                await this.transaction.Abort();
                 throw new TransactionAbortedException(this.transaction.Id, true);
             }
             catch (AmazonServiceException ase)
