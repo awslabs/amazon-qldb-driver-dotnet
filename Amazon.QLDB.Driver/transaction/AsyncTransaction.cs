@@ -33,7 +33,7 @@ namespace Amazon.QLDB.Driver
     /// </summary>
     internal class AsyncTransaction : BaseTransaction
     {
-        private CancellationToken cancellationToken = default;
+        private readonly CancellationToken cancellationToken;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AsyncTransaction"/> class.
