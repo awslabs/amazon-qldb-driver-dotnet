@@ -14,7 +14,6 @@
 namespace Amazon.QLDB.Driver
 {
     using System.Collections.Generic;
-    using System.Threading;
     using System.Threading.Tasks;
     using Amazon.IonDotnet.Tree;
     using Amazon.Runtime;
@@ -85,8 +84,6 @@ namespace Amazon.QLDB.Driver
         /// <summary>
         /// Abort the transaction and roll back any changes.
         /// </summary>
-        ///
-        ///
         public async Task Abort()
         {
             try
