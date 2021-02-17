@@ -13,7 +13,6 @@
 
 namespace Amazon.QLDB.Driver.AsyncIntegrationTests
 {
-    using Amazon.QLDB.Driver.AsyncIntegrationTests.utils;
     using Amazon.QLDB.Driver.IntegrationTests.utils;
     using Amazon.QLDBSession;
     using Amazon.QLDBSession.Model;
@@ -31,7 +30,7 @@ namespace Amazon.QLDB.Driver.AsyncIntegrationTests
     {
         private static readonly IValueFactory ValueFactory = new ValueFactory();
         private static AmazonQLDBSessionConfig amazonQldbSessionConfig;
-        private static AsyncIntegrationTestBase integrationTestBase;
+        private static IntegrationTestBase integrationTestBase;
         private static AsyncQldbDriver qldbDriver;
 
         [ClassInitialize]
@@ -40,13 +39,13 @@ namespace Amazon.QLDB.Driver.AsyncIntegrationTests
             // Get AWS configuration properties from .runsettings file.
             string region = context.Properties["region"].ToString();
 
-            amazonQldbSessionConfig = AsyncIntegrationTestBase.CreateAmazonQLDBSessionConfig(region);
-            integrationTestBase = new AsyncIntegrationTestBase(Constants.LedgerName, region);
+            amazonQldbSessionConfig = IntegrationTestBase.CreateAmazonQLDBSessionConfig(region);
+            integrationTestBase = new IntegrationTestBase(Constants.LedgerName, region);
 
             integrationTestBase.RunForceDeleteLedger();
 
             integrationTestBase.RunCreateLedger();
-            qldbDriver = integrationTestBase.CreateDriver(amazonQldbSessionConfig);
+            qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig);
 
             // Create table.
             var query = $"CREATE TABLE {Constants.TableName}";
@@ -584,7 +583,7 @@ namespace Amazon.QLDB.Driver.AsyncIntegrationTests
         public async void Execute_UpdateSameRecordAtSameTime_ThrowsOccException()
         {
             // Create a driver that does not retry OCC errors
-            AsyncQldbDriver driver = integrationTestBase.CreateDriver(amazonQldbSessionConfig, default, default, 0);
+            AsyncQldbDriver driver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig, default, default, 0);
 
             // Insert document.
             // Create Ion struct with int value 0 to insert.
