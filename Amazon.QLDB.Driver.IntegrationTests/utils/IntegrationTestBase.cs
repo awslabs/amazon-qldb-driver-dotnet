@@ -101,6 +101,35 @@ namespace Amazon.QLDB.Driver.IntegrationTests.utils
                 .Build();
         }
 
+        public AsyncQldbDriver CreateAsyncDriver(
+            AmazonQLDBSessionConfig amazonQldbSessionConfig,
+            int maxConcurrentTransactions = default,
+            string ledgerName = default,
+            int retryLimit = -1)
+        {
+            AsyncQldbDriverBuilder builder = AsyncQldbDriver.Builder();
+
+            string finalLedgerName;
+
+            if (ledgerName != default)
+            {
+                finalLedgerName = ledgerName;
+            }
+            else
+            {
+                finalLedgerName = this.ledgerName;
+            }
+
+            if (maxConcurrentTransactions != default)
+            {
+                builder.WithMaxConcurrentTransactions(maxConcurrentTransactions);
+            }
+
+            return builder.WithQLDBSessionConfig(amazonQldbSessionConfig)
+                .WithLedger(finalLedgerName)
+                .Build();
+        }
+
         public void RunDeleteLedger()
         {
             UpdateLedgerDeletionProtection(this.ledgerName, false);
