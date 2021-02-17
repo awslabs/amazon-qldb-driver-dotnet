@@ -29,14 +29,8 @@ namespace Amazon.QLDB.Driver
     ///
     /// Child Result objects will be closed when the transaction is aborted or committed.
     /// </summary>
-    internal class Transaction : ITransaction
+    internal class Transaction : BaseTransaction, ITransaction
     {
-        private readonly Session session;
-        private readonly string txnId;
-        private readonly ILogger logger;
-        private QldbHash qldbHash;
-        private bool isClosed = false;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="Transaction"/> class.
         /// </summary>
@@ -45,17 +39,9 @@ namespace Amazon.QLDB.Driver
         /// <param name="txnId">Transaction identifier.</param>
         /// <param name="logger">Logger to be used by this.</param>
         internal Transaction(Session session, string txnId, ILogger logger)
+            : base(session, txnId, logger)
         {
-            this.session = session;
-            this.txnId = txnId;
-            this.logger = logger;
-            this.qldbHash = QldbHash.ToQldbHash(txnId);
         }
-
-        /// <summary>
-        /// Gets the transaction ID.
-        /// </summary>
-        public string Id => this.txnId;
 
         /// <summary>
         /// Abort the transaction and roll back any changes. No-op if closed.
@@ -179,26 +165,6 @@ namespace Amazon.QLDB.Driver
         public IResult Execute(string statement, params IIonValue[] parameters)
         {
             return this.Execute(statement, new List<IIonValue>(parameters));
-        }
-
-        /// <summary>
-        /// Calculate the QLDB hash from statement and parameters.
-        /// </summary>
-        ///
-        /// <param name="seed">QLDB Hash.</param>
-        /// <param name="statement">PartiQL statement.</param>
-        /// <param name="parameters">Parameters to execute.</param>
-        ///
-        /// <returns>QLDB hash.</returns>
-        internal static QldbHash Dot(QldbHash seed, string statement, List<IIonValue> parameters)
-        {
-            QldbHash statementHash = QldbHash.ToQldbHash(statement);
-            foreach (var ionValue in parameters)
-            {
-                statementHash = statementHash.Dot(QldbHash.ToQldbHash(ionValue));
-            }
-
-            return seed.Dot(statementHash);
         }
     }
 }

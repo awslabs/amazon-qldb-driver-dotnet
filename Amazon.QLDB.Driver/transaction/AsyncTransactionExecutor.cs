@@ -13,39 +13,88 @@
 
 namespace Amazon.QLDB.Driver
 {
-    using System;
     using System.Collections.Generic;
-    using System.Threading;
     using System.Threading.Tasks;
     using Amazon.IonDotnet.Tree;
+    using Amazon.Runtime;
 
+    /// <summary>
+    /// Transaction object used within asynchronous lambda executions to provide a reduced view that allows only the operations that are
+    /// valid within the context of an active managed transaction.
+    /// </summary>
     public class AsyncTransactionExecutor
     {
+        private readonly AsyncTransaction transaction;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AsyncTransactionExecutor"/> class.
+        /// </summary>
+        ///
+        /// <param name="transaction">The <see cref="AsyncTransaction"/> object the <see cref="AsyncTransactionExecutor"/> wraps.</param>
         internal AsyncTransactionExecutor(AsyncTransaction transaction)
         {
-            throw new NotImplementedException();
+            this.transaction = transaction;
         }
 
+        /// <summary>
+        /// Execute the statement against QLDB and retrieve the result.
+        /// </summary>
+        ///
+        /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
+        ///
+        /// <returns>Result from executed statement.</returns>
+        ///
+        /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
         public Task<IAsyncResult> Execute(string statement)
         {
-            throw new NotImplementedException();
+            return this.transaction.Execute(statement);
         }
 
+        /// <summary>
+        /// Execute the statement using the specified parameters against QLDB and retrieve the result.
+        /// </summary>
+        ///
+        /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
+        /// <param name="parameters">Parameters to execute.</param>
+        ///
+        /// <returns>Result from executed statement.</returns>
+        ///
+        /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
         public Task<IAsyncResult> Execute(
             string statement, List<IIonValue> parameters)
         {
-            throw new NotImplementedException();
+            return this.transaction.Execute(statement, parameters);
         }
 
-        public Task<IAsyncResult> Execute(
-            string statement, params IIonValue[] parameters)
+        /// <summary>
+        /// Execute the statement using the specified parameters against QLDB and retrieve the result.
+        /// </summary>
+        ///
+        /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
+        /// <param name="parameters">Parameters to execute.</param>
+        ///
+        /// <returns>Result from executed statement.</returns>
+        ///
+        /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
+        public Task<IAsyncResult> Execute(string statement, params IIonValue[] parameters)
         {
-            throw new NotImplementedException();
+            return this.transaction.Execute(statement, parameters);
         }
 
-        public Task Abort()
+        /// <summary>
+        /// Abort the transaction and roll back any changes.
+        /// </summary>
+        public async Task Abort()
         {
-            throw new NotImplementedException();
+            try
+            {
+                await this.transaction.Abort();
+                throw new TransactionAbortedException(this.transaction.Id, true);
+            }
+            catch (AmazonServiceException ase)
+            {
+                throw new TransactionAbortedException(this.transaction.Id, false, ase);
+            }
         }
     }
 }
