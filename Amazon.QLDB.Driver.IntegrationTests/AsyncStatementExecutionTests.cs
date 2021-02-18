@@ -34,10 +34,13 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         private static AsyncQldbDriver qldbDriver;
 
         [ClassInitialize]
-        public async static void SetUp(TestContext context)
+        public async static Task SetUp(TestContext context)
         {
             // Get AWS configuration properties from .runsettings file.
-            string region = context.Properties["region"].ToString();
+            var regionProperty = context.Properties["region"];
+            string region = "us-east-2";
+            if (regionProperty != null)
+                region = regionProperty.ToString();
 
             amazonQldbSessionConfig = IntegrationTestBase.CreateAmazonQLDBSessionConfig(region);
             integrationTestBase = new IntegrationTestBase(Constants.LedgerName, region);
@@ -80,14 +83,14 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestCleanup]
-        public async void TestCleanup()
+        public async Task TestCleanup()
         {
             // Delete all documents in table.
             await qldbDriver.Execute(async txn => await txn.Execute($"DELETE FROM {Constants.TableName}"));
         }
 
         [TestMethod]
-        public async void Execute_DropExistingTable_TableDropped()
+        public async Task Execute_DropExistingTable_TableDropped()
         {
             // Given.
             var create_table_query = $"CREATE TABLE {Constants.CreateTableName}";
@@ -141,7 +144,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public async void Execute_ListTables_ReturnsListOfTables()
+        public async Task Execute_ListTables_ReturnsListOfTables()
         {
             // When.
             var result = await qldbDriver.ListTableNamesAsync();
@@ -159,7 +162,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
         [TestMethod]
         [ExpectedException(typeof(BadRequestException))]
-        public async void Execute_CreateTableThatAlreadyExist_ThrowBadRequestException()
+        public async Task Execute_CreateTableThatAlreadyExist_ThrowBadRequestException()
         {
             // Given.
             var query = $"CREATE TABLE {Constants.TableName}";
@@ -169,7 +172,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public async void Execute_CreateIndex_IndexIsCreated()
+        public async Task Execute_CreateIndex_IndexIsCreated()
         {
             // Given.
             var query = $"CREATE INDEX on {Constants.TableName} ({Constants.IndexAttribute})";
@@ -213,7 +216,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public async void Execute_QueryTableThatHasNoRecords_ReturnsEmptyResult()
+        public async Task Execute_QueryTableThatHasNoRecords_ReturnsEmptyResult()
         {
             // Given.
             var query = $"SELECT * FROM {Constants.TableName}";
@@ -236,7 +239,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public async void Execute_InsertDocument_DocumentIsInserted()
+        public async Task Execute_InsertDocument_DocumentIsInserted()
         {
             // Given.
             // Create Ion struct to insert.
@@ -276,7 +279,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public async void Execute_InsertDocumentWithMultipleFields_DocumentIsInserted()
+        public async Task Execute_InsertDocumentWithMultipleFields_DocumentIsInserted()
         {
             // Given.
             // Create Ion struct to insert.
@@ -326,7 +329,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public async void Execute_QuerySingleField_ReturnsSingleField()
+        public async Task Execute_QuerySingleField_ReturnsSingleField()
         {
             // Given.
             // Create Ion struct to insert.
@@ -367,7 +370,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public async void Execute_QueryTableEnclosedInQuotes_ReturnsResult()
+        public async Task Execute_QueryTableEnclosedInQuotes_ReturnsResult()
         {
             // Given.
             // Create Ion struct to insert.
@@ -408,7 +411,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public async void Execute_InsertMultipleDocuments_DocumentsInserted()
+        public async Task Execute_InsertMultipleDocuments_DocumentsInserted()
         {
             IIonValue ionString1 = ValueFactory.NewString(Constants.MultipleDocumentValue1);
             IIonValue ionString2 = ValueFactory.NewString(Constants.MultipleDocumentValue2);
@@ -457,7 +460,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public async void Execute_DeleteSingleDocument_DocumentIsDeleted()
+        public async Task Execute_DeleteSingleDocument_DocumentIsDeleted()
         {
             // Given.
             // Create Ion struct to insert.
@@ -516,7 +519,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public async void Execute_DeleteAllDocuments_DocumentsAreDeleted()
+        public async Task Execute_DeleteAllDocuments_DocumentsAreDeleted()
         {
             // Given.
             // Create Ion structs to insert.
@@ -580,7 +583,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
         [TestMethod]
         [ExpectedException(typeof(OccConflictException))]
-        public async void Execute_UpdateSameRecordAtSameTime_ThrowsOccException()
+        public async Task Execute_UpdateSameRecordAtSameTime_ThrowsOccException()
         {
             // Create a driver that does not retry OCC errors
             AsyncQldbDriver driver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig, default, default, 0);
@@ -631,7 +634,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
         [TestMethod]
         [DynamicData(nameof(CreateIonValues), DynamicDataSourceType.Method)]
-        public async void Execute_InsertAndReadIonTypes_IonTypesAreInsertedAndRead(IIonValue ionValue)
+        public async Task Execute_InsertAndReadIonTypes_IonTypesAreInsertedAndRead(IIonValue ionValue)
         {
             // Given.
             // Create Ion struct to be inserted.
@@ -697,7 +700,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
         [TestMethod]
         [DynamicData(nameof(CreateIonValues), DynamicDataSourceType.Method)]
-        public async void Execute_UpdateIonTypes_IonTypesAreUpdated(IIonValue ionValue)
+        public async Task Execute_UpdateIonTypes_IonTypesAreUpdated(IIonValue ionValue)
         {
             // Given.
             // Create Ion struct to be inserted.
@@ -777,7 +780,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public async void Execute_ExecuteLambdaThatDoesNotReturnValue_RecordIsUpdated()
+        public async Task Execute_ExecuteLambdaThatDoesNotReturnValue_RecordIsUpdated()
         {
             // Given.
             // Create Ion struct to insert.
@@ -807,7 +810,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
         [TestMethod]
         [ExpectedException(typeof(BadRequestException))]
-        public async void Execute_DeleteTableThatDoesntExist_ThrowsBadRequestException()
+        public async Task Execute_DeleteTableThatDoesntExist_ThrowsBadRequestException()
         {
             // Given.
             var query = "DELETE FROM NonExistentTable";
@@ -817,7 +820,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public async void Execute_ExecutionMetrics()
+        public async Task Execute_ExecutionMetrics()
         {
             await qldbDriver.Execute(async txn =>
             {
