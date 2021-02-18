@@ -11,7 +11,7 @@
  * and limitations under the License.
  */
 
-namespace Amazon.QLDB.Driver.AsyncIntegrationTests
+namespace Amazon.QLDB.Driver.IntegrationTests
 {
     using Amazon.QLDB.Driver.IntegrationTests.utils;
     using Amazon.QLDBSession;
@@ -26,7 +26,7 @@ namespace Amazon.QLDB.Driver.AsyncIntegrationTests
     using System.Threading.Tasks;
     
     [TestClass]
-    public class StatementExecutionTests
+    public class AsyncStatementExecutionTests
     {
         private static readonly IValueFactory ValueFactory = new ValueFactory();
         private static AmazonQLDBSessionConfig amazonQldbSessionConfig;
