@@ -74,13 +74,10 @@ namespace Amazon.QLDB.Driver
             return await this.sessionPool.Execute<T>(func, retryPolicy, cancellationToken);
         }
 
-        public async Task<IEnumerable<string>> ListTableNamesAsync(CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<string>> ListTableNames(CancellationToken cancellationToken = default)
         {
-            IAsyncResult result = await this.Execute<IAsyncResult>(
-                async txn =>
-                {
-                    return await txn.Execute(TableNameQuery);
-                }, cancellationToken);
+            IAsyncResult result = await this.Execute(
+                async txn => await txn.Execute(TableNameQuery), cancellationToken);
 
             return (await result.ToListAsync()).Select(i => i.StringValue);
         }
