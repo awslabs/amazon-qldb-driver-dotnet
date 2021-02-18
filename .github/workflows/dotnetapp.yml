@@ -2,9 +2,9 @@ name: dotnet Application
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, async-driver-dev  ]
   pull_request:
-    branches: [ master ]
+    branches: [ master, async-driver-dev ]
 
 jobs:
   build:
