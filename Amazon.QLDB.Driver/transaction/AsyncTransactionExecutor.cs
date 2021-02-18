@@ -23,16 +23,16 @@ namespace Amazon.QLDB.Driver
     /// Transaction object used within asynchronous lambda executions to provide a reduced view that allows only the operations that are
     /// valid within the context of an active managed transaction.
     /// </summary>
-    public class AsyncTransactionExecutor : IAsyncExecutable
+    public class AsyncTransactionExecutor
     {
-        private readonly IAsyncTransaction transaction;
+        private readonly AsyncTransaction transaction;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AsyncTransactionExecutor"/> class.
         /// </summary>
         ///
         /// <param name="transaction">The <see cref="AsyncTransaction"/> object the <see cref="AsyncTransactionExecutor"/> wraps.</param>
-        internal AsyncTransactionExecutor(IAsyncTransaction transaction)
+        internal AsyncTransactionExecutor(AsyncTransaction transaction)
         {
             this.transaction = transaction;
         }
@@ -46,8 +46,7 @@ namespace Amazon.QLDB.Driver
         /// <returns>Result from executed statement.</returns>
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        /// <param name="cancellationToken"> A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        public Task<IAsyncResult> Execute(string statement, CancellationToken cancellationToken = default)
+        public Task<IAsyncResult> Execute(string statement)
         {
             return this.transaction.Execute(statement);
         }
@@ -62,9 +61,8 @@ namespace Amazon.QLDB.Driver
         /// <returns>Result from executed statement.</returns>
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        /// <param name="cancellationToken"> A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         public Task<IAsyncResult> Execute(
-            string statement, List<IIonValue> parameters, CancellationToken cancellationToken = default)
+            string statement, List<IIonValue> parameters)
         {
             return this.transaction.Execute(statement, parameters);
         }
@@ -74,15 +72,14 @@ namespace Amazon.QLDB.Driver
         /// </summary>
         ///
         /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
-        /// <param name="cancellationToken"> A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="parameters">Parameters to execute.</param>
         ///
         /// <returns>Result from executed statement.</returns>
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        public Task<IAsyncResult> Execute(string statement, CancellationToken cancellationToken = default, params IIonValue[] parameters)
+        public Task<IAsyncResult> Execute(string statement, params IIonValue[] parameters)
         {
-            return this.transaction.Execute(statement, default, parameters);
+            return this.transaction.Execute(statement, parameters);
         }
 
         /// <summary>

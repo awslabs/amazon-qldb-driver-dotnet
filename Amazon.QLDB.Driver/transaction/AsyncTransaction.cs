@@ -31,7 +31,7 @@ namespace Amazon.QLDB.Driver
     ///
     /// Child Result objects will be closed when the transaction is aborted or committed.
     /// </summary>
-    internal class AsyncTransaction : BaseTransaction, IAsyncTransaction
+    internal class AsyncTransaction : BaseTransaction
     {
         private readonly CancellationToken cancellationToken;
 
@@ -55,7 +55,7 @@ namespace Amazon.QLDB.Driver
         /// </summary>
         ///
         /// <returns>A task representing the asynchronous abort operation.</returns>
-        public async Task Abort()
+        internal async Task Abort()
         {
             if (!this.isClosed)
             {
@@ -73,7 +73,7 @@ namespace Amazon.QLDB.Driver
         /// <exception cref="AmazonServiceException">Thrown when there is an error committing this transaction against QLDB.</exception>
         /// <exception cref="QldbDriverException">Thrown when this transaction has been disposed.</exception>
         /// <returns>A task representing the asynchronous commit operation.</returns>
-        public async Task Commit()
+        internal async Task Commit()
         {
             try
             {
@@ -126,13 +126,12 @@ namespace Amazon.QLDB.Driver
         /// </summary>
         ///
         /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
-        /// <param name="cancellationToken"> A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         ///
         /// <returns>Result from executed statement.</returns>
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
         /// <exception cref="QldbDriverException">Thrown when this transaction has been disposed.</exception>
-        public async Task<IAsyncResult> Execute(string statement, CancellationToken cancellationToken = default)
+        internal virtual async Task<IAsyncResult> Execute(string statement)
         {
             return await this.Execute(statement, new List<IIonValue>());
         }
@@ -143,13 +142,12 @@ namespace Amazon.QLDB.Driver
         ///
         /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
         /// <param name="parameters">Parameters to execute.</param>
-        /// <param name="cancellationToken"> A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         ///
         /// <returns>Result from executed statement.</returns>
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
         /// <exception cref="QldbDriverException">Thrown when this transaction has been disposed.</exception>
-        public async Task<IAsyncResult> Execute(string statement, List<IIonValue> parameters, CancellationToken cancellationToken = default)
+        internal virtual async Task<IAsyncResult> Execute(string statement, List<IIonValue> parameters)
         {
             ValidationUtils.AssertStringNotEmpty(statement, "statement");
 
@@ -166,14 +164,13 @@ namespace Amazon.QLDB.Driver
         /// </summary>
         ///
         /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
-        /// <param name="cancellationToken"> A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <param name="parameters">Parameters to execute.</param>
         ///
         /// <returns>Result from executed statement.</returns>
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
         /// <exception cref="QldbDriverException">Thrown when this transaction has been disposed.</exception>
-        public async Task<IAsyncResult> Execute(string statement, CancellationToken cancellationToken = default, params IIonValue[] parameters)
+        internal virtual async Task<IAsyncResult> Execute(string statement, params IIonValue[] parameters)
         {
             return await this.Execute(statement, new List<IIonValue>(parameters));
         }
