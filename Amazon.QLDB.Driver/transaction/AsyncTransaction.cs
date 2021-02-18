@@ -131,7 +131,7 @@ namespace Amazon.QLDB.Driver
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
         /// <exception cref="QldbDriverException">Thrown when this transaction has been disposed.</exception>
-        internal async Task<IAsyncResult> Execute(string statement)
+        internal virtual async Task<IAsyncResult> Execute(string statement)
         {
             return await this.Execute(statement, new List<IIonValue>());
         }
@@ -147,7 +147,7 @@ namespace Amazon.QLDB.Driver
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
         /// <exception cref="QldbDriverException">Thrown when this transaction has been disposed.</exception>
-        internal async Task<IAsyncResult> Execute(string statement, List<IIonValue> parameters)
+        internal virtual async Task<IAsyncResult> Execute(string statement, List<IIonValue> parameters)
         {
             ValidationUtils.AssertStringNotEmpty(statement, "statement");
 
@@ -170,7 +170,7 @@ namespace Amazon.QLDB.Driver
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
         /// <exception cref="QldbDriverException">Thrown when this transaction has been disposed.</exception>
-        internal async Task<IAsyncResult> Execute(string statement, params IIonValue[] parameters)
+        internal virtual async Task<IAsyncResult> Execute(string statement, params IIonValue[] parameters)
         {
             return await this.Execute(statement, new List<IIonValue>(parameters));
         }
