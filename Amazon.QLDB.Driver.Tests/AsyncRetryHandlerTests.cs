@@ -16,6 +16,8 @@ namespace Amazon.QLDB.Driver.Tests
     using System;
     using System.Collections.Generic;
     using System.Net;
+    using System.Threading;
+    using System.Threading.Tasks;
     using Amazon.QLDBSession;
     using Amazon.QLDBSession.Model;
     using Amazon.Runtime;
@@ -24,32 +26,33 @@ namespace Amazon.QLDB.Driver.Tests
     using Moq;
 
     [TestClass]
-    public class RetryHandlerTests
+    public class AsyncRetryHandlerTests
     {
         [DataTestMethod]
-        [DynamicData(nameof(CreateRetriableExecuteTestData), DynamicDataSourceType.Method)]
-        public void RetriableExecute_RetryOnExceptions(Driver.RetryPolicy policy, IList<Exception> exceptions, Type expectedExceptionType, Type innerExceptionType,
-            Times funcCalledTimes, Times newSessionCalledTimes, Times nextSessionCalledTimes, Times retryActionCalledTimes)
+        [DynamicData(nameof(CreateRetriableExecuteAsyncTestData), DynamicDataSourceType.Method)]
+        public async Task RetriableExecuteAsync_RetryOnExceptions(Driver.RetryPolicy policy, IList<Exception> exceptions, Type expectedExceptionType, Type innerExceptionType,
+            Times funcCalledTimes, Times newSessionCalledTimes, Times nextSessionCalledTimes)
         {
-            var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance);
+            var handler = (AsyncRetryHandler)AsyncQldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance);
 
-            var func = new Mock<Func<int>>();
-            var newSession = new Mock<Action>();
-            var nextSession = new Mock<Action>();
-            var retry = new Mock<Action<int>>();
+            var func = new Mock<Func<CancellationToken, Task<int>>>();
+            var newSession = new Mock<Func<CancellationToken, Task>>();
+            var nextSession = new Mock<Func<CancellationToken, Task>>();
 
-            var seq = func.SetupSequence(f => f.Invoke());
+            var seq = func.SetupSequence(f => f.Invoke(default));
             foreach (var ex in exceptions)
             {
-                seq = seq.Throws(ex);
+                seq = seq.ThrowsAsync(ex);
             }
-            seq.Returns(1);
+            seq.ReturnsAsync(1);
 
             try
             {
-                handler.RetriableExecute<int>(func.Object,
+                await handler.RetriableExecute(
+                    func.Object,
                     policy,
-                    newSession.Object, nextSession.Object, retry.Object);
+                    newSession.Object,
+                    nextSession.Object);
 
                 Assert.IsNull(expectedExceptionType);
             }
@@ -64,13 +67,12 @@ namespace Amazon.QLDB.Driver.Tests
                 }
             }
 
-            func.Verify(f => f.Invoke(), funcCalledTimes);
-            newSession.Verify(r => r.Invoke(), newSessionCalledTimes);
-            nextSession.Verify(r => r.Invoke(), nextSessionCalledTimes);
-            retry.Verify(r => r.Invoke(It.IsAny<int>()), retryActionCalledTimes);
+            func.Verify(f => f.Invoke(default), funcCalledTimes);
+            newSession.Verify(r => r.Invoke(default), newSessionCalledTimes);
+            nextSession.Verify(r => r.Invoke(default), nextSessionCalledTimes);
         }
 
-        public static IEnumerable<object[]> CreateRetriableExecuteTestData()
+        public static IEnumerable<object[]> CreateRetriableExecuteAsyncTestData()
         {
             var defaultPolicy = Driver.RetryPolicy.Builder().Build();
             var customerPolicy = Driver.RetryPolicy.Builder().WithMaxRetries(10).Build();
@@ -85,58 +87,46 @@ namespace Amazon.QLDB.Driver.Tests
             return new List<object[]>() {
                 // No exception, No retry.
                 new object[] { defaultPolicy, new Exception[0], null, null,
-                    Times.Once(), Times.Never(), Times.Never(), Times.Never() },
+                    Times.Once(), Times.Never(), Times.Never() },
                 // Not supported Txn exception.
                 new object[] { defaultPolicy, new Exception[] { new QldbTransactionException("txnid1111111", new QldbDriverException("qldb")) }, typeof(QldbDriverException), null,
-                    Times.Once(), Times.Never(), Times.Never(), Times.Never() },
+                    Times.Once(), Times.Never(), Times.Never() },
                 // Not supported exception.
                 new object[] { defaultPolicy, new Exception[] { new ArgumentException("qldb") }, typeof(ArgumentException), null,
-                    Times.Once(), Times.Never(), Times.Never(), Times.Never() },
+                    Times.Once(), Times.Never(), Times.Never() },
                 // Transaction expiry.
                 new object[] { defaultPolicy, new Exception[] { txnExpiry }, typeof(InvalidSessionException), null,
-                    Times.Once(), Times.Never(), Times.Never(), Times.Never() },
+                    Times.Once(), Times.Never(), Times.Never() },
                 // Retry OCC within retry limit.
                 new object[] { defaultPolicy, new Exception[] { occ, occ, occ }, null, null,
-                    Times.Exactly(4), Times.Never(), Times.Never(), Times.Exactly(3) },
+                    Times.Exactly(4), Times.Never(), Times.Never() },
                 // Retry ISE within retry limit.
                 new object[] { defaultPolicy, new Exception[] { ise, ise, ise }, null, null,
-                    Times.Exactly(4), Times.Exactly(3), Times.Never(), Times.Exactly(3) },
+                    Times.Exactly(4), Times.Exactly(3), Times.Never() },
                 // Retry mixed exceptions within retry limit.
                 new object[] { defaultPolicy, new Exception[] { ise, occ, http500 }, null, null,
-                    Times.Exactly(4), Times.Exactly(1), Times.Never(), Times.Exactly(3) },
+                    Times.Exactly(4), Times.Exactly(1), Times.Never() },
                 // Retry OCC exceed limit.
                 new object[] { defaultPolicy, new Exception[] { occ, ise, http500, ise, occ }, typeof(OccConflictException), null,
-                    Times.Exactly(5), Times.Exactly(2), Times.Never(), Times.Exactly(4) },
+                    Times.Exactly(5), Times.Exactly(2), Times.Never() },
                 // Retry CapacityExceededException exceed limit.
                 new object[] { defaultPolicy, new Exception[] { cee, cee, cee, cee, cee }, typeof(CapacityExceededException), null,
-                    Times.Exactly(5), Times.Never(), Times.Never(), Times.Exactly(4) },
+                    Times.Exactly(5), Times.Never(), Times.Never() },
                 // Retry OCC with abort txn failures.
                 new object[] { defaultPolicy, new Exception[] { occFailedAbort, occ, occFailedAbort }, null, null,
-                    Times.Exactly(4), Times.Never(), Times.Exactly(2), Times.Exactly(3) },
+                    Times.Exactly(4), Times.Never(), Times.Exactly(2) },
                 // Retry customized policy within retry limit.
                 new object[] { customerPolicy, new Exception[] { ise, ise, ise, ise, ise, ise, ise, ise}, null, null,
-                    Times.Exactly(9), Times.Exactly(8), Times.Never(), Times.Exactly(8) },
+                    Times.Exactly(9), Times.Exactly(8), Times.Never() },
             };
         }
 
         [TestMethod]
-        public void RetryPolicyContext_Create_ShouldReturnCorrectProperties()
+        public void IsTransactionExpiry_Match_ShouldMatchTransactionExpireCases_Async()
         {
-            var exception = new Exception();
-            var retries = 3;
+            Assert.IsTrue(AsyncRetryHandler.IsTransactionExpiry(new InvalidSessionException("Transaction 324weqr2314 has expired")));
 
-            var context = new RetryPolicyContext(retries, exception);
-
-            Assert.AreEqual(retries, context.RetriesAttempted);
-            Assert.AreEqual(exception, context.LastException);
-        }
-
-        [TestMethod]
-        public void IsTransactionExpiry_Match_ShouldMatchTransactionExpireCases()
-        {
-            Assert.IsTrue(RetryHandler.IsTransactionExpiry(new InvalidSessionException("Transaction 324weqr2314 has expired")));
-
-            Assert.IsFalse(RetryHandler.IsTransactionExpiry(new InvalidSessionException("Transaction 324weqr2314 has not expired")));
+            Assert.IsFalse(AsyncRetryHandler.IsTransactionExpiry(new InvalidSessionException("Transaction 324weqr2314 has not expired")));
         }
     }
 }
