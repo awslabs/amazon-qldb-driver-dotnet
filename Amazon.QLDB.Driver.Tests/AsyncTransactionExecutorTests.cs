@@ -1,4 +1,17 @@
-﻿namespace Amazon.QLDB.Driver.Tests
+﻿/*
+ * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"). You may not use this file except in compliance with
+ * the License. A copy of the License is located at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
+ */
+
+namespace Amazon.QLDB.Driver.Tests
 {
     using System.Threading.Tasks;
     using System.Collections.Generic;
@@ -24,9 +37,9 @@
             mockTransaction = new Mock<AsyncTransaction>(It.IsAny<Session>(), It.IsAny<string>(), null, null);
             mockTransaction.Setup(t => t.Abort()).Returns(Task.CompletedTask);
             mockTransaction.Setup(t => t.Execute(It.IsAny<string>())).ReturnsAsync(mockResult.Object);
-            mockTransaction.Setup(transaction => transaction.Execute(It.IsAny<string>(), It.IsAny<List<IIonValue>>()))
+            mockTransaction.Setup(t => t.Execute(It.IsAny<string>(), It.IsAny<List<IIonValue>>()))
                 .ReturnsAsync(mockResult.Object);
-            mockTransaction.Setup(transaction => transaction.Execute(It.IsAny<string>(), It.IsAny<IIonValue[]>()))
+            mockTransaction.Setup(t => t.Execute(It.IsAny<string>(), It.IsAny<IIonValue[]>()))
                 .ReturnsAsync(mockResult.Object);
         }
 
