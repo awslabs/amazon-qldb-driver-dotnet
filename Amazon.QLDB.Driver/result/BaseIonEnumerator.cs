@@ -75,14 +75,6 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <summary>
-        /// Reset. Not supported.
-        /// </summary>
-        public void Reset()
-        {
-            throw new NotSupportedException();
-        }
-
-        /// <summary>
         /// Gets the current query statistics for the number of read IO requests.
         /// The statistics are stateful.
         /// </summary>

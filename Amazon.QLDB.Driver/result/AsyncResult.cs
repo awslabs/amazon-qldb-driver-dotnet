@@ -45,7 +45,7 @@ namespace Amazon.QLDB.Driver
             Session session,
             string txnId,
             ExecuteStatementResult statementResult,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken = default)
         {
             this.ionEnumerator = new IonAsyncEnumerator(session, txnId, statementResult, cancellationToken);
         }
@@ -102,11 +102,12 @@ namespace Amazon.QLDB.Driver
             /// <param name="session">The parent session that represents the communication channel to QLDB.</param>
             /// <param name="txnId">The unique ID of the transaction.</param>
             /// <param name="statementResult">The result of the statement execution.</param>
+            /// <param name="cancellationToken">The CancellationToken to use for this AsyncResult.</param>
             internal IonAsyncEnumerator(
                 Session session,
                 string txnId,
                 ExecuteStatementResult statementResult,
-                CancellationToken cancellationToken)
+                CancellationToken cancellationToken = default)
                 : base(session, txnId, statementResult)
             {
                 this.CancellationToken = cancellationToken;
