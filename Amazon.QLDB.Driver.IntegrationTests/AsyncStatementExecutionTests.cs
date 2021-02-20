@@ -22,7 +22,6 @@ namespace Amazon.QLDB.Driver.IntegrationTests
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using System;
     using System.Collections.Generic;
-    using System.Text;
     using System.Threading.Tasks;
     
     [TestClass]
@@ -87,13 +86,13 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public async Task Execute_DropExistingTable_TableDropped()
+        public async Task ExecuteAsync_DropExistingTable_TableDropped()
         {
             // Given.
-            var create_table_query = $"CREATE TABLE {Constants.CreateTableName}";
-            var create_table_count = await qldbDriver.Execute(async txn =>
+            var createTableQuery = $"CREATE TABLE {Constants.CreateTableName}";
+            var createTableCount = await qldbDriver.Execute(async txn =>
             {
-                var result = await txn.Execute(create_table_query);
+                var result = await txn.Execute(createTableQuery);
 
                 var count = 0;
                 await foreach (var row in result)
@@ -102,9 +101,9 @@ namespace Amazon.QLDB.Driver.IntegrationTests
                 }
                 return count;
             });
-            Assert.AreEqual(1, create_table_count);
+            Assert.AreEqual(1, createTableCount);
 
-            // Execute ListTableNames() to ensure table is created.
+            // Execute ListTableNamesAsync() to ensure table is created.
             var result = await qldbDriver.ListTableNamesAsync();
 
             var tables = new List<string>();
@@ -115,10 +114,10 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             Assert.IsTrue(tables.Contains(Constants.CreateTableName));
 
             // When.
-            var drop_table_query = $"DROP TABLE {Constants.CreateTableName}";
-            var drop_table_count = await qldbDriver.Execute(async txn =>
+            var dropTableQuery = $"DROP TABLE {Constants.CreateTableName}";
+            var dropTableCount = await qldbDriver.Execute(async txn =>
             {
-                var result = await txn.Execute(drop_table_query);
+                var result = await txn.Execute(dropTableQuery);
 
                 var count = 0;
                 await foreach (var row in result)
@@ -127,13 +126,13 @@ namespace Amazon.QLDB.Driver.IntegrationTests
                 }
                 return count;
             });
-            Assert.AreEqual(1, drop_table_count);
+            Assert.AreEqual(1, dropTableCount);
 
             // Then.
             tables.Clear();
-            var updated_tables_result = await qldbDriver.ListTableNamesAsync();
+            var updatedTablesResult = await qldbDriver.ListTableNamesAsync();
 
-            foreach (var row in updated_tables_result)
+            foreach (var row in updatedTablesResult)
             {
                 tables.Add(row);
             }
@@ -141,7 +140,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public async Task Execute_ListTables_ReturnsListOfTables()
+        public async Task ExecuteAsync_ListTables_ReturnsListOfTables()
         {
             // When.
             var result = await qldbDriver.ListTableNamesAsync();
@@ -159,7 +158,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
         [TestMethod]
         [ExpectedException(typeof(BadRequestException))]
-        public async Task Execute_CreateTableThatAlreadyExist_ThrowBadRequestException()
+        public async Task ExecuteAsync_CreateTableThatAlreadyExist_ThrowBadRequestException()
         {
             // Given.
             var query = $"CREATE TABLE {Constants.TableName}";
@@ -169,7 +168,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public async Task Execute_CreateIndex_IndexIsCreated()
+        public async Task ExecuteAsync_CreateIndex_IndexIsCreated()
         {
             // Given.
             var query = $"CREATE INDEX on {Constants.TableName} ({Constants.IndexAttribute})";
@@ -189,11 +188,11 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             Assert.AreEqual(1, count);
 
             // Then.
-            var search_query = $@"SELECT VALUE indexes[0] FROM information_schema.user_tables
+            var searchQuery = $@"SELECT VALUE indexes[0] FROM information_schema.user_tables
                                   WHERE status = 'ACTIVE' AND name = '{Constants.TableName}'";
             var indexColumn = await qldbDriver.Execute(async txn =>
             {
-                var result = await txn.Execute(search_query);
+                var result = await txn.Execute(searchQuery);
 
                 // Extract the index name by querying the information_schema.
                 /* This gives:
@@ -213,7 +212,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public async Task Execute_QueryTableThatHasNoRecords_ReturnsEmptyResult()
+        public async Task ExecuteAsync_QueryTableThatHasNoRecords_ReturnsEmptyResult()
         {
             // Given.
             var query = $"SELECT * FROM {Constants.TableName}";
@@ -236,7 +235,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public async Task Execute_InsertDocument_DocumentIsInserted()
+        public async Task ExecuteAsync_InsertDocument_DocumentIsInserted()
         {
             // Given.
             // Create Ion struct to insert.
@@ -276,7 +275,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public async Task Execute_InsertDocumentWithMultipleFields_DocumentIsInserted()
+        public async Task ExecuteAsync_InsertDocumentWithMultipleFields_DocumentIsInserted()
         {
             // Given.
             // Create Ion struct to insert.
@@ -326,7 +325,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public async Task Execute_QuerySingleField_ReturnsSingleField()
+        public async Task ExecuteAsync_QuerySingleField_ReturnsSingleField()
         {
             // Given.
             // Create Ion struct to insert.
@@ -367,7 +366,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public async Task Execute_QueryTableEnclosedInQuotes_ReturnsResult()
+        public async Task ExecuteAsync_QueryTableEnclosedInQuotes_ReturnsResult()
         {
             // Given.
             // Create Ion struct to insert.
@@ -408,7 +407,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public async Task Execute_InsertMultipleDocuments_DocumentsInserted()
+        public async Task ExecuteAsync_InsertMultipleDocuments_DocumentsInserted()
         {
             IIonValue ionString1 = ValueFactory.NewString(Constants.MultipleDocumentValue1);
             IIonValue ionString2 = ValueFactory.NewString(Constants.MultipleDocumentValue2);
@@ -457,7 +456,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public async Task Execute_DeleteSingleDocument_DocumentIsDeleted()
+        public async Task ExecuteAsync_DeleteSingleDocument_DocumentIsDeleted()
         {
             // Given.
             // Create Ion struct to insert.
@@ -516,7 +515,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public async Task Execute_DeleteAllDocuments_DocumentsAreDeleted()
+        public async Task ExecuteAsync_DeleteAllDocuments_DocumentsAreDeleted()
         {
             // Given.
             // Create Ion structs to insert.
@@ -580,10 +579,10 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
         [TestMethod]
         [ExpectedException(typeof(OccConflictException))]
-        public async Task Execute_UpdateSameRecordAtSameTime_ThrowsOccException()
+        public async Task ExecuteAsync_UpdateSameRecordAtSameTime_ThrowsOccException()
         {
             // Create a driver that does not retry OCC errors
-            AsyncQldbDriver driver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig, default, default, 0);
+            AsyncQldbDriver driver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig, default, default);
 
             // Insert document.
             // Create Ion struct with int value 0 to insert.
@@ -630,8 +629,8 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        [DynamicData(nameof(CreateIonValues), DynamicDataSourceType.Method)]
-        public async Task Execute_InsertAndReadIonTypes_IonTypesAreInsertedAndRead(IIonValue ionValue)
+        [CreateIonValues]
+        public async Task ExecuteAsync_InsertAndReadIonTypes_IonTypesAreInsertedAndRead(IIonValue ionValue)
         {
             // Given.
             // Create Ion struct to be inserted.
@@ -696,8 +695,8 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        [DynamicData(nameof(CreateIonValues), DynamicDataSourceType.Method)]
-        public async Task Execute_UpdateIonTypes_IonTypesAreUpdated(IIonValue ionValue)
+        [CreateIonValues]
+        public async Task ExecuteAsync_UpdateIonTypes_IonTypesAreUpdated(IIonValue ionValue)
         {
             // Given.
             // Create Ion struct to be inserted.
@@ -777,7 +776,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public async Task Execute_ExecuteLambdaThatDoesNotReturnValue_RecordIsUpdated()
+        public async Task ExecuteAsync_ExecuteLambdaThatDoesNotReturnValue_RecordIsUpdated()
         {
             // Given.
             // Create Ion struct to insert.
@@ -807,7 +806,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
         [TestMethod]
         [ExpectedException(typeof(BadRequestException))]
-        public async Task Execute_DeleteTableThatDoesntExist_ThrowsBadRequestException()
+        public async Task ExecuteAsync_DeleteTableThatDoesntExist_ThrowsBadRequestException()
         {
             // Given.
             var query = "DELETE FROM NonExistentTable";
@@ -817,7 +816,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public async Task Execute_ExecutionMetrics()
+        public async Task ExecuteAsync_ExecutionMetrics()
         {
             await qldbDriver.Execute(async txn =>
             {
@@ -834,17 +833,24 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             await qldbDriver.Execute(async txn =>
             {
                 var result = await txn.Execute(selectQuery);
+                Driver.IOUsage? ioUsage = null;
+                Driver.TimingInformation? timingInfo = null;
+                long readIOs = 0;
+                long processingTime = 0;
 
                 await foreach (IIonValue row in result)
                 {
-                    var ioUsage = result.GetConsumedIOs();
-                    var timingInfo = result.GetTimingInformation();
-
-                    Assert.IsNotNull(ioUsage);
-                    Assert.IsNotNull(timingInfo);
-                    Assert.IsTrue(ioUsage?.ReadIOs > 0);
-                    Assert.IsTrue(timingInfo?.ProcessingTimeMilliseconds > 0);
+                    ioUsage = result.GetConsumedIOs();
+                    if (ioUsage != null)
+                        readIOs += ioUsage.Value.ReadIOs;
+                    timingInfo = result.GetTimingInformation();
+                    if (timingInfo != null)
+                        processingTime += timingInfo.Value.ProcessingTimeMilliseconds;
                 }
+                Assert.IsNotNull(ioUsage);
+                Assert.IsNotNull(timingInfo);
+                Assert.IsTrue(readIOs > 0);
+                Assert.IsTrue(processingTime > 0);
             });
 
             // When
@@ -858,196 +864,10 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             Assert.IsNotNull(ioUsage);
             Assert.IsNotNull(timingInfo);
-            Assert.AreEqual(1092, ioUsage?.ReadIOs);
+            // The 1092 value is from selectQuery.
+            Assert.AreEqual(1092, ioUsage?.ReadIOs);  
             Assert.IsTrue(timingInfo?.ProcessingTimeMilliseconds > 0);
         }
 
-        public static IEnumerable<object[]> CreateIonValues()
-        {
-            var ionValues = new List<object[]>();
-
-            var ionBlob = ValueFactory.NewBlob(Encoding.ASCII.GetBytes("value"));
-            ionValues.Add(new object[] { ionBlob });
-
-            var ionBool = ValueFactory.NewBool(true);
-            ionValues.Add(new object[] { ionBool });
-
-            var ionClob = ValueFactory.NewClob(Encoding.ASCII.GetBytes("{{ 'Clob value.'}}"));
-            ionValues.Add(new object[] { ionClob });
-
-            var ionDecimal = ValueFactory.NewDecimal(0.1);
-            ionValues.Add(new object[] { ionDecimal });
-
-            var ionFloat = ValueFactory.NewFloat(1.1);
-            ionValues.Add(new object[] { ionFloat });
-
-            var ionInt = ValueFactory.NewInt(2);
-            ionValues.Add(new object[] { ionInt });
-
-            var ionList = ValueFactory.NewEmptyList();
-            ionList.Add(ValueFactory.NewInt(3));
-            ionValues.Add(new object[] { ionList });
-
-            var ionNull = ValueFactory.NewNull();
-            ionValues.Add(new object[] { ionNull });
-
-            var ionSexp = ValueFactory.NewEmptySexp();
-            ionSexp.Add(ValueFactory.NewString("value"));
-            ionValues.Add(new object[] { ionSexp });
-
-            var ionString = ValueFactory.NewString("value");
-            ionValues.Add(new object[] { ionString });
-
-            var ionStruct = ValueFactory.NewEmptyStruct();
-            ionStruct.SetField("value", ValueFactory.NewBool(true));
-            ionValues.Add(new object[] { ionStruct });
-
-            var ionSymbol = ValueFactory.NewSymbol("symbol");
-            ionValues.Add(new object[] { ionSymbol });
-
-            var ionTimestamp = ValueFactory.NewTimestamp(new IonDotnet.Timestamp(DateTime.Now));
-            ionValues.Add(new object[] { ionTimestamp });
-
-            var ionNullBlob = ValueFactory.NewNullBlob();
-            ionValues.Add(new object[] { ionNullBlob });
-
-            var ionNullBool = ValueFactory.NewNullBool();
-            ionValues.Add(new object[] { ionNullBool });
-
-            var ionNullClob = ValueFactory.NewNullClob();
-            ionValues.Add(new object[] { ionNullClob });
-
-            var ionNullDecimal = ValueFactory.NewNullDecimal();
-            ionValues.Add(new object[] { ionNullDecimal });
-
-            var ionNullFloat = ValueFactory.NewNullFloat();
-            ionValues.Add(new object[] { ionNullFloat });
-
-            var ionNullInt = ValueFactory.NewNullInt();
-            ionValues.Add(new object[] { ionNullInt });
-
-            var ionNullList = ValueFactory.NewNullList();
-            ionValues.Add(new object[] { ionNullList });
-
-            var ionNullSexp = ValueFactory.NewNullSexp();
-            ionValues.Add(new object[] { ionNullSexp });
-
-            var ionNullString = ValueFactory.NewNullString();
-            ionValues.Add(new object[] { ionNullString });
-
-            var ionNullStruct = ValueFactory.NewNullStruct();
-            ionValues.Add(new object[] { ionNullStruct });
-
-            var ionNullSymbol = ValueFactory.NewNullSymbol();
-            ionValues.Add(new object[] { ionNullSymbol });
-
-            var ionNullTimestamp = ValueFactory.NewNullTimestamp();
-            ionValues.Add(new object[] { ionNullTimestamp });
-
-            var ionBlobWithAnnotation = ValueFactory.NewBlob(Encoding.ASCII.GetBytes("value"));
-            ionBlobWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionBlobWithAnnotation });
-
-            var ionBoolWithAnnotation = ValueFactory.NewBool(true);
-            ionBoolWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionBoolWithAnnotation });
-
-            var ionClobWithAnnotation = ValueFactory.NewClob(Encoding.ASCII.GetBytes("{{ 'Clob value.'}}"));
-            ionClobWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionClobWithAnnotation });
-
-            var ionDecimalWithAnnotation = ValueFactory.NewDecimal(0.1);
-            ionDecimalWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionDecimalWithAnnotation });
-
-            var ionFloatWithAnnotation = ValueFactory.NewFloat(1.1);
-            ionFloatWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionFloatWithAnnotation });
-
-            var ionIntWithAnnotation = ValueFactory.NewInt(2);
-            ionIntWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionIntWithAnnotation });
-
-            var ionListWithAnnotation = ValueFactory.NewEmptyList();
-            ionListWithAnnotation.Add(ValueFactory.NewInt(3));
-            ionListWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionListWithAnnotation });
-
-            var ionNullWithAnnotation = ValueFactory.NewNull();
-            ionNullWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionNullWithAnnotation });
-
-            var ionSexpWithAnnotation = ValueFactory.NewEmptySexp();
-            ionSexpWithAnnotation.Add(ValueFactory.NewString("value"));
-            ionSexpWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionSexpWithAnnotation });
-
-            var ionStringWithAnnotation = ValueFactory.NewString("value");
-            ionStringWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionStringWithAnnotation });
-
-            var ionStructWithAnnotation = ValueFactory.NewEmptyStruct();
-            ionStructWithAnnotation.SetField("value", ValueFactory.NewBool(true));
-            ionStructWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionStructWithAnnotation });
-
-            var ionSymbolWithAnnotation = ValueFactory.NewSymbol("symbol");
-            ionSymbolWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionSymbolWithAnnotation });
-
-            var ionTimestampWithAnnotation = ValueFactory.NewTimestamp(new IonDotnet.Timestamp(DateTime.Now));
-            ionTimestampWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionTimestampWithAnnotation });
-
-            var ionNullBlobWithAnnotation = ValueFactory.NewNullBlob();
-            ionNullBlobWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionNullBlobWithAnnotation });
-
-            var ionNullBoolWithAnnotation = ValueFactory.NewNullBool();
-            ionNullBoolWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionNullBoolWithAnnotation });
-
-            var ionNullClobWithAnnotation = ValueFactory.NewNullClob();
-            ionNullClobWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionNullClobWithAnnotation });
-
-            var ionNullDecimalWithAnnotation = ValueFactory.NewNullDecimal();
-            ionNullDecimalWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionNullDecimalWithAnnotation });
-
-            var ionNullFloatWithAnnotation = ValueFactory.NewNullFloat();
-            ionNullFloatWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionNullFloatWithAnnotation });
-
-            var ionNullIntWithAnnotation = ValueFactory.NewNullInt();
-            ionNullIntWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionNullIntWithAnnotation });
-
-            var ionNullListWithAnnotation = ValueFactory.NewNullList();
-            ionNullListWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionNullListWithAnnotation });
-
-            var ionNullSexpWithAnnotation = ValueFactory.NewNullSexp();
-            ionNullSexpWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionNullSexpWithAnnotation });
-
-            var ionNullStringWithAnnotation = ValueFactory.NewNullString();
-            ionNullStringWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionNullStringWithAnnotation });
-
-            var ionNullStructWithAnnotation = ValueFactory.NewNullStruct();
-            ionNullStructWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionNullStructWithAnnotation });
-
-            var ionNullSymbolWithAnnotation = ValueFactory.NewNullSymbol();
-            ionNullSymbolWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionNullSymbolWithAnnotation });
-
-            var ionNullTimestampWithAnnotation = ValueFactory.NewNullTimestamp();
-            ionNullTimestampWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionNullTimestampWithAnnotation });
-
-            return ionValues;
-        }
     }
 }
