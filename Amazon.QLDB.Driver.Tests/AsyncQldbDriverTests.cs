@@ -110,7 +110,7 @@ namespace Amazon.QLDB.Driver.Tests
         public void TestAsyncQldbDriverConstructorReturnsValidObject()
         {
             var driver = new AsyncQldbDriver(
-                new AsyncSessionPool((ct) => Session.StartSessionAsync("ledgerName", mockClient.Object, NullLogger.Instance, ct),
+                new AsyncSessionPool(ct => Session.StartSessionAsync("ledgerName", mockClient.Object, NullLogger.Instance, ct),
                     new Mock<IAsyncRetryHandler>().Object, 4, NullLogger.Instance));
         
             Assert.IsNotNull(driver);
@@ -183,7 +183,7 @@ namespace Amazon.QLDB.Driver.Tests
                     .Returns(Task.FromResult(sendCommandResponseCommit));
         
             var driver = new AsyncQldbDriver(
-                new AsyncSessionPool((ct) => Session.StartSessionAsync("ledgerName", mockClient.Object, NullLogger.Instance, ct),
+                new AsyncSessionPool(ct => Session.StartSessionAsync("ledgerName", mockClient.Object, NullLogger.Instance, ct),
                         AsyncQldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 4, NullLogger.Instance));
 
             var result = await driver.ListTableNames();
@@ -196,7 +196,7 @@ namespace Amazon.QLDB.Driver.Tests
         public async Task TestAsyncExecuteWithActionLambdaCanInvokeSuccessfully()
         {
             var driver = new AsyncQldbDriver(
-                new AsyncSessionPool((ct) => Session.StartSessionAsync("ledgerName", mockClient.Object, NullLogger.Instance, ct),
+                new AsyncSessionPool(ct => Session.StartSessionAsync("ledgerName", mockClient.Object, NullLogger.Instance, ct),
                     new Mock<IAsyncRetryHandler>().Object, 4, NullLogger.Instance));
             await driver.Execute(txn => txn.Execute("testStatement"));
         }
@@ -205,27 +205,18 @@ namespace Amazon.QLDB.Driver.Tests
         public async Task TestAsyncExecuteWithActionAndRetryPolicyCanInvokeSuccessfully()
         {
             var driver = new AsyncQldbDriver(
-                new AsyncSessionPool((ct) => Session.StartSessionAsync("ledgerName", mockClient.Object, NullLogger.Instance, ct),
+                new AsyncSessionPool(ct => Session.StartSessionAsync("ledgerName", mockClient.Object, NullLogger.Instance, ct),
                     AsyncQldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 4, NullLogger.Instance));
+
             await driver.Execute(txn => txn.Execute("testStatement"),
                 Amazon.QLDB.Driver.RetryPolicy.Builder().Build());
         }
-        
-        [TestMethod]
-        public async Task TestAsyncExecuteWithActionLambdaAndRetryPolicyCanInvokeSuccessfully()
-        {
-            var driver = new AsyncQldbDriver(
-                new AsyncSessionPool((ct) => Session.StartSessionAsync("ledgerName", mockClient.Object, NullLogger.Instance, ct),
-                    AsyncQldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 4, NullLogger.Instance));
-        
-            await driver.Execute(txn => txn.Execute("testStatement"), Amazon.QLDB.Driver.RetryPolicy.Builder().Build());
-        }
-        
+
         [TestMethod]
         public async Task TestAsyncExecuteWithFuncLambdaReturnsFuncOutput()
         {
             var driver = new AsyncQldbDriver(
-                new AsyncSessionPool((ct) => Session.StartSessionAsync("ledgerName", mockClient.Object, NullLogger.Instance, ct),
+                new AsyncSessionPool(ct => Session.StartSessionAsync("ledgerName", mockClient.Object, NullLogger.Instance, ct),
                     AsyncQldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 4, NullLogger.Instance));
         
             var result = await driver.Execute(txn =>
@@ -240,7 +231,7 @@ namespace Amazon.QLDB.Driver.Tests
         public async Task TestAsyncExecuteWithFuncLambdaAndRetryPolicyReturnsFuncOutput()
         {
             var driver = new AsyncQldbDriver(
-                new AsyncSessionPool((ct) => Session.StartSessionAsync("ledgerName", mockClient.Object, NullLogger.Instance, ct),
+                new AsyncSessionPool(ct => Session.StartSessionAsync("ledgerName", mockClient.Object, NullLogger.Instance, ct),
                     AsyncQldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 4, NullLogger.Instance));
         
             driver.Dispose();
@@ -310,7 +301,7 @@ namespace Amazon.QLDB.Driver.Tests
             mockSession.Setup(x => x.CommitTransactionAsync(It.IsAny<String>(), It.IsAny<MemoryStream>(), default))
                 .ReturnsAsync(sendCommandResponseCommit.CommitTransaction);
         
-            mockCreator.Setup((x) => x(default)).ReturnsAsync(mockSession.Object);
+            mockCreator.Setup(x => x(default)).ReturnsAsync(mockSession.Object);
         
             var driver = new AsyncQldbDriver(
                 new AsyncSessionPool(mockCreator.Object, AsyncQldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 4, NullLogger.Instance));
@@ -329,7 +320,7 @@ namespace Amazon.QLDB.Driver.Tests
             Assert.IsFalse(expectThrow);
         }
         
-        internal static ValueHolder CreateValueHolder(IIonValue ionValue)
+        private static ValueHolder CreateValueHolder(IIonValue ionValue)
         {
             MemoryStream stream = new MemoryStream();
             using (var writer = IonBinaryWriterBuilder.Build(stream))
@@ -346,7 +337,7 @@ namespace Amazon.QLDB.Driver.Tests
             return valueHolder;
         }
         
-        internal static IEnumerable<object[]> CreateDriverExceptions()
+        private static IEnumerable<object[]> CreateDriverExceptions()
         {
             return new List<object[]>
             {

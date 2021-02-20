@@ -232,19 +232,6 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestExecuteWithActionLambdaAndRetryPolicyCanInvokeSuccessfully()
-        {
-            var driver = new QldbDriver(
-                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
-                    QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 4, NullLogger.Instance));
-
-            driver.Execute((txn) =>
-            {
-                txn.Execute("testStatement");
-            }, Driver.RetryPolicy.Builder().Build());
-        }
-
-        [TestMethod]
         public void TestExecuteWithFuncLambdaReturnsFuncOutput()
         {
             var driver = new QldbDriver(
