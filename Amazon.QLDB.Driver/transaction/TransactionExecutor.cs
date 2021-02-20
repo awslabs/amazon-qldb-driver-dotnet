@@ -14,6 +14,8 @@
 namespace Amazon.QLDB.Driver
 {
     using System.Collections.Generic;
+    using System.Threading;
+    using System.Threading.Tasks;
     using Amazon.IonDotnet.Tree;
     using Amazon.Runtime;
 
@@ -38,11 +40,14 @@ namespace Amazon.QLDB.Driver
         /// <summary>
         /// Abort the transaction and roll back any changes.
         /// </summary>
-        public void Abort()
+        ///
+        /// <param name="cancellationToken">Propagates notification that operations should be canceled.</param>
+        ///
+        public async Task Abort(CancellationToken cancellationToken = default)
         {
             try
             {
-                this.transaction.Abort();
+                await this.transaction.Abort(cancellationToken);
                 throw new TransactionAbortedException(this.transaction.Id, true);
             }
             catch (AmazonServiceException ase)
@@ -56,13 +61,46 @@ namespace Amazon.QLDB.Driver
         /// </summary>
         ///
         /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
+        /// <param name="cancellationToken">Propagates notification that operations should be canceled.</param>
         ///
         /// <returns>Result from executed statement.</returns>
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        public IResult Execute(string statement)
+        public Task<IResult> Execute(string statement, CancellationToken cancellationToken = default)
         {
-            return this.transaction.Execute(statement);
+            return this.transaction.Execute(statement, cancellationToken);
+        }
+
+        /// <summary>
+        /// Execute the statement using the specified parameters against QLDB and retrieve the result.
+        /// </summary>
+        ///
+        /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
+        /// <param name="parameters">Parameters to execute.</param>
+        /// <param name="cancellationToken">Propagates notification that operations should be canceled.</param>
+        ///
+        /// <returns>Result from executed statement.</returns>
+        ///
+        /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
+        public Task<IResult> Execute(string statement, List<IIonValue> parameters, CancellationToken cancellationToken = default)
+        {
+            return this.transaction.Execute(statement, parameters, cancellationToken);
+        }
+
+        /// <summary>
+        /// Execute the statement using the specified parameters against QLDB and retrieve the result.
+        /// </summary>
+        ///
+        /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
+        /// <param name="cancellationToken">Propagates notification that operations should be canceled.</param>
+        /// <param name="parameters">Parameters to execute.</param>
+        ///
+        /// <returns>Result from executed statement.</returns>
+        ///
+        /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
+        public Task<IResult> Execute(string statement, CancellationToken cancellationToken = default, params IIonValue[] parameters)
+        {
+            return this.transaction.Execute(statement, cancellationToken, parameters);
         }
 
         /// <summary>
@@ -75,24 +113,9 @@ namespace Amazon.QLDB.Driver
         /// <returns>Result from executed statement.</returns>
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        public IResult Execute(string statement, List<IIonValue> parameters)
+        public Task<IResult> Execute(string statement, params IIonValue[] parameters)
         {
-            return this.transaction.Execute(statement, parameters);
-        }
-
-        /// <summary>
-        /// Execute the statement using the specified parameters against QLDB and retrieve the result.
-        /// </summary>
-        ///
-        /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
-        /// <param name="parameters">Parameters to execute.</param>
-        ///
-        /// <returns>Result from executed statement.</returns>
-        ///
-        /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        public IResult Execute(string statement, params IIonValue[] parameters)
-        {
-            return this.transaction.Execute(statement, parameters);
+            return this.transaction.Execute(statement, default, parameters);
         }
     }
 }

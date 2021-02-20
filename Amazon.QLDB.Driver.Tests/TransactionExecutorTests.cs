@@ -1,6 +1,8 @@
 ﻿namespace Amazon.QLDB.Driver.Tests
 {
     using System.Collections.Generic;
+    using System.Threading;
+    using System.Threading.Tasks;
     using Amazon.IonDotnet.Tree;
     using Amazon.IonDotnet.Tree.Impl;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -21,11 +23,11 @@
         {
             mockResult = new Mock<IResult>();
             mockTransaction = new Mock<ITransaction>();
-            mockTransaction.Setup(transaction => transaction.Execute(It.IsAny<string>())).Returns(mockResult.Object);
-            mockTransaction.Setup(transaction => transaction.Execute(It.IsAny<string>(), It.IsAny<List<IIonValue>>()))
-                .Returns(mockResult.Object);
-            mockTransaction.Setup(transaction => transaction.Execute(It.IsAny<string>(), It.IsAny<IIonValue[]>()))
-                .Returns(mockResult.Object);
+            mockTransaction.Setup(transaction => transaction.Execute(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(mockResult.Object);
+            mockTransaction.Setup(transaction => transaction.Execute(It.IsAny<string>(), It.IsAny<List<IIonValue>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(mockResult.Object);
+            mockTransaction.Setup(transaction => transaction.Execute(It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<IIonValue[]>()))
+                .ReturnsAsync(mockResult.Object);
         }
 
         [TestInitialize]
@@ -35,54 +37,54 @@
         }
 
         [TestMethod]
-        public void TestAbortThrowsAbortException()
+        public async Task TestAbortThrowsAbortException()
         {
-            Assert.ThrowsException<TransactionAbortedException>(transactionExecutor.Abort);
+            await Assert.ThrowsExceptionAsync<TransactionAbortedException>(() => transactionExecutor.Abort());
         }
 
         [TestMethod]
-        public void TestExecuteNoParamsDelegatesCallToTransaction()
+        public async Task TestExecuteNoParamsDelegatesCallToTransaction()
         {
-            IResult actualResult = transactionExecutor.Execute(query);
-            mockTransaction.Verify(transaction => transaction.Execute(query), Times.Exactly(1));
+            IResult actualResult = await transactionExecutor.Execute(query);
+            mockTransaction.Verify(transaction => transaction.Execute(query, It.IsAny<CancellationToken>()), Times.Exactly(1));
             Assert.AreEqual(mockResult.Object, actualResult);
         }
 
         [TestMethod]
-        public void TestExecuteEmptyParamsDelegatesCallToTransaction()
+        public async Task TestExecuteEmptyParamsDelegatesCallToTransaction()
         {
             List<IIonValue> emptyParams = new List<IIonValue>();
-            IResult actualResult = transactionExecutor.Execute(query, emptyParams);
-            mockTransaction.Verify(transaction => transaction.Execute(query, emptyParams), Times.Exactly(1));
+            IResult actualResult = await transactionExecutor.Execute(query, emptyParams);
+            mockTransaction.Verify(transaction => transaction.Execute(query, emptyParams, It.IsAny<CancellationToken>()), Times.Exactly(1));
             Assert.AreEqual(mockResult.Object, actualResult);
         }
 
         [TestMethod]
-        public void TestExecuteWithNullParamsList()
+        public async Task TestExecuteWithNullParamsList()
         {
             List<IIonValue> nullParams = null;
-            IResult actualResult = transactionExecutor.Execute(query, nullParams);
-            mockTransaction.Verify(transaction => transaction.Execute(query, (List<IIonValue>)null), Times.Exactly(1));
+            IResult actualResult = await transactionExecutor.Execute(query, nullParams);
+            mockTransaction.Verify(transaction => transaction.Execute(query, (List<IIonValue>)null, It.IsAny<CancellationToken>()), Times.Exactly(1));
             Assert.AreEqual(mockResult.Object, actualResult);
         }
 
         [TestMethod]
-        public void TestExecuteOneParamDelegatesCallToTransaction()
+        public async Task TestExecuteOneParamDelegatesCallToTransaction()
         {
             List<IIonValue> oneParam = new List<IIonValue> { new ValueFactory().NewInt(1) };
-            IResult actualResult = transactionExecutor.Execute(query, oneParam);
-            mockTransaction.Verify(transaction => transaction.Execute(query, oneParam), Times.Exactly(1));
+            IResult actualResult = await transactionExecutor.Execute(query, oneParam);
+            mockTransaction.Verify(transaction => transaction.Execute(query, oneParam, It.IsAny<CancellationToken>()), Times.Exactly(1));
             Assert.AreEqual(mockResult.Object, actualResult);
         }
 
         [TestMethod]
-        public void TestExecuteWithVarargs()
+        public async Task TestExecuteWithVarargs()
         {
             var ionFactory = new ValueFactory();
             IIonValue one = ionFactory.NewInt(1);
             IIonValue two = ionFactory.NewInt(2);
-            IResult actualResult = transactionExecutor.Execute(query, one, two);
-            mockTransaction.Verify(transaction => transaction.Execute(query, one, two), Times.Exactly(1));
+            IResult actualResult = await transactionExecutor.Execute(query, one, two);
+            mockTransaction.Verify(transaction => transaction.Execute(query, It.IsAny<CancellationToken>(), one, two), Times.Exactly(1));
             Assert.AreEqual(mockResult.Object, actualResult);
         }
     }

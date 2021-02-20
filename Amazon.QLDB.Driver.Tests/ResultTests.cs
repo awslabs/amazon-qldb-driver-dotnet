@@ -16,6 +16,9 @@ namespace Amazon.QLDB.Driver.Tests
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Amazon.IonDotnet.Tree;
     using Amazon.QLDBSession.Model;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
@@ -78,13 +81,13 @@ namespace Amazon.QLDB.Driver.Tests
         public void TestGetEnumeratorAndThrowsExceptionWhenAlreadyRetrieved()
         {
             // First time is fine - sets a flag
-            result.GetEnumerator();
+            result.GetAsyncEnumerator();
 
-            Assert.ThrowsException<InvalidOperationException>(result.GetEnumerator);
+            Assert.ThrowsException<InvalidOperationException>(() => result.GetAsyncEnumerator());
         }
 
         [TestMethod]
-        public void TestMoveNextWithOneNextPage()
+        public async Task TestMoveNextWithOneNextPage()
         {
             var ms = new MemoryStream();
             var valueHolderList = new List<ValueHolder> { new ValueHolder { IonBinary = ms, IonText = "ionText" } };
@@ -93,23 +96,23 @@ namespace Amazon.QLDB.Driver.Tests
                 Page = new Page { NextPageToken = null, Values = valueHolderList }
             };
 
-            mockSession.Setup(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(fetchPageResult);
+            mockSession.Setup(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(fetchPageResult);
 
-            var results = result.GetEnumerator();
+            var results = result.GetAsyncEnumerator();
 
             int counter = 0;
-            while (results.MoveNext())
+            while (await results.MoveNextAsync())
             {
                 counter++;
             }
 
             Assert.AreEqual(2, counter);
-            mockSession.Verify(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
+            mockSession.Verify(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [TestMethod]
-        public void TestMoveNextWithNoNextPage()
+        public async Task TestMoveNextWithNoNextPage()
         {
             var ms = new MemoryStream();
             var valueHolderList = new List<ValueHolder> { new ValueHolder { IonBinary = ms, IonText = "ionText" } };
@@ -123,43 +126,35 @@ namespace Amazon.QLDB.Driver.Tests
             };
 
             Result res = new Result(mockSession.Object, "txnId", executeResult);
-            var results = res.GetEnumerator();
+            var results = res.GetAsyncEnumerator();
 
             int counter = 0;
-            while (results.MoveNext())
+            while (await results.MoveNextAsync())
             {
                 counter++;
             }
 
             Assert.AreEqual(1, counter);
-            mockSession.Verify(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            mockSession.Verify(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [TestMethod]
-        public void TestIonEnumeratorCurrentReturnsTrueWhenResultsExist()
+        public async Task TestIonEnumeratorCurrentReturnsTrueWhenResultsExist()
         {
-            var results = result.GetEnumerator();
+            var results = result.GetAsyncEnumerator();
 
             Assert.IsNotNull(results);
-            Assert.IsTrue(results.MoveNext());
+            Assert.IsTrue(await results.MoveNextAsync());
         }
 
         [TestMethod]
-        public void TestIonEnumeratorResetIsNotSupported()
-        {
-            var results = result.GetEnumerator();
-
-            Assert.ThrowsException<NotSupportedException>(results.Reset);
-        }
-
-        [TestMethod]
-        public void TestQueryStatsNullExecuteNullFetch()
+        public async Task TestQueryStatsNullExecuteNullFetch()
         {
             var executeResult = GetExecuteResultNullStats();
             var fetchPageResult = GetFetchResultNullStats();
 
-            mockSession.Setup(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(fetchPageResult);
+            mockSession.Setup(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(fetchPageResult);
 
             var result = new Result(mockSession.Object, "txnId", executeResult);
 
@@ -168,8 +163,8 @@ namespace Amazon.QLDB.Driver.Tests
             Assert.IsNull(io);
             Assert.IsNull(timing);
 
-            var results = result.GetEnumerator();
-            while (results.MoveNext())
+            var results = result.GetAsyncEnumerator();
+            while (await results.MoveNextAsync())
             {
                 // Fetch the next page
             }
@@ -181,13 +176,13 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestQueryStatsNullExecuteHasFetch()
+        public async Task TestQueryStatsNullExecuteHasFetch()
         {
             var executeResult = GetExecuteResultNullStats();
             var fetchPageResult = GetFetchResultWithStats();
 
-            mockSession.Setup(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(fetchPageResult);
+            mockSession.Setup(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(fetchPageResult);
 
             var result = new Result(mockSession.Object, "txnId", executeResult);
 
@@ -196,8 +191,8 @@ namespace Amazon.QLDB.Driver.Tests
             Assert.IsNull(io);
             Assert.IsNull(timing);
 
-            var results = result.GetEnumerator();
-            while (results.MoveNext())
+            var results = result.GetAsyncEnumerator();
+            while (await results.MoveNextAsync())
             {
                 // Fetch the next page
             }
@@ -210,13 +205,13 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestQueryStatsHasExecuteNullFetch()
+        public async Task TestQueryStatsHasExecuteNullFetch()
         {
             var executeResult = GetExecuteResultWithStats();
             var fetchPageResult = GetFetchResultNullStats();
 
-            mockSession.Setup(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(fetchPageResult);
+            mockSession.Setup(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(fetchPageResult);
 
             var result = new Result(mockSession.Object, "txnId", executeResult);
 
@@ -226,8 +221,8 @@ namespace Amazon.QLDB.Driver.Tests
             Assert.AreEqual(executeWrites, io?.WriteIOs);
             Assert.AreEqual(executeTime, timing?.ProcessingTimeMilliseconds);
 
-            var results = result.GetEnumerator();
-            while (results.MoveNext())
+            var results = result.GetAsyncEnumerator();
+            while (await results.MoveNextAsync())
             {
                 // Fetch the next page
             }
@@ -240,13 +235,13 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestQueryStatsHasExecuteHasFetch()
+        public async Task TestQueryStatsHasExecuteHasFetch()
         {
             var executeResult = GetExecuteResultWithStats();
             var fetchPageResult = GetFetchResultWithStats();
 
-            mockSession.Setup(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(fetchPageResult);
+            mockSession.Setup(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(fetchPageResult);
 
             var result = new Result(mockSession.Object, "txnId", executeResult);
 
@@ -256,8 +251,8 @@ namespace Amazon.QLDB.Driver.Tests
             Assert.AreEqual(executeWrites, io?.WriteIOs);
             Assert.AreEqual(executeTime, timing?.ProcessingTimeMilliseconds);
 
-            var results = result.GetEnumerator();
-            while (results.MoveNext())
+            var results = result.GetAsyncEnumerator();
+            while (await results.MoveNextAsync())
             {
                 // Fetch the next page
             }

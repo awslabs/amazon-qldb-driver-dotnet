@@ -117,7 +117,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestListTableNamesLists()
+        public async Task TestListTableNamesLists()
         {
             var factory = new ValueFactory();
             var tables = new List<string>() { "table1", "table2" };
@@ -186,33 +186,30 @@ namespace Amazon.QLDB.Driver.Tests
                 new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
                         QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 4, NullLogger.Instance));
 
-            var result = driver.ListTableNames();
+            var result = await driver.ListTableNames();
 
             Assert.IsNotNull(result);
             CollectionAssert.AreEqual(tables, result.ToList());
         }
 
         [TestMethod]
-        public void TestExecuteWithActionLambdaCanInvokeSuccessfully()
+        public async Task TestExecuteWithActionLambdaCanInvokeSuccessfully()
         {
             var driver = new QldbDriver(
                 new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
                     new Mock<IRetryHandler>().Object, 4, NullLogger.Instance));
-            driver.Execute((txn) =>
-            {
-                txn.Execute("testStatement");
-            });
+            await driver.Execute(txn => txn.Execute("testStatement"));
         }
 
         [TestMethod]
-        public void TestExecuteWithActionAndRetryPolicyCanInvokeSuccessfully()
+        public async Task TestExecuteWithActionAndRetryPolicyCanInvokeSuccessfully()
         {
             var driver = new QldbDriver(
                 new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
                     QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 4, NullLogger.Instance));
-            driver.Execute((txn) =>
+            await driver.Execute(async (txn) =>
             {
-                txn.Execute("testStatement");
+                await txn.Execute("testStatement");
             },
             Driver.RetryPolicy.Builder().Build());
         }
@@ -232,57 +229,54 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestExecuteWithActionLambdaAndRetryPolicyCanInvokeSuccessfully()
+        public async Task TestExecuteWithActionLambdaAndRetryPolicyCanInvokeSuccessfully()
         {
             var driver = new QldbDriver(
                 new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
                     QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 4, NullLogger.Instance));
 
-            driver.Execute((txn) =>
-            {
-                txn.Execute("testStatement");
-            }, Driver.RetryPolicy.Builder().Build());
+            await driver.Execute(txn => txn.Execute("testStatement"), Driver.RetryPolicy.Builder().Build());
         }
 
         [TestMethod]
-        public void TestExecuteWithFuncLambdaReturnsFuncOutput()
+        public async Task TestExecuteWithFuncLambdaReturnsFuncOutput()
         {
             var driver = new QldbDriver(
                 new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
                     QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 4, NullLogger.Instance));
 
-            var result = driver.Execute((txn) =>
+            var result = await driver.Execute(async txn =>
             {
-                txn.Execute("testStatement");
+                await txn.Execute("testStatement");
                 return "testReturnValue";
             });
             Assert.AreEqual("testReturnValue", result);
         }
 
         [TestMethod]
-        public void TestExecuteWithFuncLambdaAndRetryPolicyReturnsFuncOutput()
+        public async Task TestExecuteWithFuncLambdaAndRetryPolicyReturnsFuncOutput()
         {
             var driver = new QldbDriver(
                 new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
                     QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 4, NullLogger.Instance));
 
-            driver.Dispose();
-            Assert.ThrowsException<QldbDriverException>(() => driver.Execute((txn) =>
+            await driver.DisposeAsync();
+            await Assert.ThrowsExceptionAsync<QldbDriverException>(async () => await driver.Execute(async txn =>
             {
-                txn.Execute("testStatement");
+                await txn.Execute("testStatement");
                 return "testReturnValue";
             }, Driver.RetryPolicy.Builder().Build()));
         }
 
         [TestMethod]
         [Obsolete]
-        public void TestExecuteWithFuncLambdaAndRetryActionReturnsFuncOutput()
+        public async Task TestExecuteWithFuncLambdaAndRetryActionReturnsFuncOutput()
         {
             var driver = new QldbDriver(
                 new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
                     QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 4, NullLogger.Instance));
 
-            driver.Dispose();
+            await driver.DisposeAsync();
             Assert.ThrowsException<QldbDriverException>(() => driver.Execute((txn) =>
             {
                 txn.Execute("testStatement");
@@ -292,7 +286,7 @@ namespace Amazon.QLDB.Driver.Tests
 
         [DataTestMethod]
         [DynamicData(nameof(CreateDriverExceptions), DynamicDataSourceType.Method)]
-        public void Execute_ExceptionOnExecute_ShouldOnlyRetryOnISEAndTAOE(Exception exception, bool expectThrow)
+        public async Task Execute_ExceptionOnExecute_ShouldOnlyRetryOnISEAndTAOE(Exception exception, bool expectThrow)
         {
             var statement = "DELETE FROM table;";
             var h1 = QldbHash.ToQldbHash(TestTransactionId);
@@ -337,30 +331,29 @@ namespace Amazon.QLDB.Driver.Tests
                     RequestId = "testId"
                 }
             };
-            var mockCreator = new Mock<Func<Session>>();
+            var mockCreator = new Mock<Func<Task<Session>>>();
             var mockSession = new Mock<Session>(null, null, null, null, null);
 
-            mockSession.Setup(x => x.StartTransaction()).Returns(sendCommandResponseWithStartSession.StartTransaction);
-            mockSession.SetupSequence(x => x.ExecuteStatement(It.IsAny<String>(), It.IsAny<String>(), It.IsAny<List<IIonValue>>()))
-                .Throws(exception)
-                .Throws(exception)
-                .Returns(sendCommandResponseExecute.ExecuteStatement);
-            mockSession.Setup(x => x.CommitTransaction(It.IsAny<String>(), It.IsAny<MemoryStream>()))
-                .Returns(sendCommandResponseCommit.CommitTransaction);
+            mockSession.Setup(x => x.StartTransaction(It.IsAny<CancellationToken>())).ReturnsAsync(sendCommandResponseWithStartSession.StartTransaction);
+            mockSession.SetupSequence(x => x.ExecuteStatement(It.IsAny<String>(), It.IsAny<String>(), It.IsAny<List<IIonValue>>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(exception)
+                .ThrowsAsync(exception)
+                .ReturnsAsync(sendCommandResponseExecute.ExecuteStatement);
+            mockSession.Setup(x => x.CommitTransaction(It.IsAny<String>(), It.IsAny<MemoryStream>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(sendCommandResponseCommit.CommitTransaction);
 
-            mockCreator.Setup(x => x()).Returns(mockSession.Object);
+            mockCreator.Setup(x => x()).ReturnsAsync(mockSession.Object);
 
             var driver = new QldbDriver(
                 new SessionPool(mockCreator.Object, QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 4, NullLogger.Instance));
-
             try
             {
-                driver.Execute(txn => txn.Execute(statement));
+                await driver.Execute(txn => txn.Execute(statement));
             }
             catch (Exception e)
             {
-                Assert.IsTrue(expectThrow);
                 Assert.AreEqual(exception, e);
+                Assert.IsTrue(expectThrow);
                 return;
             }
 

@@ -13,8 +13,9 @@
 
 namespace Amazon.QLDB.Driver
 {
-    using System.Collections;
     using System.Collections.Generic;
+    using System.Threading;
+    using System.Threading.Tasks;
     using Amazon.IonDotnet.Tree;
 
     /// <summary>
@@ -49,10 +50,10 @@ namespace Amazon.QLDB.Driver
         /// <param name="result">The result which is to be buffered into memory and closed.</param>
         ///
         /// <returns>The <see cref="BufferedResult"/> object.</returns>
-        public static BufferedResult BufferResult(IResult result)
+        public static async Task<BufferedResult> BufferResult(IResult result)
         {
             var values = new List<IIonValue>();
-            foreach (IIonValue value in result)
+            await foreach (IIonValue value in result)
             {
                 values.Add(value);
             }
@@ -63,19 +64,31 @@ namespace Amazon.QLDB.Driver
         /// <summary>
         /// Returns an enumerator that iterates through a collection.
         /// </summary>
-        /// <returns>An <see cref="IEnumerator"/> object that can be used to iterate through the collection.</returns>
-        public IEnumerator<IIonValue> GetEnumerator()
+        ///
+        /// <param name="cancellationToken">
+        ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
+        /// </param>
+        ///
+        /// <returns>An <see cref="IAsyncEnumerator&lt;IIonValue&gt;"/> object that can be used to iterate through the collection.</returns>
+        public IAsyncEnumerator<IIonValue> GetAsyncEnumerator(CancellationToken cancellationToken = default)
         {
-            return this.values.GetEnumerator();
+            return new ValuesEnumerator(this.values);
         }
 
         /// <summary>
-        /// Returns an enumerator that iterates through a collection.
+        /// Asynchronously enumerates and list of Ion values.
         /// </summary>
-        /// <returns>An <see cref="IEnumerator"/> object that can be used to iterate through the collection.</returns>
-        IEnumerator IEnumerable.GetEnumerator()
+        private struct ValuesEnumerator : IAsyncEnumerator<IIonValue>
         {
-            return this.GetEnumerator();
+            private List<IIonValue>.Enumerator valuesEnumerator;
+
+            public ValuesEnumerator(List<IIonValue> values) => this.valuesEnumerator = values.GetEnumerator();
+
+            public IIonValue Current => this.valuesEnumerator.Current;
+
+            public ValueTask<bool> MoveNextAsync() => new ValueTask<bool>(this.valuesEnumerator.MoveNext());
+
+            public ValueTask DisposeAsync() => default;
         }
 
         /// <summary>

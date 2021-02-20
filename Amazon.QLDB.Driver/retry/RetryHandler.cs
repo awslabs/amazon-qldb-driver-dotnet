@@ -16,6 +16,7 @@ namespace Amazon.QLDB.Driver
     using System;
     using System.Text.RegularExpressions;
     using System.Threading;
+    using System.Threading.Tasks;
     using Amazon.QLDBSession.Model;
     using Microsoft.Extensions.Logging;
 
@@ -39,7 +40,7 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <inheritdoc/>
-        public T RetriableExecute<T>(Func<T> func, RetryPolicy retryPolicy, Action newSessionAction, Action nextSessionAction, Action<int> retryAction)
+        public async Task<T> RetriableExecute<T>(Func<CancellationToken, Task<T>> func, RetryPolicy retryPolicy, Func<CancellationToken, Task> newSessionAction, Func<CancellationToken, Task> nextSessionAction, Func<int, CancellationToken, Task> retryAction, CancellationToken cancellationToken = default)
         {
             Exception last = null;
             int retryAttempt = 0;
@@ -48,7 +49,7 @@ namespace Amazon.QLDB.Driver
             {
                 try
                 {
-                    return func();
+                    return await func(cancellationToken);
                 }
                 catch (QldbTransactionException ex)
                 {
@@ -69,19 +70,23 @@ namespace Amazon.QLDB.Driver
                                 ++retryAttempt,
                                 TryGetTransactionId(ex));
 
-                        retryAction?.Invoke(retryAttempt);
+                        if (retryAction != null)
+                        {
+                            await retryAction(retryAttempt, cancellationToken);
+                        }
 
-                        Thread.Sleep(retryPolicy.BackoffStrategy.CalculateDelay(new RetryPolicyContext(retryAttempt, iex)));
+                        var backoffDelay = retryPolicy.BackoffStrategy.CalculateDelay(new RetryPolicyContext(retryAttempt, iex));
+                        await Task.Delay(backoffDelay, cancellationToken);
 
                         if (!ex.IsSessionAlive)
                         {
                             if (iex is InvalidSessionException)
                             {
-                                newSessionAction();
+                                await newSessionAction(cancellationToken);
                             }
                             else
                             {
-                                nextSessionAction();
+                                await nextSessionAction(cancellationToken);
                             }
                         }
 
@@ -93,6 +98,11 @@ namespace Amazon.QLDB.Driver
             }
 
             throw last;
+        }
+
+        public Task<T> RetriableExecute<T>(Func<Task<T>> func, RetryPolicy retryPolicy, Func<Task> newSession, Func<Task> nextSession, Func<int, Task> retryAction, CancellationToken cancellationToken = default)
+        {
+            return this.RetriableExecute(ct => func(), retryPolicy, ct => newSession(), ct => nextSession(), (arg, ct) => retryAction(arg), cancellationToken);
         }
 
         internal static bool IsTransactionExpiry(Exception ex)

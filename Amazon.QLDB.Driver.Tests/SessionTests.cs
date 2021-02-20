@@ -34,7 +34,7 @@ namespace Amazon.QLDB.Driver.Tests
 
         [ClassInitialize]
 #pragma warning disable IDE0060 // Remove unused parameter
-        public static void Setup(TestContext context)
+        public static async Task Setup(TestContext context)
 #pragma warning restore IDE0060 // Remove unused parameter
         {
             var testStartSessionResponse = new SendCommandResponse
@@ -50,7 +50,7 @@ namespace Amazon.QLDB.Driver.Tests
             };
             SetResponse(testStartSessionResponse);
 
-            session = Session.StartSession("testLedgerName", mockClient.Object, NullLogger.Instance);
+            session = await Session.StartSession("testLedgerName", mockClient.Object, NullLogger.Instance);
         }
 
         [TestMethod]
@@ -61,7 +61,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestAbortTransactionReturnsResponse()
+        public async Task TestAbortTransactionReturnsResponse()
         {
             var testAbortTransactionResult = new AbortTransactionResult();
             var testAbortTransactionResponse = new SendCommandResponse
@@ -70,11 +70,11 @@ namespace Amazon.QLDB.Driver.Tests
             };
             SetResponse(testAbortTransactionResponse);
 
-            Assert.AreEqual(testAbortTransactionResult, session.AbortTransaction());
+            Assert.AreEqual(testAbortTransactionResult, await session.AbortTransaction());
         }
 
         [TestMethod]
-        public void TestEndSessionReturnsResponse()
+        public async Task TestEndSessionReturnsResponse()
         {
             var testEndSessionResult = new EndSessionResult();
             var testEndSessionResponse = new SendCommandResponse
@@ -83,20 +83,20 @@ namespace Amazon.QLDB.Driver.Tests
             };
             SetResponse(testEndSessionResponse);
 
-            Assert.AreEqual(testEndSessionResult, session.EndSession());
+            Assert.AreEqual(testEndSessionResult, await session.EndSession());
         }
 
         [TestMethod]
-        public void TestEndSendsEndSessionAndIgnoresExceptions()
+        public async Task TestEndSendsEndSessionAndIgnoresExceptions()
         {
             mockClient.Setup(x => x.SendCommandAsync(It.IsAny<SendCommandRequest>(), It.IsAny<CancellationToken>()))
                 .Throws(new AmazonServiceException());
 
-            session.End();
+            await session.End();
         }
 
         [TestMethod]
-        public void TestCommitTransactionReturnsResponse()
+        public async Task TestCommitTransactionReturnsResponse()
         {
             var testCommitTransactionResult = new CommitTransactionResult
             {
@@ -109,11 +109,11 @@ namespace Amazon.QLDB.Driver.Tests
             };
             SetResponse(testCommitTransactionResponse);
 
-            Assert.AreEqual(testCommitTransactionResult, session.CommitTransaction("txnId", new MemoryStream()));
+            Assert.AreEqual(testCommitTransactionResult, await session.CommitTransaction("txnId", new MemoryStream()));
         }
 
         [TestMethod]
-        public void TestExecuteStatementReturnsResponse()
+        public async Task TestExecuteStatementReturnsResponse()
         {
             var testExecuteStatementResult = new ExecuteStatementResult
             {
@@ -132,15 +132,15 @@ namespace Amazon.QLDB.Driver.Tests
                 valueFactory.NewString("param2")
             };
 
-            var executeResultParams = session.ExecuteStatement("txnId", "statement", parameters);
+            var executeResultParams = await session.ExecuteStatement("txnId", "statement", parameters);
             Assert.AreEqual(testExecuteStatementResult, executeResultParams);
 
-            var executeResultEmptyParams = session.ExecuteStatement("txnId", "statement", new List<IIonValue>());
+            var executeResultEmptyParams = await session.ExecuteStatement("txnId", "statement", new List<IIonValue>());
             Assert.AreEqual(testExecuteStatementResult, executeResultEmptyParams);
         }
 
         [TestMethod]
-        public void TestFetchPageReturnsResponse()
+        public async Task TestFetchPageReturnsResponse()
         {
             var testFetchPageResult = new FetchPageResult
             {
@@ -152,11 +152,11 @@ namespace Amazon.QLDB.Driver.Tests
             };
             SetResponse(testFetchPageResponse);
 
-            Assert.AreEqual(testFetchPageResult, session.FetchPage("txnId", "nextPageToken"));
+            Assert.AreEqual(testFetchPageResult, await session.FetchPage("txnId", "nextPageToken"));
         }
 
         [TestMethod]
-        public void TestStartTransactionReturnsResponse()
+        public async Task TestStartTransactionReturnsResponse()
         {
             var testStartTransactionResult = new StartTransactionResult
             {
@@ -168,13 +168,13 @@ namespace Amazon.QLDB.Driver.Tests
             };
             SetResponse(testStartTransactionResponse);
 
-            Assert.AreEqual(testStartTransactionResult, session.StartTransaction());
+            Assert.AreEqual(testStartTransactionResult, await session.StartTransaction());
         }
 
         private static void SetResponse(SendCommandResponse response)
         {
             mockClient.Setup(x => x.SendCommandAsync(It.IsAny<SendCommandRequest>(), It.IsAny<CancellationToken>()))
-                    .Returns(Task.FromResult(response));
+                    .ReturnsAsync(response);
         }
     }
 }

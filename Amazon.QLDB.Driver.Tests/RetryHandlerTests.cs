@@ -4,6 +4,8 @@ namespace Amazon.QLDB.Driver.Tests
     using System;
     using System.Collections.Generic;
     using System.Net;
+    using System.Threading;
+    using System.Threading.Tasks;
     using Amazon.QLDBSession;
     using Amazon.QLDBSession.Model;
     using Amazon.Runtime;
@@ -16,26 +18,26 @@ namespace Amazon.QLDB.Driver.Tests
     {
         [DataTestMethod]
         [DynamicData(nameof(CreateRetriableExecuteTestData), DynamicDataSourceType.Method)]
-        public void RetriableExecute_RetryOnExceptions(Driver.RetryPolicy policy, IList<Exception> exceptions, Type expectedExceptionType, Type innerExceptionType,
+        public async Task RetriableExecute_RetryOnExceptions(Driver.RetryPolicy policy, IList<Exception> exceptions, Type expectedExceptionType, Type innerExceptionType,
             Times funcCalledTimes, Times newSessionCalledTimes, Times nextSessionCalledTimes, Times retryActionCalledTimes)
         {
             var handler = (RetryHandler)QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance);
 
-            var func = new Mock<Func<int>>();
-            var newSession = new Mock<Action>();
-            var nextSession = new Mock<Action>();
-            var retry = new Mock<Action<int>>();
+            var func = new Mock<Func<Task<int>>>();
+            var newSession = new Mock<Func<Task>>();
+            var nextSession = new Mock<Func<Task>>();
+            var retry = new Mock<Func<int, Task>>();
 
             var seq = func.SetupSequence(f => f.Invoke());
             foreach (var ex in exceptions)
             {
-                seq = seq.Throws(ex);
+                seq = seq.ThrowsAsync(ex);
             }
-            seq.Returns(1);
+            seq.ReturnsAsync(1);
 
             try
             {
-                handler.RetriableExecute<int>(func.Object,
+                await handler.RetriableExecute<int>(func.Object,
                     policy,
                     newSession.Object, nextSession.Object, retry.Object);
 

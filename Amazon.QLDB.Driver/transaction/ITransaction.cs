@@ -14,6 +14,8 @@
 namespace Amazon.QLDB.Driver
 {
     using System;
+    using System.Threading;
+    using System.Threading.Tasks;
     using Amazon.QLDBSession.Model;
     using Amazon.Runtime;
 
@@ -33,7 +35,7 @@ namespace Amazon.QLDB.Driver
     ///
     /// <para>Child Result objects will be closed when the transaction is aborted or committed.</para>
     /// </summary>
-    internal interface ITransaction : IDisposable, IExecutable
+    internal interface ITransaction : IAsyncDisposable, IExecutable
     {
         string Id { get; }
 
@@ -41,16 +43,23 @@ namespace Amazon.QLDB.Driver
         /// Abort the transaction and roll back any changes. No-op if closed.
         /// Any open <see cref="IResult"/> created by the transaction will be invalidated.
         /// </summary>
-        void Abort();
+        ///
+        /// <param name="cancellationToken">Propagates notification that operations should be canceled.</param>
+        ///
+        /// <returns>A task representing the asynchronous abort operation.</returns>
+        Task Abort(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Commit the transaction. Any open <see cref="IResult"/> created by the transaction will be invalidated.
         /// </summary>
         ///
+        /// <param name="cancellationToken">Propagates notification that operations should be canceled.</param>
+        ///
         /// <exception cref="InvalidOperationException">Thrown when Hash returned from QLDB is not equal.</exception>
         /// <exception cref="OccConflictException">Thrown if an OCC conflict has been detected within the transaction.</exception>
         /// <exception cref="AmazonServiceException">Thrown when there is an error committing this transaction against QLDB.</exception>
         /// <exception cref="QldbDriverException">Thrown when this transaction has been disposed.</exception>
-        void Commit();
+        /// <returns>A task representing the asynchronous commit operation.</returns>
+        Task Commit(CancellationToken cancellationToken = default);
     }
 }
