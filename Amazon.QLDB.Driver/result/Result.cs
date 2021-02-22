@@ -111,6 +111,14 @@ namespace Amazon.QLDB.Driver
             }
 
             /// <summary>
+            /// Reset. Not supported.
+            /// </summary>
+            public void Reset()
+            {
+                throw new NotSupportedException();
+            }
+
+            /// <summary>
             /// Advance the enumerator to the next value within the page.
             /// </summary>
             ///

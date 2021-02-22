@@ -13,6 +13,7 @@
 
 namespace Amazon.QLDB.Driver
 {
+    using System.Collections.Generic;
     using System.IO;
     using Amazon.IonDotnet.Builders;
     using Amazon.IonDotnet.Tree;
@@ -36,6 +37,56 @@ namespace Amazon.QLDB.Driver
             };
 
             return valueHolder;
+        }
+
+        internal static ExecuteStatementResult GetExecuteResultNullStats(List<ValueHolder> valueHolderList)
+        {
+            return new ExecuteStatementResult
+            {
+                FirstPage = new Page
+                {
+                    NextPageToken = "hasNextPage",
+                    Values = valueHolderList,
+                },
+            };
+        }
+
+        internal static ExecuteStatementResult GetExecuteResultWithStats(
+            List<ValueHolder> valueHolderList,
+            Amazon.QLDBSession.Model.IOUsage executeIO,
+            Amazon.QLDBSession.Model.TimingInformation executeTiming)
+        {
+            return new ExecuteStatementResult
+            {
+                FirstPage = new Page
+                {
+                    NextPageToken = "hasNextPage",
+                    Values = valueHolderList,
+                },
+                ConsumedIOs = executeIO,
+                TimingInformation = executeTiming,
+            };
+        }
+
+        internal static FetchPageResult GetFetchResultNullStats(List<ValueHolder> valueHolderList)
+        {
+            return new FetchPageResult
+            {
+                Page = new Page { NextPageToken = null, Values = valueHolderList },
+            };
+        }
+
+        internal static FetchPageResult GetFetchResultWithStats(
+            List<ValueHolder> valueHolderList,
+            Amazon.QLDBSession.Model.IOUsage fetchIO,
+            Amazon.QLDBSession.Model.TimingInformation fetchTiming)
+        {
+            return new FetchPageResult
+            {
+                Page = new Page { NextPageToken = null, Values = valueHolderList },
+                ConsumedIOs = fetchIO,
+                TimingInformation = fetchTiming,
+            };
         }
     }
 }
