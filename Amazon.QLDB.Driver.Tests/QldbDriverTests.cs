@@ -16,18 +16,18 @@ namespace Amazon.QLDB.Driver.Tests
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
+    using Amazon.IonDotnet.Tree;
     using Amazon.IonDotnet.Tree.Impl;
     using Amazon.QLDBSession;
     using Amazon.QLDBSession.Model;
     using Amazon.Runtime;
-    using Amazon.IonDotnet.Tree;
     using Microsoft.Extensions.Logging.Abstractions;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
-    using System.Linq;
 
     [TestClass]
     public class QldbDriverTests
