@@ -66,7 +66,7 @@ namespace Amazon.QLDB.Driver.Tests
         public void TestCommitCallsCommitTransaction()
         {
             mockSession.Setup(m => m.CommitTransaction(It.IsAny<string>(), It.IsAny<MemoryStream>()))
-                .Returns(AsyncTransactionTests.GetTransactionResult(TxnId).GetAwaiter().GetResult());
+                .Returns(GetTransactionResult(TxnId));
 
             // We must not have any exceptions
             transaction.Commit();
@@ -106,7 +106,7 @@ namespace Amazon.QLDB.Driver.Tests
         public void TestCommitWhenDifferentTxnIDThrowsException()
         {
             mockSession.Setup(m => m.CommitTransaction(It.IsAny<string>(), It.IsAny<MemoryStream>()))
-                .Returns(AsyncTransactionTests.GetTransactionResult("differentTnxIdFromThis").GetAwaiter().GetResult());
+                .Returns(GetTransactionResult("differentTnxIdFromThis"));
 
             Assert.ThrowsException<InvalidOperationException>(transaction.Commit);
         }
@@ -136,6 +136,11 @@ namespace Amazon.QLDB.Driver.Tests
         public void TestExecuteWhenStatementEmptyThrowsException()
         {
             Assert.ThrowsException<ArgumentException>(() => transaction.Execute(""));
+        }
+
+        private CommitTransactionResult GetTransactionResult(string txnId)
+        {
+            return AsyncTransactionTests.GetAsyncTransactionResult(txnId).GetAwaiter().GetResult();
         }
     }
 }

@@ -70,7 +70,7 @@ namespace Amazon.QLDB.Driver.Tests
         public async Task TestCommitCallsCommitTransaction()
         {
             mockSession.Setup(s => s.CommitTransactionAsync(It.IsAny<string>(), It.IsAny<MemoryStream>(),
-                It.IsAny<CancellationToken>())).Returns(GetTransactionResult(TxnId));
+                It.IsAny<CancellationToken>())).Returns(GetAsyncTransactionResult(TxnId));
 
             // We must not have any exceptions
             await asyncTransaction.Commit();
@@ -114,7 +114,7 @@ namespace Amazon.QLDB.Driver.Tests
         public async Task TestCommitWhenDifferentTxnIDThrowsException()
         {
             mockSession.Setup(s => s.CommitTransactionAsync(It.IsAny<string>(), It.IsAny<MemoryStream>(),
-                It.IsAny<CancellationToken>())).Returns(GetTransactionResult("differentTnxIdFromThis"));
+                It.IsAny<CancellationToken>())).Returns(GetAsyncTransactionResult("differentTnxIdFromThis"));
 
             await asyncTransaction.Commit();
         }
@@ -149,7 +149,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
-        internal static async Task<CommitTransactionResult> GetTransactionResult(string txnId)
+        internal static async Task<CommitTransactionResult> GetAsyncTransactionResult(string txnId)
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             var hashBytes = QldbHash.ToQldbHash(txnId).Hash;
