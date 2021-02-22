@@ -20,7 +20,7 @@ namespace Amazon.QLDB.Driver
 
     public interface IAsyncQldbDriver : IDisposable
     {
-        Task<IEnumerable<string>> ListTableNamesAsync(CancellationToken cancellationToken = default);
+        Task<IEnumerable<string>> ListTableNames(CancellationToken cancellationToken = default);
 
         Task Execute(Func<AsyncTransactionExecutor, Task> action, CancellationToken cancellationToken = default);
 
