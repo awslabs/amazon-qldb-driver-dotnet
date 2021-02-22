@@ -155,8 +155,8 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public void TestQueryStatsNullExecuteNullFetch()
         {
-            var executeResult = GetExecuteResultNullStats();
-            var fetchPageResult = GetFetchResultNullStats();
+            var executeResult = TestingUtilities.GetExecuteResultNullStats(valueHolderList);
+            var fetchPageResult = TestingUtilities.GetFetchResultNullStats(valueHolderList);
 
             mockSession.Setup(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>()))
                 .Returns(fetchPageResult);
@@ -183,8 +183,8 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public void TestQueryStatsNullExecuteHasFetch()
         {
-            var executeResult = GetExecuteResultNullStats();
-            var fetchPageResult = GetFetchResultWithStats();
+            var executeResult = TestingUtilities.GetExecuteResultNullStats(valueHolderList);
+            var fetchPageResult = TestingUtilities.GetFetchResultWithStats(valueHolderList, fetchIO, fetchTiming);
 
             mockSession.Setup(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>()))
                 .Returns(fetchPageResult);
@@ -212,8 +212,8 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public void TestQueryStatsHasExecuteNullFetch()
         {
-            var executeResult = GetExecuteResultWithStats();
-            var fetchPageResult = GetFetchResultNullStats();
+            var executeResult = TestingUtilities.GetExecuteResultWithStats(valueHolderList, executeIO, executeTiming);
+            var fetchPageResult = TestingUtilities.GetFetchResultNullStats(valueHolderList);
 
             mockSession.Setup(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>()))
                 .Returns(fetchPageResult);
@@ -242,8 +242,8 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public void TestQueryStatsHasExecuteHasFetch()
         {
-            var executeResult = GetExecuteResultWithStats();
-            var fetchPageResult = GetFetchResultWithStats();
+            var executeResult = TestingUtilities.GetExecuteResultWithStats(valueHolderList, executeIO, executeTiming);
+            var fetchPageResult = TestingUtilities.GetFetchResultWithStats(valueHolderList, fetchIO, fetchTiming);
 
             mockSession.Setup(m => m.FetchPage(It.IsAny<string>(), It.IsAny<string>()))
                 .Returns(fetchPageResult);
@@ -267,50 +267,6 @@ namespace Amazon.QLDB.Driver.Tests
             Assert.AreEqual(executeReads + fetchReads, io?.ReadIOs);
             Assert.AreEqual(executeWrites + fetchWrites, io?.WriteIOs);
             Assert.AreEqual(executeTime + fetchTime, timing?.ProcessingTimeMilliseconds);
-        }
-
-        private ExecuteStatementResult GetExecuteResultNullStats()
-        {
-            return new ExecuteStatementResult
-            {
-                FirstPage = new Page
-                {
-                    NextPageToken = "hasNextPage",
-                    Values = valueHolderList
-                }
-            };
-        }
-
-        private ExecuteStatementResult GetExecuteResultWithStats()
-        {
-            return new ExecuteStatementResult
-            {
-                FirstPage = new Page
-                {
-                    NextPageToken = "hasNextPage",
-                    Values = valueHolderList
-                },
-                ConsumedIOs = executeIO,
-                TimingInformation = executeTiming
-            };
-        }
-
-        private FetchPageResult GetFetchResultNullStats()
-        {
-            return new FetchPageResult
-            {
-                Page = new Page { NextPageToken = null, Values = valueHolderList }
-            };
-        }
-
-        private FetchPageResult GetFetchResultWithStats()
-        {
-            return new FetchPageResult
-            {
-                Page = new Page { NextPageToken = null, Values = valueHolderList },
-                ConsumedIOs = fetchIO,
-                TimingInformation = fetchTiming
-            };
         }
     }
 }
