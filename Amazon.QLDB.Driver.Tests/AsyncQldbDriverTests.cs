@@ -20,8 +20,6 @@ namespace Amazon.QLDB.Driver.Tests
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
-    using Amazon.IonDotnet.Builders;
-    using Amazon.IonDotnet.Utils;
     using Amazon.IonDotnet.Tree;
     using Amazon.IonDotnet.Tree.Impl;
     using Amazon.QLDBSession;
@@ -121,7 +119,7 @@ namespace Amazon.QLDB.Driver.Tests
         {
             var factory = new ValueFactory();
             var tables = new List<string> { "table1", "table2" };
-            var ions = tables.Select(t => CreateValueHolder(factory.NewString(t))).ToList();
+            var ions = tables.Select(t => TestingUtilities.CreateValueHolder(factory.NewString(t))).ToList();
         
             var h1 = QldbHash.ToQldbHash(TestTransactionId);
             h1 = AsyncTransaction.Dot(h1, AsyncQldbDriver.TableNameQuery, new List<IIonValue>());
@@ -245,7 +243,7 @@ namespace Amazon.QLDB.Driver.Tests
         
         [DataTestMethod]
         [DynamicData(nameof(CreateDriverExceptions), DynamicDataSourceType.Method)]
-        public async Task ExecuteAsync_ExceptionOnExecute_ShouldOnlyRetryOnISEAndTAOE(Exception exception, bool expectThrow)
+        public async Task TestAsyncExecuteExceptionOnExecuteShouldOnlyRetryOnISEAndTAOE(Exception exception, bool expectThrow)
         {
             var statement = "DELETE FROM table;";
             var h1 = QldbHash.ToQldbHash(TestTransactionId);
@@ -319,24 +317,7 @@ namespace Amazon.QLDB.Driver.Tests
         
             Assert.IsFalse(expectThrow);
         }
-        
-        private static ValueHolder CreateValueHolder(IIonValue ionValue)
-        {
-            MemoryStream stream = new MemoryStream();
-            using (var writer = IonBinaryWriterBuilder.Build(stream))
-            {
-                ionValue.WriteTo(writer);
-                writer.Finish();
-            }
-        
-            var valueHolder = new ValueHolder
-            {
-                IonBinary = new MemoryStream(stream.GetWrittenBuffer())
-            };
-        
-            return valueHolder;
-        }
-        
+
         private static IEnumerable<object[]> CreateDriverExceptions()
         {
             return new List<object[]>

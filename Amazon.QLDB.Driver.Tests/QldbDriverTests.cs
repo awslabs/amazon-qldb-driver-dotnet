@@ -20,8 +20,6 @@ namespace Amazon.QLDB.Driver.Tests
     using System.Threading;
     using System.Threading.Tasks;
     using Amazon.IonDotnet.Tree.Impl;
-    using Amazon.IonDotnet.Builders;
-    using Amazon.IonDotnet.Utils;
     using Amazon.QLDBSession;
     using Amazon.QLDBSession.Model;
     using Amazon.Runtime;
@@ -121,7 +119,7 @@ namespace Amazon.QLDB.Driver.Tests
         {
             var factory = new ValueFactory();
             var tables = new List<string>() { "table1", "table2" };
-            var ions = tables.Select(t => CreateValueHolder(factory.NewString(t))).ToList();
+            var ions = tables.Select(t => TestingUtilities.CreateValueHolder(factory.NewString(t))).ToList();
 
             var h1 = QldbHash.ToQldbHash(TestTransactionId);
             h1 = Transaction.Dot(h1, QldbDriver.TableNameQuery, new List<IIonValue> { });
@@ -279,7 +277,7 @@ namespace Amazon.QLDB.Driver.Tests
 
         [DataTestMethod]
         [DynamicData(nameof(CreateDriverExceptions), DynamicDataSourceType.Method)]
-        public void Execute_ExceptionOnExecute_ShouldOnlyRetryOnISEAndTAOE(Exception exception, bool expectThrow)
+        public void TestExecuteExceptionOnExecuteShouldOnlyRetryOnISEAndTAOE(Exception exception, bool expectThrow)
         {
             var statement = "DELETE FROM table;";
             var h1 = QldbHash.ToQldbHash(TestTransactionId);
@@ -352,23 +350,6 @@ namespace Amazon.QLDB.Driver.Tests
             }
 
             Assert.IsFalse(expectThrow);
-        }
-
-        public static ValueHolder CreateValueHolder(IIonValue ionValue)
-        {
-            MemoryStream stream = new MemoryStream();
-            using (var writer = IonBinaryWriterBuilder.Build(stream))
-            {
-                ionValue.WriteTo(writer);
-                writer.Finish();
-            }
-
-            var valueHolder = new ValueHolder
-            {
-                IonBinary = new MemoryStream(stream.GetWrittenBuffer())
-            };
-
-            return valueHolder;
         }
 
         public static IEnumerable<object[]> CreateDriverExceptions()
