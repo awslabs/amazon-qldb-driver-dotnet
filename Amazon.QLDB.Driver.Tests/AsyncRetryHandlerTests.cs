@@ -122,7 +122,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void IsTransactionExpiry_Match_ShouldMatchTransactionExpireCases_Async()
+        public void TestAsyncTransactionExpiryMatchShouldMatchTransactionExpireCases()
         {
             Assert.IsTrue(AsyncRetryHandler.IsTransactionExpiry(new InvalidSessionException("Transaction 324weqr2314 has expired")));
 
