@@ -140,14 +140,7 @@ namespace Amazon.QLDB.Driver.Tests
 
         private CommitTransactionResult GetTransactionResult(string txnId)
         {
-            var hashBytes = QldbHash.ToQldbHash(txnId).Hash;
-            CommitTransactionResult commitTransactionResult = new CommitTransactionResult
-            {
-                TransactionId = txnId,
-                CommitDigest = new MemoryStream(hashBytes)
-            };
-
-            return commitTransactionResult;
+            return AsyncTransactionTests.GetAsyncTransactionResult(txnId).GetAwaiter().GetResult();
         }
     }
 }

@@ -55,7 +55,7 @@ namespace Amazon.QLDB.Driver
         /// </summary>
         ///
         /// <returns>A task representing the asynchronous abort operation.</returns>
-        internal async Task Abort()
+        internal virtual async Task Abort()
         {
             if (!this.isClosed)
             {
