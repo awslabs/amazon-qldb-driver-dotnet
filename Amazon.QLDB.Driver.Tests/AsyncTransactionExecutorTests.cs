@@ -51,13 +51,13 @@ namespace Amazon.QLDB.Driver.Tests
 
         [TestMethod]
         [ExpectedException(typeof(TransactionAbortedException), AllowDerivedTypes = false)]
-        public async Task TestAbortThrowsAbortException()
+        public async Task TestAsyncAbortThrowsAbortException()
         {
             await asyncTransactionExecutor.Abort();
         }
 
         [TestMethod]
-        public async Task TestExecuteNoParamsDelegatesCallToTransaction()
+        public async Task TestAsyncExecuteNoParamsDelegatesCallToTransaction()
         {
             var actualResult = await asyncTransactionExecutor.Execute(query);
             mockTransaction.Verify(transaction => transaction.Execute(query), Times.Exactly(1));
@@ -65,7 +65,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public async Task TestExecuteEmptyParamsDelegatesCallToTransaction()
+        public async Task TestAsyncExecuteEmptyParamsDelegatesCallToTransaction()
         {
             List<IIonValue> emptyParams = new List<IIonValue>();
             var actualResult = await asyncTransactionExecutor.Execute(query, emptyParams);
@@ -74,7 +74,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public async Task TestExecuteWithNullParamsList()
+        public async Task TestAsyncExecuteWithNullParamsList()
         {
             List<IIonValue> nullParams = null;
             var actualResult = await asyncTransactionExecutor.Execute(query, nullParams);
@@ -83,7 +83,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public async Task TestExecuteOneParamDelegatesCallToTransaction()
+        public async Task TestAsyncExecuteOneParamDelegatesCallToTransaction()
         {
             List<IIonValue> oneParam = new List<IIonValue> { new ValueFactory().NewInt(1) };
             var actualResult = await asyncTransactionExecutor.Execute(query, oneParam);
@@ -92,7 +92,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public async Task TestExecuteWithVarargs()
+        public async Task TestAsyncExecuteWithVarargs()
         {
             var ionFactory = new ValueFactory();
             IIonValue one = ionFactory.NewInt(1);
