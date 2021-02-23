@@ -856,7 +856,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             Assert.IsNotNull(ioUsage);
             Assert.IsNotNull(timingInfo);
-            // The 1092 value is from selectQuery.
+            // The 1092 value is from selectQuery, that performs self joins on a table.
             Assert.AreEqual(1092, ioUsage?.ReadIOs);
             Assert.IsTrue(timingInfo?.ProcessingTimeMilliseconds > 0);
         }    
