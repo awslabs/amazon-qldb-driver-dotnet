@@ -24,7 +24,6 @@ namespace Amazon.QLDB.Driver.Tests
     using System.IO;
     using System.Net;
     using Amazon.IonDotnet.Tree;
-    using Amazon.QLDBSession;
     using Amazon.QLDBSession.Model;
     using Amazon.Runtime;
     using Microsoft.Extensions.Logging.Abstractions;
@@ -50,12 +49,6 @@ namespace Amazon.QLDB.Driver.Tests
             mockAction = new Mock<MockDisposeDelegate>();
             mockSession = new Mock<Session>(null, null, null, null, null);
             qldbSession = new QldbSession(mockSession.Object, mockAction.Object.DisposeDelegate, NullLogger.Instance);
-        }
-
-        [TestMethod]
-        public void TestConstructorReturnsValidSession()
-        {
-            Assert.IsNotNull(qldbSession);
         }
 
         [TestMethod]
@@ -154,8 +147,8 @@ namespace Amazon.QLDB.Driver.Tests
             };
         }
 
-        [DataTestMethod]
-        [DynamicData(nameof(CreateExceptionTestData), DynamicDataSourceType.Method)]
+        [TestMethod]
+        [TestingUtilities.CreateExceptionTestData]
         public void Execute_ThrowException_ThrowExpectedException(Exception exception,
             Type expectedExceptionType, Type innerExceptionType, Times abortTransactionCalledTimes)
         {
@@ -186,42 +179,6 @@ namespace Amazon.QLDB.Driver.Tests
                 return;
             }
             Assert.Fail();
-        }
-
-        public static IEnumerable<object[]> CreateExceptionTestData()
-        {
-            return new List<object[]>() {
-                new object[] { new CapacityExceededException("Capacity Exceeded Exception", ErrorType.Receiver, "errorCode", "requestId", HttpStatusCode.ServiceUnavailable),
-                    typeof(RetriableException), typeof(CapacityExceededException),
-                    Times.Once()},
-                new object[] { new AmazonQLDBSessionException("", 0, "", "", HttpStatusCode.InternalServerError),
-                    typeof(RetriableException), null,
-                    Times.Once()},
-                new object[] { new AmazonQLDBSessionException("", 0, "", "", HttpStatusCode.ServiceUnavailable),
-                    typeof(RetriableException), null,
-                    Times.Once()},
-                new object[] { new AmazonQLDBSessionException("", 0, "", "", HttpStatusCode.Unauthorized),
-                    typeof(QldbTransactionException), null,
-                    Times.Once()},
-                new object[] { new OccConflictException("occ"),
-                    typeof(RetriableException), typeof(OccConflictException),
-                    Times.Never()},
-                new object[] { new AmazonServiceException(),
-                    typeof(QldbTransactionException), typeof(AmazonServiceException),
-                    Times.Once()},
-                new object[] { new InvalidSessionException("invalid session"),
-                    typeof(RetriableException), typeof(InvalidSessionException),
-                    Times.Never()},
-                new object[] { new QldbTransactionException(string.Empty, true, new BadRequestException("Bad request")),
-                    typeof(QldbTransactionException), typeof(BadRequestException),
-                    Times.Never()},
-                new object[] { new TransactionAbortedException("testTransactionIdddddd", true),
-                    typeof(TransactionAbortedException), null,
-                    Times.Never()},
-                new object[] { new Exception("Customer Exception"),
-                    typeof(QldbTransactionException), typeof(Exception),
-                    Times.Once()}
-            };
         }
 
         [TestMethod]
