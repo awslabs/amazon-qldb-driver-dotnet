@@ -85,7 +85,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
                     // Call the first ListTableNames() to start a session and put into pool.
                     qldbDriver.ListTableNames();
 
-                    // Call the second ListTableName() to use session from pool and is expected to execute successfully.
+                    // Call the second ListTableNames() to use session from pool and is expected to execute successfully.
                     qldbDriver.ListTableNames();
                 }
             }

@@ -52,7 +52,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         {
             using (var qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig, 0, "NonExistentLedger"))
             {
-                await qldbDriver.ListTableNamesAsync();
+                await qldbDriver.ListTableNames();
             }
         }
 
@@ -65,7 +65,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
                 // and has not hit the limit.
                 using (var qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig))
                 {
-                    await qldbDriver.ListTableNamesAsync();
+                    await qldbDriver.ListTableNames();
                 }
             }
             catch (TimeoutException e)
@@ -84,10 +84,10 @@ namespace Amazon.QLDB.Driver.IntegrationTests
                 using (var qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig))
                 {
                     // Call the first ListTableNames() to start a session and put into pool.
-                    await qldbDriver.ListTableNamesAsync();
+                    await qldbDriver.ListTableNames();
 
-                    // Call the second ListTableName() to use session from pool and is expected to execute successfully.
-                    await qldbDriver.ListTableNamesAsync();
+                    // Call the second ListTableNames() to use session from pool and is expected to execute successfully.
+                    await qldbDriver.ListTableNames();
                 }
             }
             catch (TimeoutException e)
@@ -125,7 +125,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             {
                 qldbDriver.Dispose();
                          
-                await qldbDriver.ListTableNamesAsync();
+                await qldbDriver.ListTableNames();
             }
         }
     }

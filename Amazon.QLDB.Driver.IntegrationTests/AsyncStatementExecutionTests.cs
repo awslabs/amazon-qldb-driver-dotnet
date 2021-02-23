@@ -64,7 +64,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             Assert.AreEqual(1, count);
 
-            var result = await qldbDriver.ListTableNamesAsync();
+            var result = await qldbDriver.ListTableNames();
             foreach (var row in result)
             {
                 Assert.AreEqual(Constants.TableName, row);
@@ -103,8 +103,8 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             });
             Assert.AreEqual(1, createTableCount);
 
-            // Execute ListTableNamesAsync() to ensure table is created.
-            var result = await qldbDriver.ListTableNamesAsync();
+            // Execute ListTableNames() to ensure table is created.
+            var result = await qldbDriver.ListTableNames();
 
             var tables = new List<string>();
             foreach (var row in result)
@@ -130,7 +130,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             // Then.
             tables.Clear();
-            var updatedTablesResult = await qldbDriver.ListTableNamesAsync();
+            var updatedTablesResult = await qldbDriver.ListTableNames();
 
             foreach (var row in updatedTablesResult)
             {
@@ -143,7 +143,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         public async Task ExecuteAsync_ListTables_ReturnsListOfTables()
         {
             // When.
-            var result = await qldbDriver.ListTableNamesAsync();
+            var result = await qldbDriver.ListTableNames();
 
             // Then.
             int count = 0;

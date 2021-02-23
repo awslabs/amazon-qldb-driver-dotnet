@@ -33,7 +33,7 @@ namespace Amazon.QLDB.Driver
 
             var valueHolder = new ValueHolder
             {
-                IonBinary = new MemoryStream(stream.GetWrittenBuffer())
+                IonBinary = new MemoryStream(stream.GetWrittenBuffer()),
             };
 
             return valueHolder;
