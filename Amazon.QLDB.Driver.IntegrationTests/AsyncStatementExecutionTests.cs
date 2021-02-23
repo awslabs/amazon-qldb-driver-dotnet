@@ -37,7 +37,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         {
             // Get AWS configuration properties from .runsettings file.
             string region = context.Properties["region"].ToString();
-            
+
             amazonQldbSessionConfig = IntegrationTestBase.CreateAmazonQLDBSessionConfig(region);
             integrationTestBase = new IntegrationTestBase(Constants.LedgerName, region);
 
@@ -833,22 +833,19 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             await qldbDriver.Execute(async txn =>
             {
                 var result = await txn.Execute(selectQuery);
-                Driver.IOUsage? ioUsage = null;
-                Driver.TimingInformation? timingInfo = null;
                 long readIOs = 0;
                 long processingTime = 0;
 
                 await foreach (IIonValue row in result)
                 {
-                    ioUsage = result.GetConsumedIOs();
+                    var ioUsage = result.GetConsumedIOs();
                     if (ioUsage != null)
-                        readIOs += ioUsage.Value.ReadIOs;
-                    timingInfo = result.GetTimingInformation();
+                        readIOs = ioUsage.Value.ReadIOs;
+                    var timingInfo = result.GetTimingInformation();
                     if (timingInfo != null)
-                        processingTime += timingInfo.Value.ProcessingTimeMilliseconds;
+                        processingTime = timingInfo.Value.ProcessingTimeMilliseconds;
                 }
-                Assert.IsNotNull(ioUsage);
-                Assert.IsNotNull(timingInfo);
+
                 Assert.IsTrue(readIOs > 0);
                 Assert.IsTrue(processingTime > 0);
             });
