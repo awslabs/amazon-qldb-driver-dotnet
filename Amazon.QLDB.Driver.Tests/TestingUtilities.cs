@@ -11,7 +11,7 @@
  * and limitations under the License.
  */
 
-namespace Amazon.QLDB.Driver
+namespace Amazon.QLDB.Driver.Tests
 {
     using System.Collections.Generic;
     using System.IO;
@@ -53,8 +53,8 @@ namespace Amazon.QLDB.Driver
 
         internal static ExecuteStatementResult GetExecuteResultWithStats(
             List<ValueHolder> valueHolderList,
-            Amazon.QLDBSession.Model.IOUsage executeIO,
-            Amazon.QLDBSession.Model.TimingInformation executeTiming)
+            IOUsage executeIO,
+            TimingInformation executeTiming)
         {
             return new ExecuteStatementResult
             {
@@ -78,8 +78,8 @@ namespace Amazon.QLDB.Driver
 
         internal static FetchPageResult GetFetchResultWithStats(
             List<ValueHolder> valueHolderList,
-            Amazon.QLDBSession.Model.IOUsage fetchIO,
-            Amazon.QLDBSession.Model.TimingInformation fetchTiming)
+            IOUsage fetchIO,
+            TimingInformation fetchTiming)
         {
             return new FetchPageResult
             {
