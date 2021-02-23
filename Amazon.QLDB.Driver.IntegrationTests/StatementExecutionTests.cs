@@ -841,7 +841,8 @@ namespace Amazon.QLDB.Driver.IntegrationTests
                         processingTime = timingInfo.Value.ProcessingTimeMilliseconds;
                 }
 
-                Assert.IsTrue(readIOs > 0);
+                // The 1092 value is from selectQuery, that performs self joins on a table.
+                Assert.AreEqual(1092, readIOs);
                 Assert.IsTrue(processingTime > 0);  
             });
 
