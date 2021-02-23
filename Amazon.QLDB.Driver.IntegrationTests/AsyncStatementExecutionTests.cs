@@ -22,17 +22,18 @@ namespace Amazon.QLDB.Driver.IntegrationTests
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using System;
     using System.Collections.Generic;
-
+    using System.Threading.Tasks;
+    
     [TestClass]
-    public class StatementExecutionTests
+    public class AsyncStatementExecutionTests
     {
         private static readonly IValueFactory ValueFactory = new ValueFactory();
         private static AmazonQLDBSessionConfig amazonQldbSessionConfig;
         private static IntegrationTestBase integrationTestBase;
-        private static QldbDriver qldbDriver;
+        private static AsyncQldbDriver qldbDriver;
 
         [ClassInitialize]
-        public static void SetUp(TestContext context)
+        public async static Task SetUp(TestContext context)
         {
             // Get AWS configuration properties from .runsettings file.
             string region = context.Properties["region"].ToString();
@@ -43,24 +44,27 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             integrationTestBase.RunForceDeleteLedger();
 
             integrationTestBase.RunCreateLedger();
-            qldbDriver = integrationTestBase.CreateDriver(amazonQldbSessionConfig);
+            qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig);
 
             // Create table.
             var query = $"CREATE TABLE {Constants.TableName}";
-            var count = qldbDriver.Execute(txn =>
+
+            var count = await qldbDriver.Execute(async txn =>
             {
-                var result = txn.Execute(query);
+                var result = await txn.Execute(query);
 
                 var count = 0;
-                foreach (var row in result)
+                await foreach (var row in result)
                 {
                     count++;
                 }
                 return count;
             });
+
+
             Assert.AreEqual(1, count);
 
-            var result = qldbDriver.ListTableNames();
+            var result = await qldbDriver.ListTableNamesAsync();
             foreach (var row in result)
             {
                 Assert.AreEqual(Constants.TableName, row);
@@ -75,32 +79,32 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestCleanup]
-        public void TestCleanup()
+        public async Task TestCleanup()
         {
             // Delete all documents in table.
-            qldbDriver.Execute(txn => txn.Execute($"DELETE FROM {Constants.TableName}"));
+            await qldbDriver.Execute(async txn => await txn.Execute($"DELETE FROM {Constants.TableName}"));
         }
 
         [TestMethod]
-        public void Execute_DropExistingTable_TableDropped()
+        public async Task ExecuteAsync_DropExistingTable_TableDropped()
         {
             // Given.
-            var create_table_query = $"CREATE TABLE {Constants.CreateTableName}";
-            var create_table_count = qldbDriver.Execute(txn =>
+            var createTableQuery = $"CREATE TABLE {Constants.CreateTableName}";
+            var createTableCount = await qldbDriver.Execute(async txn =>
             {
-                var result = txn.Execute(create_table_query);
+                var result = await txn.Execute(createTableQuery);
 
                 var count = 0;
-                foreach (var row in result)
+                await foreach (var row in result)
                 {
                     count++;
                 }
                 return count;
             });
-            Assert.AreEqual(1, create_table_count);
+            Assert.AreEqual(1, createTableCount);
 
-            // Execute ListTableNames() to ensure table is created.
-            var result = qldbDriver.ListTableNames();
+            // Execute ListTableNamesAsync() to ensure table is created.
+            var result = await qldbDriver.ListTableNamesAsync();
 
             var tables = new List<string>();
             foreach (var row in result)
@@ -110,24 +114,25 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             Assert.IsTrue(tables.Contains(Constants.CreateTableName));
 
             // When.
-            var drop_table_query = $"DROP TABLE {Constants.CreateTableName}";
-            var drop_table_count = qldbDriver.Execute(txn =>
+            var dropTableQuery = $"DROP TABLE {Constants.CreateTableName}";
+            var dropTableCount = await qldbDriver.Execute(async txn =>
             {
-                var result = txn.Execute(drop_table_query);
+                var result = await txn.Execute(dropTableQuery);
 
                 var count = 0;
-                foreach (var row in result)
+                await foreach (var row in result)
                 {
                     count++;
                 }
                 return count;
             });
-            Assert.AreEqual(1, drop_table_count);
+            Assert.AreEqual(1, dropTableCount);
 
             // Then.
             tables.Clear();
-            var updated_tables_result = qldbDriver.ListTableNames();
-            foreach (var row in updated_tables_result)
+            var updatedTablesResult = await qldbDriver.ListTableNamesAsync();
+
+            foreach (var row in updatedTablesResult)
             {
                 tables.Add(row);
             }
@@ -135,10 +140,10 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public void Execute_ListTables_ReturnsListOfTables()
+        public async Task ExecuteAsync_ListTables_ReturnsListOfTables()
         {
             // When.
-            var result = qldbDriver.ListTableNames();
+            var result = await qldbDriver.ListTableNamesAsync();
 
             // Then.
             int count = 0;
@@ -153,28 +158,28 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
         [TestMethod]
         [ExpectedException(typeof(BadRequestException))]
-        public void Execute_CreateTableThatAlreadyExist_ThrowBadRequestException()
+        public async Task ExecuteAsync_CreateTableThatAlreadyExist_ThrowBadRequestException()
         {
             // Given.
             var query = $"CREATE TABLE {Constants.TableName}";
 
             // When.
-            qldbDriver.Execute(txn => txn.Execute(query));
+            await qldbDriver.Execute(async txn => await txn.Execute(query));
         }
 
         [TestMethod]
-        public void Execute_CreateIndex_IndexIsCreated()
+        public async Task ExecuteAsync_CreateIndex_IndexIsCreated()
         {
             // Given.
             var query = $"CREATE INDEX on {Constants.TableName} ({Constants.IndexAttribute})";
 
             // When.
-            var count = qldbDriver.Execute(txn =>
+            var count = await qldbDriver.Execute(async txn =>
             {
-                var result = txn.Execute(query);
+                var result = await txn.Execute(query);
 
                 var count = 0;
-                foreach (var row in result)
+                await foreach (var row in result)
                 {
                     count++;
                 }
@@ -183,11 +188,11 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             Assert.AreEqual(1, count);
 
             // Then.
-            var search_query = $@"SELECT VALUE indexes[0] FROM information_schema.user_tables
+            var searchQuery = $@"SELECT VALUE indexes[0] FROM information_schema.user_tables
                                   WHERE status = 'ACTIVE' AND name = '{Constants.TableName}'";
-            var indexColumn = qldbDriver.Execute(txn =>
+            var indexColumn = await qldbDriver.Execute(async txn =>
             {
-                var result = txn.Execute(search_query);
+                var result = await txn.Execute(searchQuery);
 
                 // Extract the index name by querying the information_schema.
                 /* This gives:
@@ -196,7 +201,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
                 }
                 */
                 var indexColumn = "";
-                foreach (var row in result)
+                await foreach (var row in result)
                 {
                     indexColumn = row.GetField("expr").StringValue;
                 }
@@ -207,18 +212,18 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public void Execute_QueryTableThatHasNoRecords_ReturnsEmptyResult()
+        public async Task ExecuteAsync_QueryTableThatHasNoRecords_ReturnsEmptyResult()
         {
             // Given.
             var query = $"SELECT * FROM {Constants.TableName}";
 
             // When.
-            int resultSetSize = qldbDriver.Execute(txn =>
+            int resultSetSize = await qldbDriver.Execute(async txn =>
             {
-                var result = txn.Execute(query);
+                var result = await txn.Execute(query);
 
                 int count = 0;
-                foreach (var row in result)
+                await foreach (var row in result)
                 {
                     count++;
                 }
@@ -230,7 +235,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public void Execute_InsertDocument_DocumentIsInserted()
+        public async Task ExecuteAsync_InsertDocument_DocumentIsInserted()
         {
             // Given.
             // Create Ion struct to insert.
@@ -239,12 +244,12 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             // When.
             var query = $"INSERT INTO {Constants.TableName} ?";
-            var count = qldbDriver.Execute(txn =>
+            var count = await qldbDriver.Execute(async txn =>
             {
-                var result = txn.Execute(query, ionStruct);
+                var result = await txn.Execute(query, ionStruct);
 
                 var count = 0;
-                foreach (var row in result)
+                await foreach (var row in result)
                 {
                     count++;
                 }
@@ -255,12 +260,12 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             // Then.
             var searchQuery = $@"SELECT VALUE {Constants.ColumnName} FROM {Constants.TableName} 
                                WHERE {Constants.ColumnName} = '{Constants.SingleDocumentValue}'";
-            var value = qldbDriver.Execute(txn =>
+            var value = await qldbDriver.Execute(async txn =>
             {
-                var result = txn.Execute(searchQuery);
+                var result = await txn.Execute(searchQuery);
 
                 var value = "";
-                foreach (var row in result)
+                await foreach (var row in result)
                 {
                     value = row.StringValue;
                 }
@@ -270,7 +275,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public void Execute_InsertDocumentWithMultipleFields_DocumentIsInserted()
+        public async Task ExecuteAsync_InsertDocumentWithMultipleFields_DocumentIsInserted()
         {
             // Given.
             // Create Ion struct to insert.
@@ -280,12 +285,12 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             // When.
             var query = $"INSERT  INTO {Constants.TableName} ?";
-            var count = qldbDriver.Execute(txn =>
+            var count = await qldbDriver.Execute(async txn =>
             {
-                var result = txn.Execute(query, ionStruct);
+                var result = await txn.Execute(query, ionStruct);
 
                 var count = 0;
-                foreach (var row in result)
+                await foreach (var row in result)
                 {
                     count++;
                 }
@@ -296,12 +301,12 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             // Then.
             var searchQuery = $@"SELECT {Constants.ColumnName}, {Constants.SecondColumnName} FROM {Constants.TableName} 
                                WHERE {Constants.ColumnName} = '{Constants.SingleDocumentValue}' AND  {Constants.SecondColumnName} = '{Constants.SingleDocumentValue}'";
-            IIonValue value = qldbDriver.Execute(txn =>
+            IIonValue value = await qldbDriver.Execute(async txn =>
             {
-                var result = txn.Execute(searchQuery);
+                var result = await txn.Execute(searchQuery);
 
                 IIonValue value = null;
-                foreach (var row in result)
+                await foreach (var row in result)
                 {
                     value = row;
                 }
@@ -320,7 +325,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public void Execute_QuerySingleField_ReturnsSingleField()
+        public async Task ExecuteAsync_QuerySingleField_ReturnsSingleField()
         {
             // Given.
             // Create Ion struct to insert.
@@ -328,12 +333,12 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             ionStruct.SetField(Constants.ColumnName, ValueFactory.NewString(Constants.SingleDocumentValue));
 
             var query = $"INSERT INTO {Constants.TableName} ?";
-            var count = qldbDriver.Execute(txn =>
+            var count = await qldbDriver.Execute(async txn =>
             {
-                var result = txn.Execute(query, ionStruct);
+                var result = await txn.Execute(query, ionStruct);
 
                 var count = 0;
-                foreach (var row in result)
+                await foreach (var row in result)
                 {
                     count++;
                 }
@@ -344,12 +349,12 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             // When.
             var searchQuery = $@"SELECT VALUE {Constants.ColumnName} FROM {Constants.TableName}
                                  WHERE {Constants.ColumnName} = '{Constants.SingleDocumentValue}'";
-            var value = qldbDriver.Execute(txn =>
+            var value = await qldbDriver.Execute(async txn =>
             {
-                var result = txn.Execute(searchQuery);
+                var result = await txn.Execute(searchQuery);
 
                 var value = "";
-                foreach (var row in result)
+                await foreach (var row in result)
                 {
                     value = row.StringValue;
                 }
@@ -361,7 +366,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public void Execute_QueryTableEnclosedInQuotes_ReturnsResult()
+        public async Task ExecuteAsync_QueryTableEnclosedInQuotes_ReturnsResult()
         {
             // Given.
             // Create Ion struct to insert.
@@ -369,12 +374,12 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             ionStruct.SetField(Constants.ColumnName, ValueFactory.NewString(Constants.SingleDocumentValue));
 
             var query = $"INSERT INTO {Constants.TableName} ?";
-            var count = qldbDriver.Execute(txn =>
+            var count = await qldbDriver.Execute(async txn =>
             {
-                var result = txn.Execute(query, ionStruct);
+                var result = await txn.Execute(query, ionStruct);
 
                 var count = 0;
-                foreach (var row in result)
+                await foreach (var row in result)
                 {
                     count++;
                 }
@@ -385,12 +390,12 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             // When.
             var searchQuery = $@"SELECT VALUE {Constants.ColumnName} FROM ""{Constants.TableName}""
                                  WHERE {Constants.ColumnName} = '{Constants.SingleDocumentValue}'";
-            var value = qldbDriver.Execute(txn =>
+            var value = await qldbDriver.Execute(async txn =>
             {
-                var result = txn.Execute(searchQuery);
+                var result = await txn.Execute(searchQuery);
 
                 var value = "";
-                foreach (var row in result)
+                await foreach (var row in result)
                 {
                     value = row.StringValue;
                 }
@@ -402,7 +407,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public void Execute_InsertMultipleDocuments_DocumentsInserted()
+        public async Task ExecuteAsync_InsertMultipleDocuments_DocumentsInserted()
         {
             IIonValue ionString1 = ValueFactory.NewString(Constants.MultipleDocumentValue1);
             IIonValue ionString2 = ValueFactory.NewString(Constants.MultipleDocumentValue2);
@@ -419,12 +424,12 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             // When.
             var query = $"INSERT INTO {Constants.TableName} <<?,?>>";
-            var count = qldbDriver.Execute(txn =>
+            var count = await qldbDriver.Execute(async txn =>
             {
-                var result = txn.Execute(query, parameters);
+                var result = await txn.Execute(query, parameters);
 
                 var count = 0;
-                foreach (var row in result)
+                await foreach (var row in result)
                 {
                     count++;
                 }
@@ -435,12 +440,12 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             // Then.
             var searchQuery = $@"SELECT VALUE {Constants.ColumnName} FROM {Constants.TableName}
                                  WHERE {Constants.ColumnName} IN (?,?)";
-            var values = qldbDriver.Execute(txn =>
+            var values = await qldbDriver.Execute(async txn =>
             {
-                var result = txn.Execute(searchQuery, ionString1, ionString2);
+                var result = await txn.Execute(searchQuery, ionString1, ionString2);
 
                 var values = new List<String>();
-                foreach (var row in result)
+                await foreach (var row in result)
                 {
                     values.Add(row.StringValue);
                 }
@@ -451,20 +456,20 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public void Execute_DeleteSingleDocument_DocumentIsDeleted()
+        public async Task ExecuteAsync_DeleteSingleDocument_DocumentIsDeleted()
         {
             // Given.
             // Create Ion struct to insert.
             IIonValue ionStruct = ValueFactory.NewEmptyStruct();
             ionStruct.SetField(Constants.ColumnName, ValueFactory.NewString(Constants.SingleDocumentValue));
-
+       
             var query = $"INSERT INTO {Constants.TableName} ?";
-            var count = qldbDriver.Execute(txn =>
+            var count = await qldbDriver.Execute(async txn =>
             {
-                var result = txn.Execute(query, ionStruct);
+                var result = await txn.Execute(query, ionStruct);
 
                 var count = 0;
-                foreach (var row in result)
+                await foreach (var row in result)
                 {
                     count++;
                 }
@@ -475,12 +480,12 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             // When.
             var deleteQuery = $@"DELETE FROM { Constants.TableName}
                                  WHERE {Constants.ColumnName} = '{Constants.SingleDocumentValue}'";
-            var deletedCount = qldbDriver.Execute(txn =>
+            var deletedCount = await qldbDriver.Execute(async txn =>
             {
-                var result = txn.Execute(deleteQuery);
+                var result = await txn.Execute(deleteQuery);
 
                 var count = 0;
-                foreach (var row in result)
+                await foreach (var row in result)
                 {
                     count++;
                 }
@@ -490,12 +495,12 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             // Then.
             var searchQuery = $"SELECT COUNT(*) FROM {Constants.TableName}";
-            var searchCount = qldbDriver.Execute(txn =>
+            var searchCount = await qldbDriver.Execute(async txn =>
             {
-                var result = txn.Execute(searchQuery);
+                var result = await txn.Execute(searchQuery);
 
                 int count = -1;
-                foreach (var row in result)
+                await foreach (var row in result)
                 {
                     // This gives:
                     // {
@@ -510,7 +515,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public void Execute_DeleteAllDocuments_DocumentsAreDeleted()
+        public async Task ExecuteAsync_DeleteAllDocuments_DocumentsAreDeleted()
         {
             // Given.
             // Create Ion structs to insert.
@@ -523,12 +528,12 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             List<IIonValue> parameters = new List<IIonValue>() { ionStruct1, ionStruct2 };
 
             var query = $"INSERT INTO {Constants.TableName} <<?,?>>";
-            var count = qldbDriver.Execute(txn =>
+            var count = await qldbDriver.Execute(async txn =>
             {
-                var result = txn.Execute(query, parameters);
+                var result = await txn.Execute(query, parameters);
 
                 var count = 0;
-                foreach (var row in result)
+                await foreach (var row in result)
                 {
                     count++;
                 }
@@ -538,12 +543,12 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             // When.
             var deleteQuery = $"DELETE FROM { Constants.TableName}";
-            var deleteCount = qldbDriver.Execute(txn =>
+            var deleteCount = await qldbDriver.Execute(async txn =>
             {
-                var result = txn.Execute(deleteQuery);
+                var result = await txn.Execute(deleteQuery);
 
                 var count = 0;
-                foreach (var row in result)
+                await foreach (var row in result)
                 {
                     count++;
                 }
@@ -553,12 +558,12 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             // Then.
             var searchQuery = $"SELECT COUNT(*) FROM {Constants.TableName}";
-            var searchCount = qldbDriver.Execute(txn =>
+            var searchCount = await qldbDriver.Execute(async txn =>
             {
-                var result = txn.Execute(searchQuery);
+                var result = await txn.Execute(searchQuery);
 
                 int count = -1;
-                foreach (var row in result)
+                await foreach (var row in result)
                 {
                     // This gives:
                     // {
@@ -574,10 +579,10 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
         [TestMethod]
         [ExpectedException(typeof(OccConflictException))]
-        public void Execute_UpdateSameRecordAtSameTime_ThrowsOccException()
+        public async Task ExecuteAsync_UpdateSameRecordAtSameTime_ThrowsOccException()
         {
             // Create a driver that does not retry OCC errors
-            QldbDriver driver = integrationTestBase.CreateDriver(amazonQldbSessionConfig, default, default);
+            AsyncQldbDriver driver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig, default, default);
 
             // Insert document.
             // Create Ion struct with int value 0 to insert.
@@ -585,12 +590,12 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             ionStruct.SetField(Constants.ColumnName, ValueFactory.NewInt(0));
 
             var query = $"INSERT INTO {Constants.TableName} ?";
-            var count = driver.Execute(txn =>
+            var count = await driver.Execute(async txn =>
             {
-                var result = txn.Execute(query, ionStruct);
+                var result = await txn.Execute(query, ionStruct);
 
                 var count = 0;
-                foreach (var row in result)
+                await foreach (var row in result)
                 {
                     count++;
                 }
@@ -603,29 +608,29 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             // For testing purposes only. Forcefully causes an OCC conflict to occur.
             // Do not invoke QldbDriver.Execute within the lambda function under normal circumstances.
-            driver.Execute(txn =>
+            await driver.Execute(async txn =>
             {
                 // Query table.
-                var result = txn.Execute(selectQuery);
+                var result = await txn.Execute(selectQuery);
 
                 var currentValue = 0;
-                foreach (var row in result)
+                await foreach (var row in result)
                 {
                     currentValue = row.IntValue;
                 }
 
-                driver.Execute(txn =>
+                await driver.Execute(async txn =>
                 {
                     // Update document.
                     var ionValue = ValueFactory.NewInt(currentValue + 5);
-                    txn.Execute(updateQuery, ionValue);
+                    await txn.Execute(updateQuery, ionValue);
                 }, RetryPolicy.Builder().WithMaxRetries(0).Build());
             }, RetryPolicy.Builder().WithMaxRetries(0).Build());
         }
 
         [TestMethod]
         [CreateIonValues]
-        public void Execute_InsertAndReadIonTypes_IonTypesAreInsertedAndRead(IIonValue ionValue)
+        public async Task ExecuteAsync_InsertAndReadIonTypes_IonTypesAreInsertedAndRead(IIonValue ionValue)
         {
             // Given.
             // Create Ion struct to be inserted.
@@ -633,12 +638,12 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             ionStruct.SetField(Constants.ColumnName, ionValue);
 
             var query = $"INSERT INTO {Constants.TableName} ?";
-            var insertCount = qldbDriver.Execute(txn =>
+            var insertCount = await qldbDriver.Execute(async txn =>
             {
-                var result = txn.Execute(query, ionStruct);
+                var result = await txn.Execute(query, ionStruct);
 
                 var count = 0;
-                foreach (var row in result)
+                await foreach (var row in result)
                 {
                     count++;
                 }
@@ -652,12 +657,12 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             {
                 var searchQuery = $@"SELECT VALUE { Constants.ColumnName } FROM { Constants.TableName }
                                      WHERE { Constants.ColumnName } IS NULL";
-                searchResult = qldbDriver.Execute(txn =>
+                searchResult = await qldbDriver.Execute(async txn =>
                 {
-                    var result = txn.Execute(searchQuery);
+                    var result = await txn.Execute(searchQuery);
 
                     IIonValue ionVal = null;
-                    foreach (var row in result)
+                    await foreach (var row in result)
                     {
                         ionVal = row;
                     }
@@ -668,12 +673,12 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             {
                 var searchQuery = $@"SELECT VALUE { Constants.ColumnName } FROM { Constants.TableName }
                                      WHERE { Constants.ColumnName } = ?";
-                searchResult = qldbDriver.Execute(txn =>
+                searchResult = await qldbDriver.Execute(async txn =>
                 {
-                    var result = txn.Execute(searchQuery, ionValue);
+                    var result = await txn.Execute(searchQuery, ionValue);
 
                     IIonValue ionVal = null;
-                    foreach (var row in result)
+                    await foreach (var row in result)
                     {
                         ionVal = row;
                     }
@@ -691,7 +696,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
         [TestMethod]
         [CreateIonValues]
-        public void Execute_UpdateIonTypes_IonTypesAreUpdated(IIonValue ionValue)
+        public async Task ExecuteAsync_UpdateIonTypes_IonTypesAreUpdated(IIonValue ionValue)
         {
             // Given.
             // Create Ion struct to be inserted.
@@ -700,12 +705,12 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             // Insert first record which will be subsequently updated.
             var insertQuery = $"INSERT INTO {Constants.TableName} ?";
-            var insertCount = qldbDriver.Execute(txn =>
+            var insertCount = await qldbDriver.Execute(async txn =>
             {
-                var result = txn.Execute(insertQuery, ionStruct);
+                var result = await txn.Execute(insertQuery, ionStruct);
 
                 var count = 0;
-                foreach (var row in result)
+                await foreach (var row in result)
                 {
                     count++;
                 }
@@ -715,12 +720,12 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             // When.
             var updateQuery = $"UPDATE { Constants.TableName } SET { Constants.ColumnName } = ?";
-            var updateCount = qldbDriver.Execute(txn =>
+            var updateCount = await qldbDriver.Execute(async txn =>
             {
-                var result = txn.Execute(updateQuery, ionValue);
+                var result = await txn.Execute(updateQuery, ionValue);
 
                 var count = 0;
-                foreach (var row in result)
+                await foreach (var row in result)
                 {
                     count++;
                 }
@@ -734,12 +739,12 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             {
                 var searchQuery = $@"SELECT VALUE { Constants.ColumnName } FROM { Constants.TableName }
                                      WHERE { Constants.ColumnName } IS NULL";
-                searchResult = qldbDriver.Execute(txn =>
+                searchResult = await qldbDriver.Execute(async txn =>
                 {
-                    var result = txn.Execute(searchQuery);
+                    var result = await txn.Execute(searchQuery);
 
                     IIonValue ionVal = null;
-                    foreach (var row in result)
+                    await foreach (var row in result)
                     {
                         ionVal = row;
                     }
@@ -750,12 +755,12 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             {
                 var searchQuery = $@"SELECT VALUE { Constants.ColumnName } FROM { Constants.TableName }
                                      WHERE { Constants.ColumnName } = ?";
-                searchResult = qldbDriver.Execute(txn =>
+                searchResult = await qldbDriver.Execute(async txn =>
                 {
-                    var result = txn.Execute(searchQuery, ionValue);
+                    var result = await txn.Execute(searchQuery, ionValue);
 
                     IIonValue ionVal = null;
-                    foreach (var row in result)
+                    await foreach (var row in result)
                     {
                         ionVal = row;
                     }
@@ -771,7 +776,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public void Execute_ExecuteLambdaThatDoesNotReturnValue_RecordIsUpdated()
+        public async Task ExecuteAsync_ExecuteLambdaThatDoesNotReturnValue_RecordIsUpdated()
         {
             // Given.
             // Create Ion struct to insert.
@@ -780,17 +785,17 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             // When.
             var query = $"INSERT INTO {Constants.TableName} ?";
-            qldbDriver.Execute(txn => txn.Execute(query, ionStruct));
+            await qldbDriver.Execute(async txn => await txn.Execute(query, ionStruct));
 
             // Then.
             var searchQuery = $@"SELECT VALUE {Constants.ColumnName} FROM {Constants.TableName}
                                  WHERE {Constants.ColumnName} = '{Constants.SingleDocumentValue}'";
-            var value = qldbDriver.Execute(txn =>
+            var value = await qldbDriver.Execute(async txn =>
             {
-                var result = txn.Execute(searchQuery);
+                var result = await txn.Execute(searchQuery);
 
                 string value = "";
-                foreach (var row in result)
+                await foreach (var row in result)
                 {
                     value = row.StringValue;
                 }
@@ -801,23 +806,23 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
         [TestMethod]
         [ExpectedException(typeof(BadRequestException))]
-        public void Execute_DeleteTableThatDoesntExist_ThrowsBadRequestException()
+        public async Task ExecuteAsync_DeleteTableThatDoesntExist_ThrowsBadRequestException()
         {
             // Given.
             var query = "DELETE FROM NonExistentTable";
 
             // When.
-            qldbDriver.Execute(txn => txn.Execute(query));
+            await qldbDriver.Execute(async txn => await txn.Execute(query));
         }
 
         [TestMethod]
-        public void Execute_ExecutionMetrics()
+        public async Task ExecuteAsync_ExecutionMetrics()
         {
-            qldbDriver.Execute(txn =>
+            await qldbDriver.Execute(async txn =>
             {
                 var insertQuery = String.Format("INSERT INTO {0} << {{'col': 1}}, {{'col': 2}}, {{'col': 3}} >>",
                     Constants.TableName);
-                txn.Execute(insertQuery);
+                await txn.Execute(insertQuery);
             });
 
             // Given
@@ -825,13 +830,13 @@ namespace Amazon.QLDB.Driver.IntegrationTests
                 Constants.TableName);
 
             // When
-            qldbDriver.Execute(txn =>
+            await qldbDriver.Execute(async txn =>
             {
-                var result = txn.Execute(selectQuery);
+                var result = await txn.Execute(selectQuery);
                 long readIOs = 0;
                 long processingTime = 0;
 
-                foreach (IIonValue row in result)
+                await foreach (IIonValue row in result)
                 {
                     var ioUsage = result.GetConsumedIOs();
                     if (ioUsage != null)
@@ -843,13 +848,13 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
                 // The 1092 value is from selectQuery, that performs self joins on a table.
                 Assert.AreEqual(1092, readIOs);
-                Assert.IsTrue(processingTime > 0);  
+                Assert.IsTrue(processingTime > 0);
             });
 
             // When
-            var result = qldbDriver.Execute(txn =>
+            var result = await qldbDriver.Execute(async txn =>
             {
-                return txn.Execute(selectQuery);
+                return await txn.Execute(selectQuery);
             });
 
             var ioUsage = result.GetConsumedIOs();
@@ -858,8 +863,9 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             Assert.IsNotNull(ioUsage);
             Assert.IsNotNull(timingInfo);
             // The 1092 value is from selectQuery, that performs self joins on a table.
-            Assert.AreEqual(1092, ioUsage?.ReadIOs);
+            Assert.AreEqual(1092, ioUsage?.ReadIOs);  
             Assert.IsTrue(timingInfo?.ProcessingTimeMilliseconds > 0);
-        }    
+        }
+
     }
 }
