@@ -828,23 +828,19 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             qldbDriver.Execute(txn =>
             {
                 var result = txn.Execute(selectQuery);
-                Driver.IOUsage? ioUsage = null;
-                Driver.TimingInformation? timingInfo = null;
                 long readIOs = 0;
                 long processingTime = 0;
 
                 foreach (IIonValue row in result)
                 {
-                    ioUsage = result.GetConsumedIOs();
+                    var ioUsage = result.GetConsumedIOs();
                     if (ioUsage != null)
-                        readIOs += ioUsage.Value.ReadIOs;
-                    timingInfo = result.GetTimingInformation();
+                        readIOs = ioUsage.Value.ReadIOs;
+                    var timingInfo = result.GetTimingInformation();
                     if (timingInfo != null)
-                        processingTime += timingInfo.Value.ProcessingTimeMilliseconds;
+                        processingTime = timingInfo.Value.ProcessingTimeMilliseconds;
                 }
 
-                Assert.IsNotNull(ioUsage);
-                Assert.IsNotNull(timingInfo);
                 Assert.IsTrue(readIOs > 0);
                 Assert.IsTrue(processingTime > 0);  
             });
@@ -860,6 +856,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             Assert.IsNotNull(ioUsage);
             Assert.IsNotNull(timingInfo);
+            // The 1092 value is from selectQuery.
             Assert.AreEqual(1092, ioUsage?.ReadIOs);
             Assert.IsTrue(timingInfo?.ProcessingTimeMilliseconds > 0);
         }    
