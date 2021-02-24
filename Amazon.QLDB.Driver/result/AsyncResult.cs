@@ -14,38 +14,44 @@
 namespace Amazon.QLDB.Driver
 {
     using System;
-    using System.Collections;
     using System.Collections.Generic;
+    using System.Threading;
+    using System.Threading.Tasks;
     using Amazon.IonDotnet.Tree;
     using Amazon.QLDBSession.Model;
 
     /// <summary>
-    /// Result implementation which streams data from QLDB, discarding chunks as they are read.
+    /// Result implementation which asynchronously streams data from QLDB, discarding chunks as they are read.
     ///
     /// Note that due to the fact that a result can only be retrieved from QLDB once, the Result may only be iterated
     /// over once. Attempts to do so multiple times will result in an exception.
     ///
     /// This implementation should be used by default to avoid excess memory consumption and to improve performance.
     /// </summary>
-    internal class Result : IResult
+    internal class AsyncResult : IAsyncResult
     {
-        private readonly IonEnumerator ionEnumerator;
+        private readonly IonAsyncEnumerator ionEnumerator;
         private bool isRetrieved = false;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Result"/> class.
+        /// Initializes a new instance of the <see cref="AsyncResult"/> class.
         /// </summary>
         ///
         /// <param name="session">The parent session that represents the communication channel to QLDB.</param>
         /// <param name="txnId">The ID of the parent transaction.</param>
         /// <param name="statementResult">The result of the statement execution.</param>
-        internal Result(Session session, string txnId, ExecuteStatementResult statementResult)
+        /// <param name="cancellationToken">The CancellationToken to use for this AsyncResult.</param>
+        internal AsyncResult(
+            Session session,
+            string txnId,
+            ExecuteStatementResult statementResult,
+            CancellationToken cancellationToken = default)
         {
-            this.ionEnumerator = new IonEnumerator(session, txnId, statementResult);
+            this.ionEnumerator = new IonAsyncEnumerator(session, txnId, statementResult, cancellationToken);
         }
 
         /// <inheritdoc/>
-        public IEnumerator<IIonValue> GetEnumerator()
+        public IAsyncEnumerator<IIonValue> GetAsyncEnumerator(CancellationToken cancellationToken = default)
         {
             if (this.isRetrieved)
             {
@@ -53,13 +59,12 @@ namespace Amazon.QLDB.Driver
             }
 
             this.isRetrieved = true;
-            return this.ionEnumerator;
-        }
+            if (cancellationToken != default)
+            {
+                this.ionEnumerator.CancellationToken = cancellationToken;
+            }
 
-        /// <inheritdoc/>
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return this.GetEnumerator();
+            return this.ionEnumerator;
         }
 
         /// <summary>
@@ -83,47 +88,44 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <summary>
-        /// Object which allows for iteration over the individual Ion values that make up the whole result of a statement
-        /// execution against QLDB.
+        /// Object which allows for asynchronous iteration over the individual Ion values that make up the whole result
+        /// of a statement execution against QLDB.
         /// </summary>
-        private class IonEnumerator : BaseIonEnumerator, IEnumerator<IIonValue>
+        private class IonAsyncEnumerator : BaseIonEnumerator, IAsyncEnumerator<IIonValue>
         {
+            internal CancellationToken CancellationToken;
+
             /// <summary>
-            /// Initializes a new instance of the <see cref="IonEnumerator"/> class.
+            /// Initializes a new instance of the <see cref="IonAsyncEnumerator"/> class.
             /// </summary>
             ///
             /// <param name="session">The parent session that represents the communication channel to QLDB.</param>
             /// <param name="txnId">The unique ID of the transaction.</param>
             /// <param name="statementResult">The result of the statement execution.</param>
-            internal IonEnumerator(Session session, string txnId, ExecuteStatementResult statementResult)
+            /// <param name="cancellationToken">The CancellationToken to use for this AsyncResult.</param>
+            internal IonAsyncEnumerator(
+                Session session,
+                string txnId,
+                ExecuteStatementResult statementResult,
+                CancellationToken cancellationToken = default)
                 : base(session, txnId, statementResult)
             {
+                this.CancellationToken = cancellationToken;
             }
-
-            object IEnumerator.Current => this.Current;
 
             /// <summary>
             /// Dispose the enumerator. No-op.
             /// </summary>
-            public void Dispose()
+            public ValueTask DisposeAsync()
             {
-                return;
+                return default;
             }
 
             /// <summary>
-            /// Reset. Not supported.
+            /// Asynchronously advance the enumerator to the next value within the page.
             /// </summary>
-            public void Reset()
-            {
-                throw new NotSupportedException();
-            }
-
-            /// <summary>
-            /// Advance the enumerator to the next value within the page.
-            /// </summary>
-            ///
             /// <returns>True if there is another page token.</returns>
-            public bool MoveNext()
+            public async ValueTask<bool> MoveNextAsync()
             {
                 if (this.currentEnumerator.MoveNext())
                 {
@@ -134,16 +136,17 @@ namespace Amazon.QLDB.Driver
                     return false;
                 }
 
-                this.FetchPage();
-                return this.MoveNext();
+                await this.FetchPage();
+                return await this.MoveNextAsync();
             }
 
             /// <summary>
             /// Fetch the next page from the session.
             /// </summary>
-            private void FetchPage()
+            private async Task FetchPage()
             {
-                FetchPageResult pageResult = this.session.FetchPage(this.txnId, this.nextPageToken);
+                FetchPageResult pageResult =
+                    await this.session.FetchPageAsync(this.txnId, this.nextPageToken, this.CancellationToken);
                 this.currentEnumerator = pageResult.Page.Values.GetEnumerator();
                 this.nextPageToken = pageResult.Page.NextPageToken;
                 this.UpdateMetrics(pageResult);

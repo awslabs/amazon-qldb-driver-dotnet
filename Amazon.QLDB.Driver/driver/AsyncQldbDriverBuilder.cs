@@ -11,51 +11,51 @@
  * and limitations under the License.
  */
 
- namespace Amazon.QLDB.Driver
+namespace Amazon.QLDB.Driver
 {
     using Microsoft.Extensions.Logging;
 
     /// <summary>
-    /// Builder object for creating a <see cref="QldbDriver"/>, allowing for configuration of the parameters of
+    /// Builder object for creating an <see cref="AsyncQldbDriver"/>, allowing for configuration of the parameters of
     /// construction.
     /// </summary>
-    public class QldbDriverBuilder : BaseQldbDriverBuilder<QldbDriverBuilder>
+    public class AsyncQldbDriverBuilder : BaseQldbDriverBuilder<AsyncQldbDriverBuilder>
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="QldbDriverBuilder"/> class.
+        /// Initializes a new instance of the <see cref="AsyncQldbDriverBuilder"/> class.
         /// </summary>
-        internal QldbDriverBuilder()
+        internal AsyncQldbDriverBuilder()
         {
         }
 
-        private protected override QldbDriverBuilder BuilderInstance => this;
+        private protected override AsyncQldbDriverBuilder BuilderInstance => this;
 
-        private protected override string UserAgentStringPrefix => " QLDBDriver for .NET v";
+        private protected override string UserAgentStringPrefix => "Async QLDB Driver for .NET v";
 
         /// <summary>
         /// Build a driver instance using the current configuration set with the builder.
         /// </summary>
         ///
         /// <returns>A newly created driver.</returns>
-        public QldbDriver Build()
+        public AsyncQldbDriver Build()
         {
             this.PrepareBuild();
-            return new QldbDriver(
-                new SessionPool(
-                    () => Session.StartSession(this.LedgerName, this.sessionClient, this.Logger),
+            return new AsyncQldbDriver(
+                new AsyncSessionPool(
+                    (cancellationToken) => Session.StartSessionAsync(this.LedgerName, this.sessionClient, this.Logger),
                     CreateDefaultRetryHandler(this.logRetries ? this.Logger : null),
                     this.maxConcurrentTransactions,
                     this.Logger));
         }
 
         /// <summary>
-        /// Create a RetryHandler object with the default set of retriable exceptions.
+        /// Create an AsyncRetryHandler object with the default set of retriable exceptions.
         /// </summary>
         /// <param name="logger">The logger.</param>
         /// <returns>The constructed IRetryHandler instance.</returns>
-        internal static IRetryHandler CreateDefaultRetryHandler(ILogger logger)
+        internal static IAsyncRetryHandler CreateDefaultRetryHandler(ILogger logger)
         {
-            return new RetryHandler(logger);
+            return new AsyncRetryHandler(logger);
         }
     }
 }

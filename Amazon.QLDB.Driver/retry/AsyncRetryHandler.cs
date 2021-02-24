@@ -15,34 +15,34 @@ namespace Amazon.QLDB.Driver
 {
     using System;
     using System.Threading;
+    using System.Threading.Tasks;
     using Amazon.QLDBSession.Model;
     using Microsoft.Extensions.Logging;
 
     /// <summary>
-    /// <para>The default implementation of Retry Handler.</para>
+    /// <para>The asynchronous implementation of Retry Handler.</para>
     ///
     /// <para>The driver retries in two scenarios: retrying inside a session, and retrying with another session. In the
     /// second case, it would require a <i>recover</i> action to reset the session into a working state.
     /// </summary>
-    internal class RetryHandler : BaseRetryHandler, IRetryHandler
+    internal class AsyncRetryHandler : BaseRetryHandler, IAsyncRetryHandler
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="RetryHandler"/> class.
+        /// Initializes a new instance of the <see cref="AsyncRetryHandler"/> class.
         /// </summary>
-        ///
         /// <param name="logger">The logger to record retries.</param>
-        public RetryHandler(ILogger logger)
+        public AsyncRetryHandler(ILogger logger)
             : base(logger)
         {
         }
 
         /// <inheritdoc/>
-        public T RetriableExecute<T>(
-            Func<T> func,
+        public async Task<T> RetriableExecute<T>(
+            Func<CancellationToken, Task<T>> func,
             RetryPolicy retryPolicy,
-            Action newSessionAction,
-            Action nextSessionAction,
-            Action<int> retryAction)
+            Func<CancellationToken, Task> newSessionAction,
+            Func<CancellationToken, Task> nextSessionAction,
+            CancellationToken cancellationToken = default)
         {
             int retryAttempt = 0;
 
@@ -50,7 +50,7 @@ namespace Amazon.QLDB.Driver
             {
                 try
                 {
-                    return func();
+                    return await func(cancellationToken);
                 }
                 catch (QldbTransactionException ex)
                 {
@@ -69,20 +69,19 @@ namespace Amazon.QLDB.Driver
                             ++retryAttempt,
                             TryGetTransactionId(ex));
 
-                        retryAction?.Invoke(retryAttempt);
-
-                        Thread.Sleep(
-                            retryPolicy.BackoffStrategy.CalculateDelay(new RetryPolicyContext(retryAttempt, iex)));
+                        var backoffDelay =
+                            retryPolicy.BackoffStrategy.CalculateDelay(new RetryPolicyContext(retryAttempt, iex));
+                        await Task.Delay(backoffDelay, cancellationToken);
 
                         if (!ex.IsSessionAlive)
                         {
                             if (iex is InvalidSessionException)
                             {
-                                newSessionAction();
+                                await newSessionAction(cancellationToken);
                             }
                             else
                             {
-                                nextSessionAction();
+                                await nextSessionAction(cancellationToken);
                             }
                         }
 

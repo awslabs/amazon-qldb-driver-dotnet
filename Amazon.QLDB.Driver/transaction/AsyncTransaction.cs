@@ -17,6 +17,8 @@ namespace Amazon.QLDB.Driver
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
     using Amazon.IonDotnet.Tree;
     using Amazon.QLDBSession.Model;
     using Amazon.Runtime;
@@ -29,48 +31,57 @@ namespace Amazon.QLDB.Driver
     ///
     /// Child Result objects will be closed when the transaction is aborted or committed.
     /// </summary>
-    internal class Transaction : BaseTransaction, ITransaction
+    internal class AsyncTransaction : BaseTransaction
     {
+        private readonly CancellationToken cancellationToken;
+
         /// <summary>
-        /// Initializes a new instance of the <see cref="Transaction"/> class.
+        /// Initializes a new instance of the <see cref="AsyncTransaction"/> class.
         /// </summary>
         ///
         /// <param name="session">The parent session that represents the communication channel to QLDB.</param>
         /// <param name="txnId">Transaction identifier.</param>
         /// <param name="logger">Logger to be used by this.</param>
-        internal Transaction(Session session, string txnId, ILogger logger)
+        /// <param name="token">Propagates notification that operations should be canceled.</param>
+        internal AsyncTransaction(Session session, string txnId, ILogger logger, CancellationToken token)
             : base(session, txnId, logger)
         {
+            this.cancellationToken = token;
         }
 
         /// <summary>
-        /// Abort the transaction and roll back any changes. No-op if closed.
-        /// Any open <see cref="IResult"/> created by the transaction will be invalidated.
+        /// Abort the transaction asynchronously and roll back any changes. No-op if closed.
+        /// Any open <see cref="IAsyncResult"/> created by the transaction will be invalidated.
         /// </summary>
-        public void Abort()
+        ///
+        /// <returns>A task representing the asynchronous abort operation.</returns>
+        internal virtual async Task Abort()
         {
             if (!this.isClosed)
             {
                 this.isClosed = true;
-                this.session.AbortTransaction();
+                await this.session.AbortTransactionAsync(this.cancellationToken);
             }
         }
 
         /// <summary>
-        /// Commit the transaction. Any open <see cref="IResult"/> created by the transaction will be invalidated.
+        /// Commit the transaction asynchronously. Any open <see cref="IAsyncResult"/> created by the transaction will be invalidated.
         /// </summary>
         ///
         /// <exception cref="InvalidOperationException">Thrown when Hash returned from QLDB is not equal.</exception>
         /// <exception cref="OccConflictException">Thrown if an OCC conflict has been detected within the transaction.</exception>
         /// <exception cref="AmazonServiceException">Thrown when there is an error committing this transaction against QLDB.</exception>
         /// <exception cref="QldbDriverException">Thrown when this transaction has been disposed.</exception>
-        public void Commit()
+        /// <returns>A task representing the asynchronous commit operation.</returns>
+        internal async Task Commit()
         {
             try
             {
                 byte[] hashBytes = this.qldbHash.Hash;
-                MemoryStream commitDigest = this.session.CommitTransaction(this.txnId, new MemoryStream(hashBytes))
-                    .CommitDigest;
+                MemoryStream commitDigest = (await this.session.CommitTransactionAsync(
+                        this.txnId,
+                        new MemoryStream(hashBytes),
+                        this.cancellationToken)).CommitDigest;
                 if (!hashBytes.SequenceEqual(commitDigest.ToArray()))
                 {
                     throw new InvalidOperationException(ExceptionMessages.TransactionDigestMismatch);
@@ -86,7 +97,7 @@ namespace Amazon.QLDB.Driver
             }
             catch (AmazonServiceException ase)
             {
-                this.Dispose();
+                await this.DisposeAsync();
                 throw ase;
             }
             finally
@@ -96,13 +107,13 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <summary>
-        /// Abort the transaction and close it. No-op if already closed.
+        /// Abort the transaction asynchronously and close it. No-op if already closed.
         /// </summary>
-        public void Dispose()
+        internal async ValueTask DisposeAsync()
         {
             try
             {
-                this.Abort();
+                await this.Abort();
             }
             catch (AmazonServiceException ase)
             {
@@ -111,7 +122,7 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <summary>
-        /// Execute the statement using the specified parameters against QLDB and retrieve the result.
+        /// Execute the statement asynchronously using the specified parameters against QLDB and retrieve the result.
         /// </summary>
         ///
         /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
@@ -120,9 +131,9 @@ namespace Amazon.QLDB.Driver
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
         /// <exception cref="QldbDriverException">Thrown when this transaction has been disposed.</exception>
-        public IResult Execute(string statement)
+        internal virtual async Task<IAsyncResult> Execute(string statement)
         {
-            return this.Execute(statement, new List<IIonValue>());
+            return await this.Execute(statement, new List<IIonValue>());
         }
 
         /// <summary>
@@ -136,19 +147,16 @@ namespace Amazon.QLDB.Driver
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
         /// <exception cref="QldbDriverException">Thrown when this transaction has been disposed.</exception>
-        public IResult Execute(string statement, List<IIonValue> parameters)
+        internal virtual async Task<IAsyncResult> Execute(string statement, List<IIonValue> parameters)
         {
             ValidationUtils.AssertStringNotEmpty(statement, "statement");
 
-            if (parameters == null)
-            {
-                parameters = new List<IIonValue>();
-            }
+            parameters ??= new List<IIonValue>();
 
             this.qldbHash = Dot(this.qldbHash, statement, parameters);
-            ExecuteStatementResult executeStatementResult = this.session.ExecuteStatement(
-                this.txnId, statement, parameters);
-            return new Result(this.session, this.txnId, executeStatementResult);
+            ExecuteStatementResult executeStatementResult = await this.session.ExecuteStatementAsync(
+                this.txnId, statement, parameters, this.cancellationToken);
+            return new AsyncResult(this.session, this.txnId, executeStatementResult, this.cancellationToken);
         }
 
         /// <summary>
@@ -162,9 +170,9 @@ namespace Amazon.QLDB.Driver
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
         /// <exception cref="QldbDriverException">Thrown when this transaction has been disposed.</exception>
-        public IResult Execute(string statement, params IIonValue[] parameters)
+        internal virtual async Task<IAsyncResult> Execute(string statement, params IIonValue[] parameters)
         {
-            return this.Execute(statement, new List<IIonValue>(parameters));
+            return await this.Execute(statement, new List<IIonValue>(parameters));
         }
     }
 }
