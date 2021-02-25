@@ -79,7 +79,7 @@ namespace Amazon.QLDB.Driver
             IAsyncResult result = await this.Execute(
                 async txn => await txn.Execute(TableNameQuery), cancellationToken);
 
-            return (await result.ToListAsync()).Select(i => i.StringValue);
+            return (await result.ToListAsync(cancellationToken)).Select(i => i.StringValue);
         }
     }
 }
