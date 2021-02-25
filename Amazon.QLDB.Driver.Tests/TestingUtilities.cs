@@ -19,6 +19,7 @@ namespace Amazon.QLDB.Driver.Tests
     using System.IO;
     using System.Net;
     using System.Reflection;
+    using System.Threading.Tasks;
     using Amazon.IonDotnet.Builders;
     using Amazon.IonDotnet.Tree;
     using Amazon.IonDotnet.Utils;
@@ -97,7 +98,7 @@ namespace Amazon.QLDB.Driver.Tests
             };
         }
 
-        internal class CreateExceptionTestDataAttribute : Attribute, ITestDataSource
+        internal class ExecuteExceptionTestHelperAttribute : Attribute, ITestDataSource
         {
             public IEnumerable<object[]> GetData(MethodInfo methodInfo)
             {
@@ -132,6 +133,32 @@ namespace Amazon.QLDB.Driver.Tests
                 new object[] { new Exception("Customer Exception"),
                     typeof(QldbTransactionException), typeof(Exception),
                     Times.Once()}
+                };
+            }
+
+            public string GetDisplayName(MethodInfo methodInfo, object[] data)
+            {
+                if (data != null)
+                {
+                    return string.Format(CultureInfo.CurrentCulture, "{0} ({1})", methodInfo.Name, string.Join(",", data));
+                }
+                return null;
+            }
+        }
+
+        internal class CreateExceptionsAttribute : Attribute, ITestDataSource
+        {
+            public IEnumerable<object[]> GetData(MethodInfo methodInfo)
+            {
+                return new List<object[]>()
+                {
+                    new object[] { new InvalidSessionException("message") },
+                    new object[] { new OccConflictException("message") },
+                    new object[] { new AmazonServiceException("message", new Exception(), HttpStatusCode.InternalServerError) },
+                    new object[] { new AmazonServiceException("message", new Exception(), HttpStatusCode.ServiceUnavailable) },
+                    new object[] { new AmazonServiceException("message", new Exception(), HttpStatusCode.Conflict) },
+                    new object[] { new Exception("message")},
+                    new object[] { new CapacityExceededException("message", ErrorType.Receiver, "errorCode", "requestId", HttpStatusCode.ServiceUnavailable) },
                 };
             }
 

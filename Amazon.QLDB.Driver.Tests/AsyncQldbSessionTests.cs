@@ -27,7 +27,7 @@ namespace Amazon.QLDB.Driver.Tests
     using Moq;
 
     [TestClass]
-    public class AsyncQldbSessionTest
+    public class AsyncQldbSessionTests
     {
         private static AsyncQldbSession asyncQldbSession;
         private static Mock<Session> mockSession;
@@ -116,7 +116,7 @@ namespace Amazon.QLDB.Driver.Tests
             mockAction.Verify(s => s.DisposeDelegate(asyncQldbSession), retryTimes);
         }
 
-        public static IEnumerable<object[]> CreateExecuteTestData()
+        private static IEnumerable<object[]> CreateExecuteTestData()
         {
             Func<AsyncTransactionExecutor, Task<object>> executeNormal = async txn =>
             {
@@ -145,7 +145,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        [TestingUtilities.CreateExceptionTestData]
+        [TestingUtilities.ExecuteExceptionTestHelper]
         public async Task ExecuteAsyncThrowsExpectedException(Exception exception, Type expectedExceptionType, Type innerExceptionType, Times abortTransactionCalledTimes)
         {
             mockSession.Setup(x => x.StartTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new StartTransactionResult
@@ -206,7 +206,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        [DynamicData(nameof(CreateExceptions), DynamicDataSourceType.Method)]
+        [TestingUtilities.CreateExceptions]
         public async Task TestAsyncExecuteWhenStartTransactionAsyncThrowExceptions(Exception exception)
         {
             mockSession.Setup(x => x.StartTransactionAsync(It.IsAny<CancellationToken>())).Throws(exception);
@@ -247,20 +247,5 @@ namespace Amazon.QLDB.Driver.Tests
             {
             }
         }
-
-        public static IEnumerable<Object[]> CreateExceptions()
-        {
-            return new List<object[]>()
-            {
-                new object[] { new InvalidSessionException("message") },
-                new object[] { new OccConflictException("message") },
-                new object[] { new AmazonServiceException("message", new Exception(), HttpStatusCode.InternalServerError) },
-                new object[] { new AmazonServiceException("message", new Exception(), HttpStatusCode.ServiceUnavailable) },
-                new object[] { new AmazonServiceException("message", new Exception(), HttpStatusCode.Conflict) },
-                new object[] { new Exception("message")},
-                new object[] { new CapacityExceededException("message", ErrorType.Receiver, "errorCode", "requestId", HttpStatusCode.ServiceUnavailable) },
-            };
-        }
-
     }
 }

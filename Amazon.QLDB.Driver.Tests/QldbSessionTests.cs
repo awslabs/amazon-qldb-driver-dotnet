@@ -119,7 +119,7 @@ namespace Amazon.QLDB.Driver.Tests
             mockAction.Verify(s => s.DisposeDelegate(qldbSession), retryTimes);
         }
 
-        public static IEnumerable<object[]> CreateExecuteTestData()
+        private static IEnumerable<object[]> CreateExecuteTestData()
         {
             Func<TransactionExecutor, object> executeNormal = txn =>
             {
@@ -148,7 +148,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        [TestingUtilities.CreateExceptionTestData]
+        [TestingUtilities.ExecuteExceptionTestHelper]
         public void Execute_ThrowException_ThrowExpectedException(Exception exception,
             Type expectedExceptionType, Type innerExceptionType, Times abortTransactionCalledTimes)
         {
@@ -209,7 +209,7 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        [DynamicData(nameof(CreateExceptions), DynamicDataSourceType.Method)]
+        [TestingUtilities.CreateExceptions]
         public void Execute_StartTransactionThrowExceptions(Exception exception)
         {
             mockSession.Setup(x => x.StartTransaction()).Throws(exception);
@@ -245,20 +245,6 @@ namespace Amazon.QLDB.Driver.Tests
             public virtual void DisposeDelegate(QldbSession session)
             {
             }
-        }
-
-        public static IEnumerable<Object[]> CreateExceptions()
-        {
-            return new List<object[]>()
-            {
-                new object[] { new InvalidSessionException("message") },
-                new object[] { new OccConflictException("message") },
-                new object[] { new AmazonServiceException("message", new Exception(), HttpStatusCode.InternalServerError) },
-                new object[] { new AmazonServiceException("message", new Exception(), HttpStatusCode.ServiceUnavailable) },
-                new object[] { new AmazonServiceException("message", new Exception(), HttpStatusCode.Conflict) },
-                new object[] { new Exception("message")},
-                new object[] { new CapacityExceededException("message", ErrorType.Receiver, "errorCode", "requestId", HttpStatusCode.ServiceUnavailable) },
-            };
         }
     }
 }
