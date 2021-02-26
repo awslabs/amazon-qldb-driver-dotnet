@@ -74,7 +74,7 @@ namespace Amazon.QLDB.Driver
         /// <summary>
         /// Asynchronously enumerates a list of Ion values.
         /// </summary>
-        private struct ValuesAsyncEnumerator : IAsyncEnumerator<IIonValue>
+        internal struct ValuesAsyncEnumerator : IAsyncEnumerator<IIonValue>
         {
             private List<IIonValue>.Enumerator valuesEnumerator;
 
