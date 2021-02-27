@@ -102,7 +102,7 @@ namespace Amazon.QLDB.Driver
         ///
         /// <param name="that">Hashed PartiQL statement.</param>
         ///
-        /// <returns>QldbHash.</returns>
+        /// <returns>Returns a QldbHash instance.</returns>
         internal QldbHash Dot(QldbHash that)
         {
             byte[] concatenated = JoinHashesPairwise(this.Hash, that.Hash);
@@ -113,6 +113,11 @@ namespace Amazon.QLDB.Driver
         /// <summary>
         /// Takes two hashes, sorts them, and concatenates them.
         /// </summary>
+        ///
+        /// <param name="h1">Hash codes of the first hashed PartiQL statement.</param>
+        /// <param name="h2">Hash codes of the second hashed PartiQL statement.</param>
+        ///
+        /// <returns>No object or value is returned by this method when it completes.</returns>
         private static byte[] JoinHashesPairwise(byte[] h1, byte[] h2)
         {
             if (h1.Length == 0)

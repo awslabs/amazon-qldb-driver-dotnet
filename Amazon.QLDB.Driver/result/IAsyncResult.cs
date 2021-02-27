@@ -16,10 +16,24 @@ namespace Amazon.QLDB.Driver
     using System.Collections.Generic;
     using Amazon.IonDotnet.Tree;
 
+    /// <summary>
+    /// Interface for the result of executing a statement in QLDB.
+    /// Implements IAsyncEnumerable to allow iteration over Ion values within the result.
+    /// </summary>
     public interface IAsyncResult : IAsyncEnumerable<IIonValue>
     {
+        /// <summary>
+        /// Gets the current query statistics for the number of read IO requests. The statistics are stateful.
+        /// </summary>
+        ///
+        /// <returns>The current IOUsage statistics.</returns>
         IOUsage? GetConsumedIOs();
 
+        /// <summary>
+        /// Gets the current query statistics for server-side processing time. The statistics are stateful.
+        /// </summary>
+        ///
+        /// <returns>The current TimingInformation statistics.</returns>
         TimingInformation? GetTimingInformation();
     }
 }

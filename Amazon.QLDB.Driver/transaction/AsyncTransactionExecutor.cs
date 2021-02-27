@@ -84,6 +84,8 @@ namespace Amazon.QLDB.Driver
         /// <summary>
         /// Abort the transaction and roll back any changes.
         /// </summary>
+        ///
+        /// <returns>No object or value is returned by this method when it completes.</returns>
         public async Task Abort()
         {
             try

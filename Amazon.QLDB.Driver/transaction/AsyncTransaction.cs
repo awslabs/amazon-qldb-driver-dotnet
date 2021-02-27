@@ -109,6 +109,8 @@ namespace Amazon.QLDB.Driver
         /// <summary>
         /// Abort the transaction asynchronously and close it. No-op if already closed.
         /// </summary>
+        ///
+        /// <returns>A value task representing the asynchronous abort operation.</returns>
         internal async ValueTask DisposeAsync()
         {
             try

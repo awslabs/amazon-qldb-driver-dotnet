@@ -20,7 +20,7 @@ namespace Amazon.QLDB.Driver
 
     /// <summary>
     /// <para>Represents a factory for accessing a specific ledger within QLDB. This class or
-    /// <see cref="QldbDriver"/> should be the main entry points to any interaction with QLDB.
+    /// <see cref="AsyncQldbDriver"/> should be the main entry points to any interaction with QLDB.</para>
     ///
     /// <para>This factory pools sessions and attempts to return unused but available sessions when getting new sessions.
     /// The pool does not remove stale sessions until a new session is retrieved. The default pool size is the maximum
@@ -79,7 +79,7 @@ namespace Amazon.QLDB.Driver
         ///
         /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls <see cref="TransactionExecutor.Abort"/>.</exception>
         /// <exception cref="QldbDriverException">Thrown when called on a disposed instance.</exception>
-        /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception
+        /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
         [Obsolete("As of release 1.0, replaced by 'retryPolicy'. Will be removed in the next major release.")]
         public void Execute(Action<TransactionExecutor> action, Action<int> retryAction)
         {

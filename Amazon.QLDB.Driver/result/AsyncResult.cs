@@ -116,6 +116,8 @@ namespace Amazon.QLDB.Driver
             /// <summary>
             /// Dispose the enumerator. No-op.
             /// </summary>
+            ///
+            /// <returns>No object or value is returned by this method when it completes.</returns>
             public ValueTask DisposeAsync()
             {
                 return default;
@@ -143,6 +145,8 @@ namespace Amazon.QLDB.Driver
             /// <summary>
             /// Fetch the next page from the session.
             /// </summary>
+            ///
+            /// <returns>No object or value is returned by this method when it completes.</returns>
             private async Task FetchPage()
             {
                 FetchPageResult pageResult =

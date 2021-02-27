@@ -26,7 +26,7 @@ namespace Amazon.QLDB.Driver
     public class BufferedResult : BaseBufferedResult, IResult
     {
         /// <summary>
-        /// Prevents a default instance of the <see cref="BufferedResult"/> class from being created.
+        /// Initializes a new instance of the <see cref="BufferedResult"/> class.
         /// </summary>
         ///
         /// <param name="values">Buffer values.</param>
