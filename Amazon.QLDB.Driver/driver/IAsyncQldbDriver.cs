@@ -82,6 +82,7 @@ namespace Amazon.QLDB.Driver
         /// be trusted until the transaction is committed.</param>
         /// <param name="cancellationToken"> A cancellation token that can be used by other objects or threads to
         /// receive notice of cancellation.</param>
+        /// <typeparam name="T">The return type.</typeparam>
         ///
         /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls
         /// <see cref="AsyncTransactionExecutor.Abort"/>.</exception>
@@ -106,6 +107,7 @@ namespace Amazon.QLDB.Driver
         /// driver. The given retry policy will be used when retrying the transaction.</param>
         /// <param name="cancellationToken"> A cancellation token that can be used by other objects or threads to
         /// receive notice of cancellation.</param>
+        /// <typeparam name="T">The return type.</typeparam>
         ///
         /// <exception cref="TransactionAbortedException">Thrown if the Executor lambda calls
         /// <see cref="AsyncTransactionExecutor.Abort"/>.</exception>
