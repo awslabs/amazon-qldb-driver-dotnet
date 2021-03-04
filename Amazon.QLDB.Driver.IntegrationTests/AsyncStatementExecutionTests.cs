@@ -13,7 +13,6 @@
 
 namespace Amazon.QLDB.Driver.IntegrationTests
 {
-    using Amazon.QLDB.Driver.IntegrationTests.utils;
     using Amazon.QLDBSession;
     using Amazon.QLDBSession.Model;
     using Amazon.IonDotnet.Builders;
@@ -22,7 +21,9 @@ namespace Amazon.QLDB.Driver.IntegrationTests
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Threading.Tasks;
+    using utils;
     
     [TestClass]
     public class AsyncStatementExecutionTests
@@ -33,10 +34,11 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         private static AsyncQldbDriver qldbDriver;
 
         [ClassInitialize]
-        public async static Task SetUp(TestContext context)
+        public static async Task SetUp(TestContext context)
         {
             // Get AWS configuration properties from .runsettings file.
-            string region = context.Properties["region"].ToString();
+            // string region = context.Properties["region"].ToString();
+            string region = "us-east-1";
 
             amazonQldbSessionConfig = IntegrationTestBase.CreateAmazonQLDBSessionConfig(region);
             integrationTestBase = new IntegrationTestBase(Constants.LedgerName, region);
@@ -49,26 +51,9 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             // Create table.
             var query = $"CREATE TABLE {Constants.TableName}";
 
-            var count = await qldbDriver.Execute(async txn =>
-            {
-                var result = await txn.Execute(query);
-
-                var count = 0;
-                await foreach (var row in result)
-                {
-                    count++;
-                }
-                return count;
-            });
-
-
-            Assert.AreEqual(1, count);
-
-            var result = await qldbDriver.ListTableNames();
-            foreach (var row in result)
-            {
-                Assert.AreEqual(Constants.TableName, row);
-            }
+            Assert.AreEqual(1, await ExecuteAndReturnRowCount(query));
+            
+            Assert.IsTrue(await ConfirmTable(Constants.TableName));
         }
 
         [ClassCleanup]
@@ -90,53 +75,17 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         {
             // Given.
             var createTableQuery = $"CREATE TABLE {Constants.CreateTableName}";
-            var createTableCount = await qldbDriver.Execute(async txn =>
-            {
-                var result = await txn.Execute(createTableQuery);
-
-                var count = 0;
-                await foreach (var row in result)
-                {
-                    count++;
-                }
-                return count;
-            });
-            Assert.AreEqual(1, createTableCount);
-
-            // Execute ListTableNames() to ensure table is created.
-            var result = await qldbDriver.ListTableNames();
-
-            var tables = new List<string>();
-            foreach (var row in result)
-            {
-                tables.Add(row);
-            }
-            Assert.IsTrue(tables.Contains(Constants.CreateTableName));
+            Assert.AreEqual(1, await ExecuteAndReturnRowCount(createTableQuery));
+            
+            // Ensure table is created.
+            Assert.IsTrue(await ConfirmTable(Constants.CreateTableName));
 
             // When.
             var dropTableQuery = $"DROP TABLE {Constants.CreateTableName}";
-            var dropTableCount = await qldbDriver.Execute(async txn =>
-            {
-                var result = await txn.Execute(dropTableQuery);
-
-                var count = 0;
-                await foreach (var row in result)
-                {
-                    count++;
-                }
-                return count;
-            });
-            Assert.AreEqual(1, dropTableCount);
+            Assert.AreEqual(1, await ExecuteAndReturnRowCount(dropTableQuery));
 
             // Then.
-            tables.Clear();
-            var updatedTablesResult = await qldbDriver.ListTableNames();
-
-            foreach (var row in updatedTablesResult)
-            {
-                tables.Add(row);
-            }
-            Assert.IsFalse(tables.Contains(Constants.CreateTableName));
+            Assert.IsFalse(await ConfirmTable(Constants.CreateTableName));
         }
 
         [TestMethod]
@@ -146,14 +95,9 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             var result = await qldbDriver.ListTableNames();
 
             // Then.
-            int count = 0;
-            foreach (var row in result)
-            {
-                count++;
-                Assert.AreEqual(Constants.TableName, row);
-            }
-
-            Assert.AreEqual(1, count);
+            Assert.AreEqual(1, result.Count());
+            
+            Assert.IsTrue(result.Contains(Constants.TableName));
         }
 
         [TestMethod]
@@ -174,41 +118,14 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             var query = $"CREATE INDEX on {Constants.TableName} ({Constants.IndexAttribute})";
 
             // When.
-            var count = await qldbDriver.Execute(async txn =>
-            {
-                var result = await txn.Execute(query);
-
-                var count = 0;
-                await foreach (var row in result)
-                {
-                    count++;
-                }
-                return count;
-            });
-            Assert.AreEqual(1, count);
+            Assert.AreEqual(1, await ExecuteAndReturnRowCount(query));
 
             // Then.
             var searchQuery = $@"SELECT VALUE indexes[0] FROM information_schema.user_tables
                                   WHERE status = 'ACTIVE' AND name = '{Constants.TableName}'";
-            var indexColumn = await qldbDriver.Execute(async txn =>
-            {
-                var result = await txn.Execute(searchQuery);
+            var indexColumn = await ExecuteAndReturnField(searchQuery, "expr");
 
-                // Extract the index name by querying the information_schema.
-                /* This gives:
-                {
-                    expr: "[MyColumn]"
-                }
-                */
-                var indexColumn = "";
-                await foreach (var row in result)
-                {
-                    indexColumn = row.GetField("expr").StringValue;
-                }
-                return indexColumn;
-            });
-
-            Assert.AreEqual("[" + Constants.IndexAttribute + "]", indexColumn);
+            Assert.AreEqual("[" + Constants.IndexAttribute + "]", indexColumn.StringValue);
         }
 
         [TestMethod]
@@ -217,21 +134,8 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             // Given.
             var query = $"SELECT * FROM {Constants.TableName}";
 
-            // When.
-            int resultSetSize = await qldbDriver.Execute(async txn =>
-            {
-                var result = await txn.Execute(query);
-
-                int count = 0;
-                await foreach (var row in result)
-                {
-                    count++;
-                }
-                return count;
-            });
-
-            // Then.
-            Assert.AreEqual(0, resultSetSize);
+            // When/Then.
+            Assert.AreEqual(0, await ExecuteAndReturnRowCount(query));
         }
 
         [TestMethod]
@@ -244,34 +148,14 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             // When.
             var query = $"INSERT INTO {Constants.TableName} ?";
-            var count = await qldbDriver.Execute(async txn =>
-            {
-                var result = await txn.Execute(query, ionStruct);
-
-                var count = 0;
-                await foreach (var row in result)
-                {
-                    count++;
-                }
-                return count;
-            });
-            Assert.AreEqual(1, count);
+            Assert.AreEqual(1, await ExecuteWithParamAndReturnRowCount(query, ionStruct));
 
             // Then.
             var searchQuery = $@"SELECT VALUE {Constants.ColumnName} FROM {Constants.TableName} 
                                WHERE {Constants.ColumnName} = '{Constants.SingleDocumentValue}'";
-            var value = await qldbDriver.Execute(async txn =>
-            {
-                var result = await txn.Execute(searchQuery);
 
-                var value = "";
-                await foreach (var row in result)
-                {
-                    value = row.StringValue;
-                }
-                return value;
-            });
-            Assert.AreEqual(Constants.SingleDocumentValue, value);
+            var ionVal = await ExecuteAndReturnIonValue(searchQuery);
+            Assert.AreEqual(Constants.SingleDocumentValue, ionVal.StringValue);
         }
 
         [TestMethod]
@@ -285,33 +169,12 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             // When.
             var query = $"INSERT  INTO {Constants.TableName} ?";
-            var count = await qldbDriver.Execute(async txn =>
-            {
-                var result = await txn.Execute(query, ionStruct);
-
-                var count = 0;
-                await foreach (var row in result)
-                {
-                    count++;
-                }
-                return count;
-            });
-            Assert.AreEqual(1, count);
+            Assert.AreEqual(1, await ExecuteWithParamAndReturnRowCount(query, ionStruct));
 
             // Then.
             var searchQuery = $@"SELECT {Constants.ColumnName}, {Constants.SecondColumnName} FROM {Constants.TableName} 
                                WHERE {Constants.ColumnName} = '{Constants.SingleDocumentValue}' AND  {Constants.SecondColumnName} = '{Constants.SingleDocumentValue}'";
-            IIonValue value = await qldbDriver.Execute(async txn =>
-            {
-                var result = await txn.Execute(searchQuery);
-
-                IIonValue value = null;
-                await foreach (var row in result)
-                {
-                    value = row;
-                }
-                return value;
-            });
+            IIonValue value = await ExecuteAndReturnIonValue(searchQuery);
 
             var ionReader = IonReaderBuilder.Build(value);
             ionReader.MoveNext();
@@ -333,36 +196,15 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             ionStruct.SetField(Constants.ColumnName, ValueFactory.NewString(Constants.SingleDocumentValue));
 
             var query = $"INSERT INTO {Constants.TableName} ?";
-            var count = await qldbDriver.Execute(async txn =>
-            {
-                var result = await txn.Execute(query, ionStruct);
-
-                var count = 0;
-                await foreach (var row in result)
-                {
-                    count++;
-                }
-                return count;
-            });
-            Assert.AreEqual(1, count);
+            Assert.AreEqual(1, await ExecuteWithParamAndReturnRowCount(query, ionStruct));
 
             // When.
             var searchQuery = $@"SELECT VALUE {Constants.ColumnName} FROM {Constants.TableName}
                                  WHERE {Constants.ColumnName} = '{Constants.SingleDocumentValue}'";
-            var value = await qldbDriver.Execute(async txn =>
-            {
-                var result = await txn.Execute(searchQuery);
-
-                var value = "";
-                await foreach (var row in result)
-                {
-                    value = row.StringValue;
-                }
-                return value;
-            });
+            IIonValue ionVal = await ExecuteAndReturnIonValue(searchQuery);
 
             // Then.
-            Assert.AreEqual(Constants.SingleDocumentValue, value);
+            Assert.AreEqual(Constants.SingleDocumentValue, ionVal.StringValue);
         }
 
         [TestMethod]
@@ -374,36 +216,15 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             ionStruct.SetField(Constants.ColumnName, ValueFactory.NewString(Constants.SingleDocumentValue));
 
             var query = $"INSERT INTO {Constants.TableName} ?";
-            var count = await qldbDriver.Execute(async txn =>
-            {
-                var result = await txn.Execute(query, ionStruct);
-
-                var count = 0;
-                await foreach (var row in result)
-                {
-                    count++;
-                }
-                return count;
-            });
-            Assert.AreEqual(1, count);
+            Assert.AreEqual(1, await ExecuteWithParamAndReturnRowCount(query, ionStruct));
 
             // When.
             var searchQuery = $@"SELECT VALUE {Constants.ColumnName} FROM ""{Constants.TableName}""
                                  WHERE {Constants.ColumnName} = '{Constants.SingleDocumentValue}'";
-            var value = await qldbDriver.Execute(async txn =>
-            {
-                var result = await txn.Execute(searchQuery);
-
-                var value = "";
-                await foreach (var row in result)
-                {
-                    value = row.StringValue;
-                }
-                return value;
-            });
+            IIonValue ionVal = await ExecuteAndReturnIonValue(searchQuery);
 
             // Then.
-            Assert.AreEqual(Constants.SingleDocumentValue, value);
+            Assert.AreEqual(Constants.SingleDocumentValue, ionVal.StringValue);
         }
 
         [TestMethod]
@@ -424,18 +245,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             // When.
             var query = $"INSERT INTO {Constants.TableName} <<?,?>>";
-            var count = await qldbDriver.Execute(async txn =>
-            {
-                var result = await txn.Execute(query, parameters);
-
-                var count = 0;
-                await foreach (var row in result)
-                {
-                    count++;
-                }
-                return count;
-            });
-            Assert.AreEqual(2, count);
+            Assert.AreEqual(2, await ExecuteWithParamsAndReturnRowCount(query, parameters));
 
             // Then.
             var searchQuery = $@"SELECT VALUE {Constants.ColumnName} FROM {Constants.TableName}
@@ -464,54 +274,17 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             ionStruct.SetField(Constants.ColumnName, ValueFactory.NewString(Constants.SingleDocumentValue));
        
             var query = $"INSERT INTO {Constants.TableName} ?";
-            var count = await qldbDriver.Execute(async txn =>
-            {
-                var result = await txn.Execute(query, ionStruct);
-
-                var count = 0;
-                await foreach (var row in result)
-                {
-                    count++;
-                }
-                return count;
-            });
-            Assert.AreEqual(1, count);
+            Assert.AreEqual(1, await ExecuteWithParamAndReturnRowCount(query, ionStruct));
 
             // When.
             var deleteQuery = $@"DELETE FROM { Constants.TableName}
                                  WHERE {Constants.ColumnName} = '{Constants.SingleDocumentValue}'";
-            var deletedCount = await qldbDriver.Execute(async txn =>
-            {
-                var result = await txn.Execute(deleteQuery);
-
-                var count = 0;
-                await foreach (var row in result)
-                {
-                    count++;
-                }
-                return count;
-            });
-            Assert.AreEqual(1, deletedCount);
+            Assert.AreEqual(1, await ExecuteAndReturnRowCount((deleteQuery)));
 
             // Then.
             var searchQuery = $"SELECT COUNT(*) FROM {Constants.TableName}";
-            var searchCount = await qldbDriver.Execute(async txn =>
-            {
-                var result = await txn.Execute(searchQuery);
-
-                int count = -1;
-                await foreach (var row in result)
-                {
-                    // This gives:
-                    // {
-                    //    _1: 1
-                    // }
-                    IIonValue ionValue = row.GetField("_1");
-                    count = ((IIonInt)ionValue).IntValue;
-                }
-                return count;
-            });
-            Assert.AreEqual(0, searchCount);
+            var searchCount = await ExecuteAndReturnField(searchQuery, "_1");
+            Assert.AreEqual(0, searchCount.IntValue);
         }
 
         [TestMethod]
@@ -528,53 +301,16 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             List<IIonValue> parameters = new List<IIonValue>() { ionStruct1, ionStruct2 };
 
             var query = $"INSERT INTO {Constants.TableName} <<?,?>>";
-            var count = await qldbDriver.Execute(async txn =>
-            {
-                var result = await txn.Execute(query, parameters);
-
-                var count = 0;
-                await foreach (var row in result)
-                {
-                    count++;
-                }
-                return count;
-            });
-            Assert.AreEqual(2, count);
+            Assert.AreEqual(2, await ExecuteWithParamsAndReturnRowCount(query, parameters));
 
             // When.
             var deleteQuery = $"DELETE FROM { Constants.TableName}";
-            var deleteCount = await qldbDriver.Execute(async txn =>
-            {
-                var result = await txn.Execute(deleteQuery);
-
-                var count = 0;
-                await foreach (var row in result)
-                {
-                    count++;
-                }
-                return count;
-            });
-            Assert.AreEqual(2, deleteCount);
+            Assert.AreEqual(2, await ExecuteAndReturnRowCount(deleteQuery));
 
             // Then.
             var searchQuery = $"SELECT COUNT(*) FROM {Constants.TableName}";
-            var searchCount = await qldbDriver.Execute(async txn =>
-            {
-                var result = await txn.Execute(searchQuery);
-
-                int count = -1;
-                await foreach (var row in result)
-                {
-                    // This gives:
-                    // {
-                    //    _1: 1
-                    // }
-                    IIonValue ionValue = row.GetField("_1");
-                    count = ((IIonInt)ionValue).IntValue;
-                }
-                return count;
-            });
-            Assert.AreEqual(0, searchCount);
+            var searchCount = await ExecuteAndReturnField(searchQuery, "_1");
+            Assert.AreEqual(0, searchCount.IntValue);
         }
 
         [TestMethod]
@@ -589,22 +325,14 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             IIonValue ionStruct = ValueFactory.NewEmptyStruct();
             ionStruct.SetField(Constants.ColumnName, ValueFactory.NewInt(0));
 
-            var query = $"INSERT INTO {Constants.TableName} ?";
-            var count = await driver.Execute(async txn =>
-            {
-                var result = await txn.Execute(query, ionStruct);
-
-                var count = 0;
-                await foreach (var row in result)
-                {
-                    count++;
-                }
-                return count;
-            });
-            Assert.AreEqual(1, count);
+            var insertQuery = $"INSERT INTO {Constants.TableName} ?";
+            var insertCount = await driver.Execute(async txn => await (await txn.Execute(insertQuery, ionStruct)).CountAsync());
+            Assert.AreEqual(1, insertCount);
 
             string selectQuery = $"SELECT VALUE {Constants.ColumnName} FROM {Constants.TableName}";
             string updateQuery = $"UPDATE {Constants.TableName} SET {Constants.ColumnName} = ?";
+
+            RetryPolicy retryPolicy = RetryPolicy.Builder().WithMaxRetries(0).Build();
 
             // For testing purposes only. Forcefully causes an OCC conflict to occur.
             // Do not invoke QldbDriver.Execute within the lambda function under normal circumstances.
@@ -624,8 +352,8 @@ namespace Amazon.QLDB.Driver.IntegrationTests
                     // Update document.
                     var ionValue = ValueFactory.NewInt(currentValue + 5);
                     await txn.Execute(updateQuery, ionValue);
-                }, RetryPolicy.Builder().WithMaxRetries(0).Build());
-            }, RetryPolicy.Builder().WithMaxRetries(0).Build());
+                }, retryPolicy);
+            }, retryPolicy);
         }
 
         [TestMethod]
@@ -638,18 +366,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             ionStruct.SetField(Constants.ColumnName, ionValue);
 
             var query = $"INSERT INTO {Constants.TableName} ?";
-            var insertCount = await qldbDriver.Execute(async txn =>
-            {
-                var result = await txn.Execute(query, ionStruct);
-
-                var count = 0;
-                await foreach (var row in result)
-                {
-                    count++;
-                }
-                return count;
-            });
-            Assert.AreEqual(1, insertCount);
+            Assert.AreEqual(1, await ExecuteWithParamAndReturnRowCount(query, ionStruct));
 
             // When.
             IIonValue searchResult;
@@ -657,33 +374,13 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             {
                 var searchQuery = $@"SELECT VALUE { Constants.ColumnName } FROM { Constants.TableName }
                                      WHERE { Constants.ColumnName } IS NULL";
-                searchResult = await qldbDriver.Execute(async txn =>
-                {
-                    var result = await txn.Execute(searchQuery);
-
-                    IIonValue ionVal = null;
-                    await foreach (var row in result)
-                    {
-                        ionVal = row;
-                    }
-                    return ionVal;
-                });
+                searchResult = await ExecuteAndReturnIonValue(searchQuery);
             }
             else
             {
                 var searchQuery = $@"SELECT VALUE { Constants.ColumnName } FROM { Constants.TableName }
                                      WHERE { Constants.ColumnName } = ?";
-                searchResult = await qldbDriver.Execute(async txn =>
-                {
-                    var result = await txn.Execute(searchQuery, ionValue);
-
-                    IIonValue ionVal = null;
-                    await foreach (var row in result)
-                    {
-                        ionVal = row;
-                    }
-                    return ionVal;
-                });
+                searchResult = await ExecuteWithParamAndReturnIonValue(searchQuery, ionValue);
             }
 
             // Then.
@@ -705,33 +402,11 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             // Insert first record which will be subsequently updated.
             var insertQuery = $"INSERT INTO {Constants.TableName} ?";
-            var insertCount = await qldbDriver.Execute(async txn =>
-            {
-                var result = await txn.Execute(insertQuery, ionStruct);
-
-                var count = 0;
-                await foreach (var row in result)
-                {
-                    count++;
-                }
-                return count;
-            });
-            Assert.AreEqual(1, insertCount);
+            Assert.AreEqual(1, await ExecuteWithParamAndReturnRowCount(insertQuery, ionStruct));
 
             // When.
             var updateQuery = $"UPDATE { Constants.TableName } SET { Constants.ColumnName } = ?";
-            var updateCount = await qldbDriver.Execute(async txn =>
-            {
-                var result = await txn.Execute(updateQuery, ionValue);
-
-                var count = 0;
-                await foreach (var row in result)
-                {
-                    count++;
-                }
-                return count;
-            });
-            Assert.AreEqual(1, updateCount);
+            Assert.AreEqual(1, await ExecuteWithParamAndReturnRowCount(updateQuery, ionValue));
 
             // Then.
             IIonValue searchResult;
@@ -739,33 +414,13 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             {
                 var searchQuery = $@"SELECT VALUE { Constants.ColumnName } FROM { Constants.TableName }
                                      WHERE { Constants.ColumnName } IS NULL";
-                searchResult = await qldbDriver.Execute(async txn =>
-                {
-                    var result = await txn.Execute(searchQuery);
-
-                    IIonValue ionVal = null;
-                    await foreach (var row in result)
-                    {
-                        ionVal = row;
-                    }
-                    return ionVal;
-                });
+                searchResult = await ExecuteAndReturnIonValue(searchQuery);
             }
             else
             {
                 var searchQuery = $@"SELECT VALUE { Constants.ColumnName } FROM { Constants.TableName }
                                      WHERE { Constants.ColumnName } = ?";
-                searchResult = await qldbDriver.Execute(async txn =>
-                {
-                    var result = await txn.Execute(searchQuery, ionValue);
-
-                    IIonValue ionVal = null;
-                    await foreach (var row in result)
-                    {
-                        ionVal = row;
-                    }
-                    return ionVal;
-                });
+                searchResult = await ExecuteWithParamAndReturnIonValue(searchQuery, ionValue);
             }
 
             if (searchResult.Type() != ionValue.Type())
@@ -790,18 +445,8 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             // Then.
             var searchQuery = $@"SELECT VALUE {Constants.ColumnName} FROM {Constants.TableName}
                                  WHERE {Constants.ColumnName} = '{Constants.SingleDocumentValue}'";
-            var value = await qldbDriver.Execute(async txn =>
-            {
-                var result = await txn.Execute(searchQuery);
-
-                string value = "";
-                await foreach (var row in result)
-                {
-                    value = row.StringValue;
-                }
-                return value;
-            });
-            Assert.AreEqual(Constants.SingleDocumentValue, value);
+            var ionVal = await ExecuteAndReturnIonValue(searchQuery);
+            Assert.AreEqual(Constants.SingleDocumentValue, ionVal.StringValue);
         }
 
         [TestMethod]
@@ -818,12 +463,10 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         [TestMethod]
         public async Task ExecuteAsync_ExecutionMetrics()
         {
-            await qldbDriver.Execute(async txn =>
-            {
-                var insertQuery = String.Format("INSERT INTO {0} << {{'col': 1}}, {{'col': 2}}, {{'col': 3}} >>",
-                    Constants.TableName);
-                await txn.Execute(insertQuery);
-            });
+            var insertQuery = String.Format("INSERT INTO {0} << {{'col': 1}}, {{'col': 2}}, {{'col': 3}} >>",
+               Constants.TableName);
+
+            await qldbDriver.Execute(async txn => await txn.Execute(insertQuery));
 
             // Given
             var selectQuery = String.Format("SELECT * FROM {0} as a, {0} as b, {0} as c, {0} as d, {0} as e, {0} as f",
@@ -852,20 +495,101 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             });
 
             // When
-            var result = await qldbDriver.Execute(async txn =>
-            {
-                return await txn.Execute(selectQuery);
-            });
+            var result = await qldbDriver.Execute(async txn => await txn.Execute(selectQuery));
 
             var ioUsage = result.GetConsumedIOs();
             var timingInfo = result.GetTimingInformation();
 
             Assert.IsNotNull(ioUsage);
             Assert.IsNotNull(timingInfo);
+
             // The 1092 value is from selectQuery, that performs self joins on a table.
             Assert.AreEqual(1092, ioUsage?.ReadIOs);  
             Assert.IsTrue(timingInfo?.ProcessingTimeMilliseconds > 0);
         }
+        
+        private static async Task<int> ExecuteAndReturnRowCount(string statement)
+        {
+            return await qldbDriver.Execute(async txn =>
+            {
+                var result = await txn.Execute(statement);
 
+                return await result.CountAsync();
+            });
+        }
+        
+        private static async Task<int> ExecuteWithParamAndReturnRowCount(string statement, IIonValue param)
+        {
+            return await qldbDriver.Execute(async txn =>
+            {
+                var result = await txn.Execute(statement, param);
+                
+                return await result.CountAsync();
+            });
+        }
+        
+        private static async Task<int> ExecuteWithParamsAndReturnRowCount(string statement, List<IIonValue> parameters)
+        {
+            return await qldbDriver.Execute(async txn =>
+            {
+                var result = await txn.Execute(statement, parameters);
+                
+                return await result.CountAsync();
+            });
+        }
+
+        private static async Task<IIonValue> ExecuteAndReturnIonValue(string statement)
+        {
+            return await qldbDriver.Execute(async txn =>
+            {
+                var result = await txn.Execute(statement);
+
+                IIonValue value = null;
+                await foreach (var row in result)
+                {
+                    value = row;
+                }
+                return value;
+            });
+        }
+        
+        private static async Task<IIonValue> ExecuteWithParamAndReturnIonValue(string statement, IIonValue param)
+        {
+            return await qldbDriver.Execute(async txn =>
+            {
+                var result = await txn.Execute(statement, param);
+
+                IIonValue value = null;
+                await foreach (var row in result)
+                {
+                    value = row;
+                }
+                return value;
+            });
+        }
+        
+        private static async Task<IIonValue> ExecuteAndReturnField(string statement, string fieldName)
+        {
+            return await qldbDriver.Execute(async txn =>
+            {
+                var result = await txn.Execute(statement);
+
+                IIonValue ionValue = null;
+                await foreach (var row in result)
+                {
+                    ionValue = row.GetField(fieldName);
+                }
+                return ionValue;
+            });
+        }
+        
+        private static async Task<bool> ConfirmTable(string tableName)
+        {
+            var result = await qldbDriver.ListTableNames();
+            
+            var tables = result.ToList();
+
+            return tables.Contains(tableName);
+        }
     }
 }
