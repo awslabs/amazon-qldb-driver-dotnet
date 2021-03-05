@@ -43,9 +43,9 @@ namespace Amazon.QLDB.Driver
         /// <summary>
         /// Initializes a new instance of the <see cref="QldbTransactionException"/> class.
         /// </summary>
+        /// <param name="errorMessage">The customized error message.</param>
         /// <param name="transactionId">The transaction ID.</param>
         /// <param name="innerException">The inner exception.</param>
-        /// <param name="errorMessage">The customized error message.</param>
         public QldbTransactionException(string errorMessage, string transactionId, Exception innerException)
            : this(errorMessage, transactionId, true, innerException)
         {
@@ -65,8 +65,8 @@ namespace Amazon.QLDB.Driver
         /// Initializes a new instance of the <see cref="QldbTransactionException"/> class.
         /// </summary>
         /// <param name="transactionId">The transaction ID.</param>
-        /// <param name="innerException">The inner exception.</param>
         /// <param name="isSessionAlive">Whether the session is still alive.</param>
+        /// <param name="innerException">The inner exception.</param>
         public QldbTransactionException(string transactionId, bool isSessionAlive, Exception innerException)
             : this("QLDB Transaction Exception.", transactionId, isSessionAlive, innerException)
         {
@@ -75,10 +75,10 @@ namespace Amazon.QLDB.Driver
         /// <summary>
         /// Initializes a new instance of the <see cref="QldbTransactionException"/> class.
         /// </summary>
-        /// <param name="transactionId">The transaction ID.</param>
-        /// <param name="innerException">The inner exception.</param>
-        /// <param name="isSessionAlive">Whether the session is still alive.</param>
         /// <param name="errorMessage">The customized error message.</param>
+        /// <param name="transactionId">The transaction ID.</param>
+        /// <param name="isSessionAlive">Whether the session is still alive.</param>
+        /// <param name="innerException">The inner exception.</param>
         public QldbTransactionException(string errorMessage, string transactionId, bool isSessionAlive, Exception innerException)
            : base(errorMessage, innerException)
         {

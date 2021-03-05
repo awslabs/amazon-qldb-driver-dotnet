@@ -23,7 +23,7 @@ namespace Amazon.QLDB.Driver
     /// <para>The asynchronous implementation of Retry Handler.</para>
     ///
     /// <para>The driver retries in two scenarios: retrying inside a session, and retrying with another session. In the
-    /// second case, it would require a <i>recover</i> action to reset the session into a working state.
+    /// second case, it would require a <i>recover</i> action to reset the session into a working state.</para>
     /// </summary>
     internal class AsyncRetryHandler : BaseRetryHandler, IAsyncRetryHandler
     {

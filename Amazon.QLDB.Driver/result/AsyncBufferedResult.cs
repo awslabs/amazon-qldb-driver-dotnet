@@ -27,7 +27,7 @@ namespace Amazon.QLDB.Driver
     public class AsyncBufferedResult : BaseBufferedResult, IAsyncResult
     {
         /// <summary>
-        /// Prevents a default instance of the <see cref="AsyncBufferedResult"/> class from being created.
+        /// Initializes a new instance of the <see cref="AsyncBufferedResult"/> class.
         /// </summary>
         ///
         /// <param name="values">Buffer values.</param>

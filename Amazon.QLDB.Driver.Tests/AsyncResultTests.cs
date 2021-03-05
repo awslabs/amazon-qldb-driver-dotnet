@@ -27,37 +27,37 @@ namespace Amazon.QLDB.Driver.Tests
     {
         private static AsyncResult result;
         private static Mock<Session> mockSession;
-        private static readonly MemoryStream memoryStream = new();
-        private static readonly ValueHolder valueHolder = new()
+        private static readonly MemoryStream MemoryStream = new();
+        private static readonly ValueHolder ValueHolder = new()
         {
-            IonBinary = memoryStream,
+            IonBinary = MemoryStream,
             IonText = "ionText"
         };
-        private static readonly List<ValueHolder> valueHolderList = new() { valueHolder };
+        private static readonly List<ValueHolder> ValueHolderList = new() { ValueHolder };
 
-        private static readonly long executeReads = 1;
-        private static readonly long executeWrites = 2;
-        private static readonly long executeTime = 100;
-        private static readonly IOUsage executeIO = new()
+        private static readonly long ExecuteReads = 1;
+        private static readonly long ExecuteWrites = 2;
+        private static readonly long ExecuteTime = 100;
+        private static readonly IOUsage ExecuteIO = new()
         {
-            ReadIOs = executeReads,
-            WriteIOs = executeWrites
+            ReadIOs = ExecuteReads,
+            WriteIOs = ExecuteWrites
         };
-        private static readonly TimingInformation executeTiming = new()
+        private static readonly TimingInformation ExecuteTiming = new()
         {
-            ProcessingTimeMilliseconds = executeTime
+            ProcessingTimeMilliseconds = ExecuteTime
         };
-        private static readonly long fetchReads = 10;
-        private static readonly long fetchWrites = 20;
-        private static readonly long fetchTime = 1000;
-        private static readonly IOUsage fetchIO = new()
+        private static readonly long FetchReads = 10;
+        private static readonly long FetchWrites = 20;
+        private static readonly long FetchTime = 1000;
+        private static readonly IOUsage FetchIO = new()
         {
-            ReadIOs = fetchReads,
-            WriteIOs = fetchWrites
+            ReadIOs = FetchReads,
+            WriteIOs = FetchWrites
         };
-        private static readonly TimingInformation fetchTiming = new()
+        private static readonly TimingInformation FetchTiming = new()
         {
-            ProcessingTimeMilliseconds = fetchTime
+            ProcessingTimeMilliseconds = FetchTime
         };
 
         [TestInitialize]
@@ -68,7 +68,7 @@ namespace Amazon.QLDB.Driver.Tests
                 FirstPage = new Page
                 {
                     NextPageToken = "hasNextPage",
-                    Values = valueHolderList
+                    Values = ValueHolderList
                 }
             };
 
@@ -149,8 +149,8 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public async Task TestAsyncQueryStatsNullExecuteNullFetch()
         {
-            var executeResult = TestingUtilities.GetExecuteResultNullStats(valueHolderList);
-            var fetchPageResult = TestingUtilities.GetFetchResultNullStats(valueHolderList);
+            var executeResult = TestingUtilities.GetExecuteResultNullStats(ValueHolderList);
+            var fetchPageResult = TestingUtilities.GetFetchResultNullStats(ValueHolderList);
         
             mockSession.Setup(m => m.FetchPageAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(fetchPageResult);
@@ -177,8 +177,8 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public async Task TestAsyncQueryStatsNullExecuteHasFetch()
         {
-            var executeResult = TestingUtilities.GetExecuteResultNullStats(valueHolderList);
-            var fetchPageResult = TestingUtilities.GetFetchResultWithStats(valueHolderList, fetchIO, fetchTiming);
+            var executeResult = TestingUtilities.GetExecuteResultNullStats(ValueHolderList);
+            var fetchPageResult = TestingUtilities.GetFetchResultWithStats(ValueHolderList, FetchIO, FetchTiming);
         
             mockSession.Setup(m => m.FetchPageAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(fetchPageResult);
@@ -198,16 +198,16 @@ namespace Amazon.QLDB.Driver.Tests
         
             io = result.GetConsumedIOs();
             timing = result.GetTimingInformation();
-            Assert.AreEqual(fetchReads, io?.ReadIOs);
-            Assert.AreEqual(fetchWrites, io?.WriteIOs);
-            Assert.AreEqual(fetchTime, timing?.ProcessingTimeMilliseconds);
+            Assert.AreEqual(FetchReads, io?.ReadIOs);
+            Assert.AreEqual(FetchWrites, io?.WriteIOs);
+            Assert.AreEqual(FetchTime, timing?.ProcessingTimeMilliseconds);
         }
         
         [TestMethod]
         public async Task TestAsyncQueryStatsHasExecuteNullFetch()
         {
-            var executeResult = TestingUtilities.GetExecuteResultWithStats(valueHolderList, executeIO, executeTiming);
-            var fetchPageResult = TestingUtilities.GetFetchResultNullStats(valueHolderList);
+            var executeResult = TestingUtilities.GetExecuteResultWithStats(ValueHolderList, ExecuteIO, ExecuteTiming);
+            var fetchPageResult = TestingUtilities.GetFetchResultNullStats(ValueHolderList);
         
             mockSession.Setup(m => m.FetchPageAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(fetchPageResult);
@@ -216,9 +216,9 @@ namespace Amazon.QLDB.Driver.Tests
         
             var io = result.GetConsumedIOs();
             var timing = result.GetTimingInformation();
-            Assert.AreEqual(executeReads, io?.ReadIOs);
-            Assert.AreEqual(executeWrites, io?.WriteIOs);
-            Assert.AreEqual(executeTime, timing?.ProcessingTimeMilliseconds);
+            Assert.AreEqual(ExecuteReads, io?.ReadIOs);
+            Assert.AreEqual(ExecuteWrites, io?.WriteIOs);
+            Assert.AreEqual(ExecuteTime, timing?.ProcessingTimeMilliseconds);
         
             var results = result.GetAsyncEnumerator();
             while (await results.MoveNextAsync())
@@ -228,16 +228,16 @@ namespace Amazon.QLDB.Driver.Tests
         
             io = result.GetConsumedIOs();
             timing = result.GetTimingInformation();
-            Assert.AreEqual(executeReads, io?.ReadIOs);
-            Assert.AreEqual(executeWrites, io?.WriteIOs);
-            Assert.AreEqual(executeTime, timing?.ProcessingTimeMilliseconds);
+            Assert.AreEqual(ExecuteReads, io?.ReadIOs);
+            Assert.AreEqual(ExecuteWrites, io?.WriteIOs);
+            Assert.AreEqual(ExecuteTime, timing?.ProcessingTimeMilliseconds);
         }
         
         [TestMethod]
         public async Task TestAsyncQueryStatsHasExecuteHasFetch()
         {
-            var executeResult = TestingUtilities.GetExecuteResultWithStats(valueHolderList, executeIO, executeTiming);
-            var fetchPageResult = TestingUtilities.GetFetchResultWithStats(valueHolderList, fetchIO, fetchTiming);
+            var executeResult = TestingUtilities.GetExecuteResultWithStats(ValueHolderList, ExecuteIO, ExecuteTiming);
+            var fetchPageResult = TestingUtilities.GetFetchResultWithStats(ValueHolderList, FetchIO, FetchTiming);
         
             mockSession.Setup(m => m.FetchPageAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(fetchPageResult);
@@ -246,9 +246,9 @@ namespace Amazon.QLDB.Driver.Tests
         
             var io = result.GetConsumedIOs();
             var timing = result.GetTimingInformation();
-            Assert.AreEqual(executeReads, io?.ReadIOs);
-            Assert.AreEqual(executeWrites, io?.WriteIOs);
-            Assert.AreEqual(executeTime, timing?.ProcessingTimeMilliseconds);
+            Assert.AreEqual(ExecuteReads, io?.ReadIOs);
+            Assert.AreEqual(ExecuteWrites, io?.WriteIOs);
+            Assert.AreEqual(ExecuteTime, timing?.ProcessingTimeMilliseconds);
         
             var results = result.GetAsyncEnumerator();
             while (await results.MoveNextAsync())
@@ -258,9 +258,9 @@ namespace Amazon.QLDB.Driver.Tests
         
             io = result.GetConsumedIOs();
             timing = result.GetTimingInformation();
-            Assert.AreEqual(executeReads + fetchReads, io?.ReadIOs);
-            Assert.AreEqual(executeWrites + fetchWrites, io?.WriteIOs);
-            Assert.AreEqual(executeTime + fetchTime, timing?.ProcessingTimeMilliseconds);
+            Assert.AreEqual(ExecuteReads + FetchReads, io?.ReadIOs);
+            Assert.AreEqual(ExecuteWrites + FetchWrites, io?.WriteIOs);
+            Assert.AreEqual(ExecuteTime + FetchTime, timing?.ProcessingTimeMilliseconds);
         }
     }
 }
