@@ -31,7 +31,7 @@ namespace Amazon.QLDB.Driver
     ///
     /// Child Result objects will be closed when the transaction is aborted or committed.
     /// </summary>
-    internal class AsyncTransaction : BaseTransaction
+    internal class AsyncTransaction : BaseTransaction, IAsyncTransaction
     {
         private readonly CancellationToken cancellationToken;
 
@@ -55,7 +55,7 @@ namespace Amazon.QLDB.Driver
         /// </summary>
         ///
         /// <returns>A task representing the asynchronous abort operation.</returns>
-        internal virtual async Task Abort()
+        public virtual async Task Abort()
         {
             if (!this.isClosed)
             {
@@ -73,7 +73,7 @@ namespace Amazon.QLDB.Driver
         /// <exception cref="AmazonServiceException">Thrown when there is an error committing this transaction against QLDB.</exception>
         /// <exception cref="QldbDriverException">Thrown when this transaction has been disposed.</exception>
         /// <returns>A task representing the asynchronous commit operation.</returns>
-        internal async Task Commit()
+        public async Task Commit()
         {
             try
             {
@@ -133,7 +133,7 @@ namespace Amazon.QLDB.Driver
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
         /// <exception cref="QldbDriverException">Thrown when this transaction has been disposed.</exception>
-        internal virtual async Task<IAsyncResult> Execute(string statement)
+        public virtual async Task<IAsyncResult> Execute(string statement)
         {
             return await this.Execute(statement, new List<IIonValue>());
         }
@@ -149,7 +149,7 @@ namespace Amazon.QLDB.Driver
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
         /// <exception cref="QldbDriverException">Thrown when this transaction has been disposed.</exception>
-        internal virtual async Task<IAsyncResult> Execute(string statement, List<IIonValue> parameters)
+        public virtual async Task<IAsyncResult> Execute(string statement, List<IIonValue> parameters)
         {
             ValidationUtils.AssertStringNotEmpty(statement, "statement");
 
@@ -172,7 +172,7 @@ namespace Amazon.QLDB.Driver
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
         /// <exception cref="QldbDriverException">Thrown when this transaction has been disposed.</exception>
-        internal virtual async Task<IAsyncResult> Execute(string statement, params IIonValue[] parameters)
+        public virtual async Task<IAsyncResult> Execute(string statement, params IIonValue[] parameters)
         {
             return await this.Execute(statement, new List<IIonValue>(parameters));
         }
