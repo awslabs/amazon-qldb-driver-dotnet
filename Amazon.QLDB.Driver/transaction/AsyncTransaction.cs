@@ -111,7 +111,7 @@ namespace Amazon.QLDB.Driver
         /// </summary>
         ///
         /// <returns>A value task representing the asynchronous abort operation.</returns>
-        internal async ValueTask DisposeAsync()
+        public async ValueTask DisposeAsync()
         {
             try
             {
