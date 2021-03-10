@@ -535,11 +535,17 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             {
                 var result = await txn.Execute(statement);
 
+                int count = 0;
                 IIonValue value = null;
                 await foreach (var row in result)
                 {
+                    count++;
                     value = row;
                 }
+                
+                // Confirm we only have 1 row in result set.
+                Assert.AreEqual(1, count);
+
                 return value;
             });
         }
@@ -550,11 +556,17 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             {
                 var result = await txn.Execute(statement, param);
 
+                int count = 0;
                 IIonValue value = null;
                 await foreach (var row in result)
                 {
+                    count++;
                     value = row;
                 }
+
+                // Confirm we only have 1 row in result set.
+                Assert.AreEqual(1, count);
+
                 return value;
             });
         }
@@ -565,11 +577,17 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             {
                 var result = await txn.Execute(statement);
 
+                int count = 0;
                 IIonValue ionValue = null;
                 await foreach (var row in result)
                 {
+                    count++;
                     ionValue = row.GetField(fieldName);
                 }
+
+                // Confirm we only have 1 row in result set.
+                Assert.AreEqual(1, count);
+
                 return ionValue;
             });
         }
