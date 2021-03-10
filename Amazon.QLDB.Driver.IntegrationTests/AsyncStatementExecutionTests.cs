@@ -543,7 +543,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
                     value = row;
                 }
                 
-                // Confirm we only have 1 row in result set.
+                // Confirm we have only 1 row in result set.
                 Assert.AreEqual(1, count);
 
                 return value;
@@ -564,7 +564,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
                     value = row;
                 }
 
-                // Confirm we only have 1 row in result set.
+                // Confirm we have only 1 row in result set.
                 Assert.AreEqual(1, count);
 
                 return value;
@@ -585,7 +585,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
                     ionValue = row.GetField(fieldName);
                 }
 
-                // Confirm we only have 1 row in result set.
+                // Confirm we have only 1 row in result set.
                 Assert.AreEqual(1, count);
 
                 return ionValue;
