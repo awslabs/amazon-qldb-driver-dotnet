@@ -501,22 +501,12 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         
         private static async Task<int> ExecuteAndReturnRowCount(string statement)
         {
-            return await qldbDriver.Execute(async txn =>
-            {
-                var result = await txn.Execute(statement);
-
-                return await result.CountAsync();
-            });
+            return await ExecuteWithParamsAndReturnRowCount(statement, new List<IIonValue>());
         }
         
         private static async Task<int> ExecuteWithParamAndReturnRowCount(string statement, IIonValue param)
         {
-            return await qldbDriver.Execute(async txn =>
-            {
-                var result = await txn.Execute(statement, param);
-                
-                return await result.CountAsync();
-            });
+            return await ExecuteWithParamsAndReturnRowCount(statement, new List<IIonValue>{ param });
         }
         
         private static async Task<int> ExecuteWithParamsAndReturnRowCount(string statement, List<IIonValue> parameters)
@@ -531,30 +521,31 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
         private static async Task<IIonValue> ExecuteAndReturnIonValue(string statement)
         {
-            return await qldbDriver.Execute(async txn =>
-            {
-                var result = await txn.Execute(statement);
-
-                IIonValue value = null;
-                await foreach (var row in result)
-                {
-                    value = row;
-                }
-                return value;
-            });
+            return await ExecuteWithParamsAndReturnIonValue(statement, new List<IIonValue>());
         }
         
         private static async Task<IIonValue> ExecuteWithParamAndReturnIonValue(string statement, IIonValue param)
         {
+            return await ExecuteWithParamsAndReturnIonValue(statement, new List<IIonValue>{ param });
+        }
+        
+        private static async Task<IIonValue> ExecuteWithParamsAndReturnIonValue(string statement, List<IIonValue> parameters)
+        {
             return await qldbDriver.Execute(async txn =>
             {
-                var result = await txn.Execute(statement, param);
+                var result = await txn.Execute(statement, parameters);
 
+                int count = 0;
                 IIonValue value = null;
                 await foreach (var row in result)
                 {
+                    count++;
                     value = row;
                 }
+
+                // Confirm we have only 1 row in result set.
+                Assert.AreEqual(1, count);
+
                 return value;
             });
         }
@@ -565,11 +556,17 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             {
                 var result = await txn.Execute(statement);
 
+                int count = 0;
                 IIonValue ionValue = null;
                 await foreach (var row in result)
                 {
+                    count++;
                     ionValue = row.GetField(fieldName);
                 }
+
+                // Confirm we have only 1 row in result set.
+                Assert.AreEqual(1, count);
+
                 return ionValue;
             });
         }
