@@ -29,9 +29,10 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         {
             // Get AWS configuration properties from .runsettings file.
             string region = context.Properties["region"].ToString();
+            const string ledgerName = "DotnetSessionManagement";
 
             amazonQldbSessionConfig = IntegrationTestBase.CreateAmazonQLDBSessionConfig(region);
-            integrationTestBase = new IntegrationTestBase(Constants.LedgerName, region);
+            integrationTestBase = new IntegrationTestBase(ledgerName, region);
 
             integrationTestBase.RunForceDeleteLedger();
 
@@ -41,7 +42,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         [ClassCleanup]
         public static void ClassCleanup()
         {
-            integrationTestBase.RunDeleteLedger();
+            integrationTestBase.RunForceDeleteLedger();
         }
 
         [TestMethod]

@@ -35,9 +35,10 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         {
             // Get AWS configuration properties from .runsettings file.
             string region = context.Properties["region"].ToString();
+            const string ledgerName = "DotnetStatementExecution";
 
             amazonQldbSessionConfig = IntegrationTestBase.CreateAmazonQLDBSessionConfig(region);
-            integrationTestBase = new IntegrationTestBase(Constants.LedgerName, region);
+            integrationTestBase = new IntegrationTestBase(ledgerName, region);
 
             integrationTestBase.RunForceDeleteLedger();
 
@@ -69,8 +70,8 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         [ClassCleanup]
         public static void ClassCleanup()
         {
-            integrationTestBase.RunDeleteLedger();
             qldbDriver.Dispose();
+            integrationTestBase.RunForceDeleteLedger();
         }
 
         [TestCleanup]
@@ -842,7 +843,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
                 // The 1092 value is from selectQuery, that performs self joins on a table.
                 Assert.AreEqual(1092, readIOs);
-                Assert.IsTrue(processingTime > 0);  
+                Assert.IsTrue(processingTime > 0);
             });
 
             // When
@@ -859,6 +860,6 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             // The 1092 value is from selectQuery, that performs self joins on a table.
             Assert.AreEqual(1092, ioUsage?.ReadIOs);
             Assert.IsTrue(timingInfo?.ProcessingTimeMilliseconds > 0);
-        }    
+        }
     }
 }

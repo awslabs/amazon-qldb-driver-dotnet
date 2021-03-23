@@ -23,7 +23,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
-    
+
     [TestClass]
     public class AsyncStatementExecutionTests
     {
@@ -40,9 +40,10 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         {
             // Get AWS configuration properties from .runsettings file.
             string region = context.Properties["region"].ToString();
+            const string ledgerName = "DotnetAsyncStatementExecution";
 
             amazonQldbSessionConfig = IntegrationTestBase.CreateAmazonQLDBSessionConfig(region);
-            integrationTestBase = new IntegrationTestBase(Constants.LedgerName, region);
+            integrationTestBase = new IntegrationTestBase(ledgerName, region);
 
             integrationTestBase.RunForceDeleteLedger();
 
@@ -53,15 +54,15 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             var query = $"CREATE TABLE {Constants.TableName}";
 
             Assert.AreEqual(1, await ExecuteAndReturnRowCount(query));
-            
+
             Assert.IsTrue(await ConfirmTableExists(Constants.TableName));
         }
 
         [ClassCleanup]
         public static void ClassCleanup()
         {
-            integrationTestBase.RunDeleteLedger();
             qldbDriver.Dispose();
+            integrationTestBase.RunForceDeleteLedger();
         }
 
         [TestCleanup]
@@ -77,7 +78,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             // Given.
             var createTableQuery = $"CREATE TABLE {Constants.CreateTableName}";
             Assert.AreEqual(1, await ExecuteAndReturnRowCount(createTableQuery));
-            
+
             // Ensure table is created.
             Assert.IsTrue(await ConfirmTableExists(Constants.CreateTableName));
 
@@ -97,7 +98,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             // Then.
             Assert.AreEqual(1, result.Count());
-            
+
             Assert.IsTrue(result.Contains(Constants.TableName));
         }
 
@@ -230,7 +231,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         {
             // Given.
             // Create Ion structs to insert as parameters.
-            List<IIonValue> parameters = 
+            List<IIonValue> parameters =
                 new List<IIonValue> { GetSingleValueIonStruct(IonString1), GetSingleValueIonStruct(IonString2) };
 
             // When.
@@ -281,7 +282,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         {
             // Given.
             // Create Ion structs to insert as parameters.
-            List<IIonValue> parameters = 
+            List<IIonValue> parameters =
                 new List<IIonValue> { GetSingleValueIonStruct(IonString1), GetSingleValueIonStruct(IonString2) };
 
             var query = $"INSERT INTO {Constants.TableName} <<?,?>>";
@@ -488,32 +489,32 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             Assert.AreEqual(1092, ioUsage?.ReadIOs);
             Assert.IsTrue(timingInfo?.ProcessingTimeMilliseconds > 0);
         }
-        
+
         private static async Task<bool> ConfirmTableExists(string tableName)
         {
             var result = await qldbDriver.ListTableNames();
-            
+
             var tables = result.ToList();
 
             return tables.Contains(tableName);
         }
-        
+
         private static async Task<int> ExecuteAndReturnRowCount(string statement)
         {
             return await ExecuteWithParamsAndReturnRowCount(statement, new List<IIonValue>());
         }
-        
+
         private static async Task<int> ExecuteWithParamAndReturnRowCount(string statement, IIonValue param)
         {
             return await ExecuteWithParamsAndReturnRowCount(statement, new List<IIonValue>{ param });
         }
-        
+
         private static async Task<int> ExecuteWithParamsAndReturnRowCount(string statement, List<IIonValue> parameters)
         {
             return await qldbDriver.Execute(async txn =>
             {
                 var result = await txn.Execute(statement, parameters);
-                
+
                 return await result.CountAsync();
             });
         }
@@ -522,12 +523,12 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         {
             return await ExecuteWithParamsAndReturnIonValue(statement, new List<IIonValue>());
         }
-        
+
         private static async Task<IIonValue> ExecuteWithParamAndReturnIonValue(string statement, IIonValue param)
         {
             return await ExecuteWithParamsAndReturnIonValue(statement, new List<IIonValue>{ param });
         }
-        
+
         private static async Task<IIonValue> ExecuteWithParamsAndReturnIonValue(string statement, List<IIonValue> parameters)
         {
             return await qldbDriver.Execute(async txn =>
@@ -548,7 +549,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
                 return value;
             });
         }
-        
+
         private static async Task<IIonValue> ExecuteAndReturnField(string statement, string fieldName)
         {
             return await qldbDriver.Execute(async txn =>
@@ -574,7 +575,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         {
             IIonValue ionStruct = ValueFactory.NewEmptyStruct();
             ionStruct.SetField(Constants.ColumnName, ionValue);
-            
+
             return ionStruct;
         }
     }
