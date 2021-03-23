@@ -11,7 +11,7 @@
  * and limitations under the License.
  */
 
-namespace Amazon.QLDB.Driver.IntegrationTests.utils
+namespace Amazon.QLDB.Driver.IntegrationTests
 {
     using NLog;
 

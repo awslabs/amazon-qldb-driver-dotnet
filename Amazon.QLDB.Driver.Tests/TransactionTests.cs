@@ -46,23 +46,6 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestDisposeCallsAbortException()
-        {
-            transaction.Dispose();
-            mockSession.Verify(m => m.AbortTransaction(), Times.Exactly(1));
-        }
-
-        [TestMethod]
-        public void TestDisposeWhenExceptionIsProperlyIgnored()
-        {
-            mockSession.Setup(m => m.AbortTransaction()).Throws(new AmazonServiceException(It.IsAny<string>()));
-
-            // Dispose should not throw exception
-            transaction.Dispose();
-            mockSession.Verify(m => m.AbortTransaction(), Times.Exactly(1));
-        }
-
-        [TestMethod]
         public void TestCommitCallsCommitTransaction()
         {
             mockSession.Setup(m => m.CommitTransaction(It.IsAny<string>(), It.IsAny<MemoryStream>()))
@@ -99,7 +82,7 @@ namespace Amazon.QLDB.Driver.Tests
                 .Throws(new AmazonServiceException(It.IsAny<string>()));
 
             Assert.ThrowsException<AmazonServiceException>(transaction.Commit);
-            mockSession.Verify(s => s.AbortTransaction(), Times.Exactly(1));
+            mockSession.Verify(s => s.AbortTransaction(), Times.Exactly(0));
         }
 
         [TestMethod]

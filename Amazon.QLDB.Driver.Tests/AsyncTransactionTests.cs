@@ -49,24 +49,6 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public async Task TestDisposeAsyncCallsAbortException()
-        {
-            await asyncTransaction.DisposeAsync();
-            mockSession.Verify(s => s.AbortTransactionAsync(It.IsAny<CancellationToken>()), Times.Exactly(1));
-        }
-
-        [TestMethod]
-        public async Task TestDisposeAsyncWhenExceptionIsProperlyIgnored()
-        {
-            mockSession.Setup(s => s.AbortTransactionAsync(It.IsAny<CancellationToken>()))
-                .Throws(new AmazonServiceException(It.IsAny<string>()));
-
-            // DisposeAsync should not throw exception
-            await asyncTransaction.DisposeAsync();
-            mockSession.Verify(s => s.AbortTransactionAsync(It.IsAny<CancellationToken>()), Times.Exactly(1));
-        }
-
-        [TestMethod]
         public async Task TestCommitCallsCommitTransaction()
         {
             mockSession.Setup(s => s.CommitTransactionAsync(It.IsAny<string>(), It.IsAny<MemoryStream>(),

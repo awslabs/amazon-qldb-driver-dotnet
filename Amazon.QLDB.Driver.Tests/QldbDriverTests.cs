@@ -15,11 +15,8 @@ namespace Amazon.QLDB.Driver.Tests
 {
     using System;
     using System.Collections.Generic;
-    using System.IO;
     using System.Linq;
     using System.Net;
-    using System.Threading;
-    using System.Threading.Tasks;
     using Amazon.IonDotnet.Tree;
     using Amazon.IonDotnet.Tree.Impl;
     using Amazon.QLDBSession;
@@ -28,62 +25,41 @@ namespace Amazon.QLDB.Driver.Tests
     using Microsoft.Extensions.Logging.Abstractions;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
+    using static TestingUtilities;
 
     [TestClass]
     public class QldbDriverTests
     {
         private const string TestTransactionId = "testTransactionId12345";
+        private const string TestRequestId = "testId";
+        private const string TestLedger = "ledgerName";
+
         private static QldbDriverBuilder builder;
-        private static Mock<AmazonQLDBSessionClient> mockClient;
-        private static readonly byte[] digest = new byte[] { 89, 49, 253, 196, 209, 176, 42, 98, 35, 214, 6, 163, 93,
-            141, 170, 92, 75, 218, 111, 151, 173, 49, 57, 144, 227, 72, 215, 194, 186, 93, 85, 108,
+        private static MockSessionClient mockClient;
+        private static QldbDriver testDriver;
+        private static readonly byte[] digest =
+        { 
+            172, 173, 243, 92, 129, 184, 254, 234, 173, 95, 107, 180, 60, 73, 11, 238,
+            6, 87, 197, 229, 178, 142, 155, 122, 218, 197, 23, 15, 241, 117, 92, 132
         };
 
         [TestInitialize]
         public void SetupTest()
         {
-            mockClient = new Mock<AmazonQLDBSessionClient>();
-            var sendCommandResponse = new SendCommandResponse
-            {
-                StartSession = new StartSessionResult
-                {
-                    SessionToken = "testToken"
-                },
-                StartTransaction = new StartTransactionResult
-                {
-                    TransactionId = "testTransactionIdddddd"
-                },
-                ExecuteStatement = new ExecuteStatementResult
-                {
-                    FirstPage = new Page
-                    {
-                        NextPageToken = null,
-                        Values = new List<ValueHolder>()
-                    }
-                },
-                CommitTransaction = new CommitTransactionResult
-                {
-                    CommitDigest = new MemoryStream(digest)
-                },
-                ResponseMetadata = new ResponseMetadata
-                {
-                    RequestId = "testId"
-                }
-            };
-            mockClient.Setup(x => x.SendCommandAsync(It.IsAny<SendCommandRequest>(), It.IsAny<CancellationToken>()))
-                    .Returns(Task.FromResult(sendCommandResponse));
             builder = QldbDriver.Builder()
                 .WithLedger("testLedger")
                 .WithRetryLogging()
                 .WithLogger(NullLogger.Instance)
                 .WithAWSCredentials(new Mock<AWSCredentials>().Object)
                 .WithQLDBSessionConfig(new AmazonQLDBSessionConfig());
-        }
-
-        [TestMethod]
-        public void TestBuilderGetsANotNullObject()
-        {
             Assert.IsNotNull(builder);
+            
+            mockClient = new MockSessionClient();
+            mockClient.SetDefaultResponse(DefaultSendCommandResponse("testToken", TestTransactionId, 
+                TestRequestId, digest));
+
+            testDriver = new QldbDriver(TestLedger, mockClient, 4, NullLogger.Instance);
+            Assert.IsNotNull(testDriver);
         }
 
         [TestMethod]
@@ -105,261 +81,300 @@ namespace Amazon.QLDB.Driver.Tests
         }
 
         [TestMethod]
-        public void TestQldbDriverConstructorReturnsValidObject()
-        {
-            var driver = new QldbDriver(
-                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
-                    new Mock<IRetryHandler>().Object, 4, NullLogger.Instance));
-
-            Assert.IsNotNull(driver);
-        }
-
-        [TestMethod]
         public void TestListTableNamesLists()
         {
             var factory = new ValueFactory();
             var tables = new List<string>() { "table1", "table2" };
-            var ions = tables.Select(t => TestingUtilities.CreateValueHolder(factory.NewString(t))).ToList();
+            var ions = tables.Select(t => CreateValueHolder(factory.NewString(t))).ToList();
 
             var h1 = QldbHash.ToQldbHash(TestTransactionId);
-            h1 = Transaction.Dot(h1, QldbDriver.TableNameQuery, new List<IIonValue> { });
+            h1 = Transaction.Dot(h1, QldbDriverBase<QldbSession>.TableNameQuery, new List<IIonValue> { });
 
-            var sendCommandResponseWithStartSession = new SendCommandResponse
-            {
-                StartSession = new StartSessionResult
-                {
-                    SessionToken = "testToken"
-                },
-                ResponseMetadata = new ResponseMetadata
-                {
-                    RequestId = "testId"
-                }
-            };
-            var sendCommandResponseStartTransaction = new SendCommandResponse
-            {
-                StartTransaction = new StartTransactionResult
-                {
-                    TransactionId = TestTransactionId
-                },
-                ResponseMetadata = new ResponseMetadata
-                {
-                    RequestId = "testId"
-                }
-            };
-            var sendCommandResponseExecute = new SendCommandResponse
-            {
-                ExecuteStatement = new ExecuteStatementResult
-                {
-                    FirstPage = new Page
-                    {
-                        NextPageToken = null,
-                        Values = ions
-                    }
-                },
-                ResponseMetadata = new ResponseMetadata
-                {
-                    RequestId = "testId"
-                }
-            };
-            var sendCommandResponseCommit = new SendCommandResponse
-            {
-                CommitTransaction = new CommitTransactionResult
-                {
-                    CommitDigest = new MemoryStream(h1.Hash),
-                    TransactionId = TestTransactionId
-                },
-                ResponseMetadata = new ResponseMetadata
-                {
-                    RequestId = "testId"
-                }
-            };
+            mockClient.QueueResponse(StartSessionResponse(TestRequestId));
+            mockClient.QueueResponse(StartTransactionResponse(TestTransactionId, TestRequestId));
+            mockClient.QueueResponse(ExecuteResponse(TestRequestId, ions));
+            mockClient.QueueResponse(CommitResponse(TestTransactionId, TestRequestId, h1.Hash));
 
-            mockClient.SetupSequence(x => x.SendCommandAsync(It.IsAny<SendCommandRequest>(), It.IsAny<CancellationToken>()))
-                    .Returns(Task.FromResult(sendCommandResponseWithStartSession))
-                    .Returns(Task.FromResult(sendCommandResponseStartTransaction))
-                    .Returns(Task.FromResult(sendCommandResponseExecute))
-                    .Returns(Task.FromResult(sendCommandResponseCommit));
-
-            var driver = new QldbDriver(
-                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
-                        QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 4, NullLogger.Instance));
-
-            var result = driver.ListTableNames();
+            var result = testDriver.ListTableNames();
 
             Assert.IsNotNull(result);
             CollectionAssert.AreEqual(tables, result.ToList());
+
+            mockClient.Clear();
+        }
+
+        [TestMethod]
+        public void TestGetSession_ExpectedSessionReturned()
+        {
+            QldbSession returnedSession = testDriver.GetSession();
+            Assert.IsNotNull(returnedSession);
+            Assert.AreEqual(TestRequestId, returnedSession.GetSessionId());
+        }
+
+        [TestMethod]
+        public void TestGetSession_GetTwoSessionsFromPoolOfOne_TimeoutOnSecondGet()
+        {
+            var driver = new QldbDriver(TestLedger, mockClient, 1, NullLogger.Instance);
+            QldbSession returnedSession = driver.GetSession();
+            Assert.ThrowsException<QldbDriverException>(() => driver.GetSession());
+
+            Assert.IsNotNull(returnedSession);
+        }
+
+        [TestMethod]
+        public void TestGetSession_FailedToCreateSession_ThrowTheOriginalException()
+        {
+            var exception = new AmazonServiceException("test");
+            mockClient.QueueResponse(exception);
+
+            try
+            {
+                testDriver.GetSession();
+                
+                Assert.Fail("driver.GetSession() should have thrown retriable exception");
+            }
+            catch (RetriableException re)
+            {
+                Assert.IsNotNull(re.InnerException);
+                Assert.AreEqual(exception, re.InnerException);
+            }
+        }
+
+        [TestMethod]
+        public void TestRetryPolicyContext_Create_ShouldReturnCorrectProperties()
+        {
+            var exception = new Exception();
+            var retries = 3;
+
+            var context = new RetryPolicyContext(retries, exception);
+
+            Assert.AreEqual(retries, context.RetriesAttempted);
+            Assert.AreEqual(exception, context.LastException);
         }
 
         [TestMethod]
         public void TestExecuteWithActionLambdaCanInvokeSuccessfully()
         {
-            var driver = new QldbDriver(
-                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
-                    new Mock<IRetryHandler>().Object, 4, NullLogger.Instance));
-            driver.Execute((txn) =>
+            bool executeInvoked = false;
+            try
             {
-                txn.Execute("testStatement");
-            });
+                testDriver.Execute(txn =>
+                {
+                    txn.Execute("testStatement");
+                    executeInvoked = true;
+                });
+            }
+            catch (Exception)
+            {
+                Assert.Fail("driver.Execute() should not have thrown exception");
+            }
+
+            Assert.IsTrue(executeInvoked);
         }
 
         [TestMethod]
         public void TestExecuteWithActionAndRetryPolicyCanInvokeSuccessfully()
         {
-            var driver = new QldbDriver(
-                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
-                    QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 4, NullLogger.Instance));
-            driver.Execute((txn) =>
+            bool executeInvoked = false;
+            try
             {
-                txn.Execute("testStatement");
-            },
-            Driver.RetryPolicy.Builder().Build());
+                testDriver.Execute(
+                    txn =>
+                    {
+                        txn.Execute("testStatement");
+                        executeInvoked = true;
+                    },
+                    Driver.RetryPolicy.Builder().Build());
+            }
+            catch (Exception)
+            {
+                Assert.Fail("driver.Execute() should not have thrown exception");
+            }
+            
+            Assert.IsTrue(executeInvoked);
         }
 
         [TestMethod]
         [Obsolete]
         public void TestExecuteWithActionAndRetryActionCanInvokeSuccessfully()
         {
-            var driver = new QldbDriver(
-                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
-                    QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 4, NullLogger.Instance));
-            driver.Execute((txn) =>
+            bool executeInvoked = false;
+            try
             {
-                txn.Execute("testStatement");
-            },
-            Console.WriteLine);
+                testDriver.Execute(
+                    txn =>
+                    {
+                        txn.Execute("testStatement");
+                        executeInvoked = true;
+                    },
+                    Console.WriteLine);
+            }
+            catch (Exception)
+            {
+                Assert.Fail("driver.Execute() should not have thrown exception");
+            }
+            
+            Assert.IsTrue(executeInvoked);
         }
 
         [TestMethod]
         public void TestExecuteWithFuncLambdaReturnsFuncOutput()
         {
-            var driver = new QldbDriver(
-                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
-                    QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 4, NullLogger.Instance));
-
-            var result = driver.Execute((txn) =>
+            bool executeInvoked = false;
+            var result = testDriver.Execute(txn =>
             {
                 txn.Execute("testStatement");
+                executeInvoked = true;
                 return "testReturnValue";
             });
+            Assert.IsTrue(executeInvoked);
+            Assert.AreEqual("testReturnValue", result);
+        }
+        
+        [TestMethod]
+        public void TestExecuteWithFuncLambdaAndRetryPolicyReturnsFuncOutput()
+        {
+            bool executeInvoked = false;
+            var result = testDriver.Execute(
+                txn =>
+                {
+                    txn.Execute("testStatement");
+                    executeInvoked = true;
+                    return "testReturnValue";
+                },
+                Driver.RetryPolicy.Builder().Build());
+            Assert.IsTrue(executeInvoked);
             Assert.AreEqual("testReturnValue", result);
         }
 
         [TestMethod]
-        public void TestExecuteWithFuncLambdaAndRetryPolicyReturnsFuncOutput()
+        public void TestExecuteWithFuncLambdaAndRetryPolicyThrowsExceptionAfterDispose()
         {
-            var driver = new QldbDriver(
-                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
-                    QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 4, NullLogger.Instance));
-
-            driver.Dispose();
-            Assert.ThrowsException<QldbDriverException>(() => driver.Execute((txn) =>
-            {
-                txn.Execute("testStatement");
-                return "testReturnValue";
-            }, Driver.RetryPolicy.Builder().Build()));
+            testDriver.Dispose();
+            Assert.ThrowsException<QldbDriverException>(
+                () => testDriver.Execute(
+                    txn =>
+                    {
+                        txn.Execute("testStatement");
+                        return "testReturnValue";
+                    },
+                    Driver.RetryPolicy.Builder().Build()));
         }
 
         [TestMethod]
         [Obsolete]
-        public void TestExecuteWithFuncLambdaAndRetryActionReturnsFuncOutput()
+        public void TestExecuteWithFuncLambdaAndRetryActionThrowsExceptionAfterDispose()
         {
-            var driver = new QldbDriver(
-                new SessionPool(() => Session.StartSession("ledgerName", mockClient.Object, NullLogger.Instance),
-                    QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 4, NullLogger.Instance));
-
-            driver.Dispose();
-            Assert.ThrowsException<QldbDriverException>(() => driver.Execute((txn) =>
-            {
-                txn.Execute("testStatement");
-                return "testReturnValue";
-            }, Console.WriteLine));
+            testDriver.Dispose();
+            Assert.ThrowsException<QldbDriverException>(
+                () => testDriver.Execute(
+                    txn =>
+                    {
+                        txn.Execute("testStatement");
+                        return "testReturnValue";
+                    },
+                    Console.WriteLine));
         }
 
         [DataTestMethod]
-        [DynamicData(nameof(CreateDriverExceptions), DynamicDataSourceType.Method)]
-        public void TestExecuteExceptionOnExecuteShouldOnlyRetryOnISEAndTAOE(Exception exception, bool expectThrow)
+        [DynamicData(nameof(CreateRetriableExecuteTestData), DynamicDataSourceType.Method)]
+        public void TestExecute_RetryOnExceptions(
+            Driver.RetryPolicy policy,
+            IList<Exception> exceptions,
+            bool expectThrow,
+            Times retryActionCalledTimes)
         {
-            var statement = "DELETE FROM table;";
+            string statement = "DELETE FROM table;";
             var h1 = QldbHash.ToQldbHash(TestTransactionId);
             h1 = Transaction.Dot(h1, statement, new List<IIonValue> { });
 
-            var sendCommandResponseWithStartSession = new SendCommandResponse
+            mockClient.QueueResponse(StartSessionResponse(TestRequestId));
+            mockClient.QueueResponse(StartTransactionResponse(TestTransactionId, TestRequestId));
+            foreach (var ex in exceptions)
             {
-                StartTransaction = new StartTransactionResult
+                mockClient.QueueResponse(ex);
+
+                // OccConflictException reuses the session so no need for another start session.
+                if (ex is not OccConflictException)
                 {
-                    TransactionId = TestTransactionId
-                },
-                ResponseMetadata = new ResponseMetadata
-                {
-                    RequestId = "testId"
+                    mockClient.QueueResponse(StartSessionResponse(TestRequestId));
                 }
-            };
 
-            var sendCommandResponseExecute = new SendCommandResponse
-            {
-                ExecuteStatement = new ExecuteStatementResult
-                {
-                    FirstPage = new Page
-                    {
-                        NextPageToken = null
-                    }
-                },
-                ResponseMetadata = new ResponseMetadata
-                {
-                    RequestId = "testId"
-                }
-            };
+                mockClient.QueueResponse(StartTransactionResponse(TestTransactionId, TestRequestId));
+            }
+            mockClient.QueueResponse(ExecuteResponse(TestRequestId, null));
+            mockClient.QueueResponse(CommitResponse(TestTransactionId, TestRequestId, h1.Hash));
 
-            var sendCommandResponseCommit = new SendCommandResponse
-            {
-                CommitTransaction = new CommitTransactionResult
-                {
-                    TransactionId = TestTransactionId,
-                    CommitDigest = new MemoryStream(h1.Hash),
-                },
-                ResponseMetadata = new ResponseMetadata
-                {
-                    RequestId = "testId"
-                }
-            };
-            var mockCreator = new Mock<Func<Session>>();
-            var mockSession = new Mock<Session>(null, null, null, null, null);
-
-            mockSession.Setup(x => x.StartTransaction()).Returns(sendCommandResponseWithStartSession.StartTransaction);
-            mockSession.SetupSequence(x => x.ExecuteStatement(It.IsAny<String>(), It.IsAny<String>(), It.IsAny<List<IIonValue>>()))
-                .Throws(exception)
-                .Throws(exception)
-                .Returns(sendCommandResponseExecute.ExecuteStatement);
-            mockSession.Setup(x => x.CommitTransaction(It.IsAny<String>(), It.IsAny<MemoryStream>()))
-                .Returns(sendCommandResponseCommit.CommitTransaction);
-
-            mockCreator.Setup(x => x()).Returns(mockSession.Object);
-
-            var driver = new QldbDriver(
-                new SessionPool(mockCreator.Object, QldbDriverBuilder.CreateDefaultRetryHandler(NullLogger.Instance), 4, NullLogger.Instance));
+            var retry = new Mock<Action<int>>();
 
             try
             {
-                driver.Execute(txn => txn.Execute(statement));
+                testDriver.Execute(txn => txn.Execute(statement), policy, retry.Object);
+
+                Assert.IsFalse(expectThrow);
             }
             catch (Exception e)
             {
                 Assert.IsTrue(expectThrow);
-                Assert.AreEqual(exception, e);
-                return;
+                
+                Assert.IsTrue(exceptions.Count > 0);
+                
+                // The exception should be the same type as the last exception in our exception list.
+                Exception finalException = exceptions[exceptions.Count - 1];
+                Type expectedExceptionType = finalException.GetType();
+                Assert.IsInstanceOfType(e, expectedExceptionType);
             }
 
-            Assert.IsFalse(expectThrow);
+            retry.Verify(r => r.Invoke(It.IsAny<int>()), retryActionCalledTimes);
+
+            mockClient.Clear();
         }
 
-        public static IEnumerable<object[]> CreateDriverExceptions()
+        public static IEnumerable<object[]> CreateRetriableExecuteTestData()
         {
+            var defaultPolicy = Driver.RetryPolicy.Builder().Build();
+            var customerPolicy = Driver.RetryPolicy.Builder().WithMaxRetries(10).Build();
+
+            var capacityExceeded = new CapacityExceededException("qldb", ErrorType.Receiver, "errorCode", "requestId", HttpStatusCode.ServiceUnavailable);
+            var occConflict = new OccConflictException("qldb", new BadRequestException("oops"));
+            var invalidSession = new InvalidSessionException("invalid session");
+            var http500 = new AmazonQLDBSessionException("", 0, "", "", HttpStatusCode.ServiceUnavailable);
+
             return new List<object[]>() {
-                new object[] { new InvalidSessionException("invalid session"), false },
-                new object[] { new OccConflictException("occ"), false },
-                new object[] { new CapacityExceededException("capacity exceeded", ErrorType.Receiver, "errorCode", "requestId", HttpStatusCode.ServiceUnavailable), false },
-                new object[] { new ArgumentException(), true },
-                new object[] { new QldbDriverException("generic"), true },
+                // No exception, No retry.
+                new object[] { defaultPolicy, new Exception[0], false, Times.Never() },
+                // Generic Driver exception.
+                new object[] { defaultPolicy, new Exception[] { new QldbDriverException("generic") }, true,
+                    Times.Never() },
+                // Not supported Txn exception.
+                new object[] { defaultPolicy, new Exception[] { new QldbTransactionException("txnid1111111",
+                    new QldbDriverException("qldb")) }, true, Times.Never() },
+                // Not supported exception.
+                new object[] { defaultPolicy, new Exception[] { new ArgumentException("qldb") }, true,
+                    Times.Never() },
+                // Transaction expiry.
+                new object[] { defaultPolicy,
+                    new Exception[] { new InvalidSessionException("Transaction 324weqr2314 has expired") },
+                    true, Times.Never() },
+                // Retry OCC within retry limit.
+                new object[] { defaultPolicy, new Exception[] { occConflict, occConflict, occConflict }, false,
+                    Times.Exactly(3) },
+                // Retry ISE within retry limit.
+                new object[] { defaultPolicy, new Exception[] { invalidSession, invalidSession, invalidSession }, false,
+                    Times.Exactly(3) },
+                // Retry mixed exceptions within retry limit.
+                new object[] { defaultPolicy, new Exception[] { invalidSession, occConflict, http500 }, false,
+                    Times.Exactly(3) },
+                // Retry OCC exceed limit.
+                new object[] { defaultPolicy, new Exception[] { occConflict, invalidSession, http500, invalidSession, 
+                    occConflict }, true, Times.Exactly(4) },
+                // Retry CapacityExceededException exceed limit.
+                new object[] { defaultPolicy, new Exception[] { capacityExceeded, capacityExceeded, capacityExceeded,
+                    capacityExceeded, capacityExceeded }, true, Times.Exactly(4) },
+                // Retry customized policy within retry limit.
+                new object[] { customerPolicy, new Exception[] { invalidSession, invalidSession, invalidSession, 
+                    invalidSession, invalidSession, invalidSession, invalidSession, invalidSession}, false,
+                    Times.Exactly(8) },
             };
         }
     }

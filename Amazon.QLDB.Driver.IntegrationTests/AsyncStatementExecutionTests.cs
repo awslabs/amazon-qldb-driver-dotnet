@@ -23,7 +23,6 @@ namespace Amazon.QLDB.Driver.IntegrationTests
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
-    using utils;
     
     [TestClass]
     public class AsyncStatementExecutionTests

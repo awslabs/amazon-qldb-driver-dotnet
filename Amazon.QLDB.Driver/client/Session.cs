@@ -30,7 +30,7 @@ namespace Amazon.QLDB.Driver
     internal class Session
     {
         internal readonly string LedgerName;
-        internal readonly AmazonQLDBSessionClient SessionClient;
+        internal readonly IAmazonQLDBSession SessionClient;
         internal readonly string SessionId;
         private readonly string sessionToken;
         private readonly ILogger logger;
@@ -46,7 +46,7 @@ namespace Amazon.QLDB.Driver
         /// <param name="logger">The logger to inject any logging framework.</param>
         internal Session(
             string ledgerName,
-            AmazonQLDBSessionClient sessionClient,
+            IAmazonQLDBSession sessionClient,
             string sessionToken,
             string sessionId,
             ILogger logger)
@@ -72,7 +72,7 @@ namespace Amazon.QLDB.Driver
         /// <returns>A newly created <see cref="Session"/>.</returns>
         internal static async Task<Session> StartSessionAsync(
             string ledgerName,
-            AmazonQLDBSessionClient sessionClient,
+            IAmazonQLDBSession sessionClient,
             ILogger logger,
             CancellationToken cancellationToken = default)
         {
@@ -104,7 +104,7 @@ namespace Amazon.QLDB.Driver
         /// <param name="logger">The logger to inject any logging framework.</param>
         ///
         /// <returns>A newly created <see cref="Session"/>.</returns>
-        internal static Session StartSession(string ledgerName, AmazonQLDBSessionClient sessionClient, ILogger logger)
+        internal static Session StartSession(string ledgerName, IAmazonQLDBSession sessionClient, ILogger logger)
         {
             return StartSessionAsync(ledgerName, sessionClient, logger).GetAwaiter().GetResult();
         }

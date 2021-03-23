@@ -21,6 +21,8 @@ namespace Amazon.QLDB.Driver
     /// </summary>
     public class QldbTransactionException : Exception
     {
+        internal const string DefaultTransactionId = "None";
+
         /// <summary>
         /// Initializes a new instance of the <see cref="QldbTransactionException"/> class.
         /// </summary>
@@ -79,7 +81,11 @@ namespace Amazon.QLDB.Driver
         /// <param name="transactionId">The transaction ID.</param>
         /// <param name="isSessionAlive">Whether the session is still alive.</param>
         /// <param name="innerException">The inner exception.</param>
-        public QldbTransactionException(string errorMessage, string transactionId, bool isSessionAlive, Exception innerException)
+        public QldbTransactionException(
+            string errorMessage,
+            string transactionId,
+            bool isSessionAlive,
+            Exception innerException)
            : base(errorMessage, innerException)
         {
             this.TransactionId = transactionId;

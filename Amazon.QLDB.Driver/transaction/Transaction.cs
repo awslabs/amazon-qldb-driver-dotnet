@@ -23,13 +23,11 @@ namespace Amazon.QLDB.Driver
     using Microsoft.Extensions.Logging;
 
     /// <summary>
-    /// Implementation of a QLDB transaction which also tracks child Results for the purposes of managing their lifecycle.
-    /// Any unexpected errors that occur when calling methods in this class should not be retried, as the state of the
-    /// transaction is now ambiguous. When an OCC conflict occurs, the transaction is closed.
-    ///
-    /// Child Result objects will be closed when the transaction is aborted or committed.
+    /// Implementation of a QLDB transaction. Any unexpected errors that occur when calling methods in this class should
+    /// not be retried, as the state of the transaction is now ambiguous. When an OCC conflict occurs, the transaction
+    /// is closed.
     /// </summary>
-    internal class Transaction : BaseTransaction, ITransaction
+    internal class Transaction : BaseTransaction
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="Transaction"/> class.
@@ -44,69 +42,34 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <summary>
-        /// Abort the transaction and roll back any changes. No-op if closed.
-        /// Any open <see cref="IResult"/> created by the transaction will be invalidated.
+        /// Abort the transaction and roll back any changes.
         /// </summary>
-        public void Abort()
+        internal virtual void Abort()
         {
-            if (!this.isClosed)
-            {
-                this.isClosed = true;
-                this.session.AbortTransaction();
-            }
+            this.session.AbortTransaction();
         }
 
         /// <summary>
-        /// Commit the transaction. Any open <see cref="IResult"/> created by the transaction will be invalidated.
+        /// Commit the transaction.
         /// </summary>
         ///
-        /// <exception cref="InvalidOperationException">Thrown when Hash returned from QLDB is not equal.</exception>
-        /// <exception cref="OccConflictException">Thrown if an OCC conflict has been detected within the transaction.</exception>
-        /// <exception cref="AmazonServiceException">Thrown when there is an error committing this transaction against QLDB.</exception>
-        /// <exception cref="QldbDriverException">Thrown when this transaction has been disposed.</exception>
-        public void Commit()
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when Hash returned from QLDB is not equal.
+        /// </exception>
+        /// <exception cref="OccConflictException">
+        /// Thrown if an OCC conflict has been detected within the transaction.
+        /// </exception>
+        /// <exception cref="AmazonServiceException">
+        /// Thrown when there is an error committing this transaction against QLDB.
+        /// </exception>
+        internal void Commit()
         {
-            try
+            byte[] hashBytes = this.qldbHash.Hash;
+            MemoryStream commitDigest = this.session.CommitTransaction(this.txnId, new MemoryStream(hashBytes))
+                .CommitDigest;
+            if (!hashBytes.SequenceEqual(commitDigest.ToArray()))
             {
-                byte[] hashBytes = this.qldbHash.Hash;
-                MemoryStream commitDigest = this.session.CommitTransaction(this.txnId, new MemoryStream(hashBytes))
-                    .CommitDigest;
-                if (!hashBytes.SequenceEqual(commitDigest.ToArray()))
-                {
-                    throw new InvalidOperationException(ExceptionMessages.TransactionDigestMismatch);
-                }
-            }
-            catch (OccConflictException oce)
-            {
-                throw oce;
-            }
-            catch (InvalidSessionException ise)
-            {
-                throw ise;
-            }
-            catch (AmazonServiceException ase)
-            {
-                this.Dispose();
-                throw ase;
-            }
-            finally
-            {
-                this.isClosed = true;
-            }
-        }
-
-        /// <summary>
-        /// Abort the transaction and close it. No-op if already closed.
-        /// </summary>
-        public void Dispose()
-        {
-            try
-            {
-                this.Abort();
-            }
-            catch (AmazonServiceException ase)
-            {
-                this.logger.LogWarning("Ignored AmazonServiceException aborting transaction when calling dispose: {}", ase);
+                throw new InvalidOperationException(ExceptionMessages.TransactionDigestMismatch);
             }
         }
 
@@ -119,8 +82,7 @@ namespace Amazon.QLDB.Driver
         /// <returns>Result from executed statement.</returns>
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        /// <exception cref="QldbDriverException">Thrown when this transaction has been disposed.</exception>
-        public IResult Execute(string statement)
+        internal virtual IResult Execute(string statement)
         {
             return this.Execute(statement, new List<IIonValue>());
         }
@@ -135,8 +97,7 @@ namespace Amazon.QLDB.Driver
         /// <returns>Result from executed statement.</returns>
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        /// <exception cref="QldbDriverException">Thrown when this transaction has been disposed.</exception>
-        public IResult Execute(string statement, List<IIonValue> parameters)
+        internal virtual IResult Execute(string statement, List<IIonValue> parameters)
         {
             ValidationUtils.AssertStringNotEmpty(statement, "statement");
 
@@ -161,8 +122,7 @@ namespace Amazon.QLDB.Driver
         /// <returns>Result from executed statement.</returns>
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        /// <exception cref="QldbDriverException">Thrown when this transaction has been disposed.</exception>
-        public IResult Execute(string statement, params IIonValue[] parameters)
+        internal virtual IResult Execute(string statement, params IIonValue[] parameters)
         {
             return this.Execute(statement, new List<IIonValue>(parameters));
         }

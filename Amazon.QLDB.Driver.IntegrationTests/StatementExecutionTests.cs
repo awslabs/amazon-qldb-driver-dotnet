@@ -13,7 +13,6 @@
 
 namespace Amazon.QLDB.Driver.IntegrationTests
 {
-    using Amazon.QLDB.Driver.IntegrationTests.utils;
     using Amazon.QLDBSession;
     using Amazon.QLDBSession.Model;
     using Amazon.IonDotnet.Builders;

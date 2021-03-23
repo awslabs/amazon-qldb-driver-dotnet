@@ -13,8 +13,6 @@
 
  namespace Amazon.QLDB.Driver
 {
-    using Microsoft.Extensions.Logging;
-
     /// <summary>
     /// Builder object for creating a <see cref="QldbDriver"/>, allowing for configuration of the parameters of
     /// construction.
@@ -30,7 +28,7 @@
 
         private protected override QldbDriverBuilder BuilderInstance => this;
 
-        private protected override string UserAgentStringPrefix => " QLDBDriver for .NET v";
+        private protected override string UserAgentStringPrefix => " QLDB Driver for .NET v";
 
         /// <summary>
         /// Build a driver instance using the current configuration set with the builder.
@@ -40,22 +38,7 @@
         public QldbDriver Build()
         {
             this.PrepareBuild();
-            return new QldbDriver(
-                new SessionPool(
-                    () => Session.StartSession(this.LedgerName, this.sessionClient, this.Logger),
-                    CreateDefaultRetryHandler(this.logRetries ? this.Logger : null),
-                    this.maxConcurrentTransactions,
-                    this.Logger));
-        }
-
-        /// <summary>
-        /// Create a RetryHandler object with the default set of retriable exceptions.
-        /// </summary>
-        /// <param name="logger">The logger.</param>
-        /// <returns>The constructed IRetryHandler instance.</returns>
-        internal static IRetryHandler CreateDefaultRetryHandler(ILogger logger)
-        {
-            return new RetryHandler(logger);
+            return new QldbDriver(this.LedgerName, this.sessionClient, this.maxConcurrentTransactions, this.Logger);
         }
     }
 }

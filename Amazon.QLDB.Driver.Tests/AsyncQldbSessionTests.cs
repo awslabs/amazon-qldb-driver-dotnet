@@ -44,14 +44,7 @@ namespace Amazon.QLDB.Driver.Tests
         {
             mockAction = new Mock<MockDisposeDelegate>();
             mockSession = new Mock<Session>(null, null, null, null, null);
-            asyncQldbSession = new AsyncQldbSession(mockSession.Object, mockAction.Object.DisposeDelegate, NullLogger.Instance);
-        }
-
-        [TestMethod]
-        public void TestReleaseAsyncSession()
-        {
-            asyncQldbSession.Release();
-            mockAction.Verify(x => x.DisposeDelegate(asyncQldbSession), Times.Once);
+            asyncQldbSession = new AsyncQldbSession(mockSession.Object, NullLogger.Instance);
         }
 
         [TestMethod]

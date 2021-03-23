@@ -48,14 +48,7 @@ namespace Amazon.QLDB.Driver.Tests
         {
             mockAction = new Mock<MockDisposeDelegate>();
             mockSession = new Mock<Session>(null, null, null, null, null);
-            qldbSession = new QldbSession(mockSession.Object, mockAction.Object.DisposeDelegate, NullLogger.Instance);
-        }
-
-        [TestMethod]
-        public void TestReleaseSession()
-        {
-            qldbSession.Release();
-            mockAction.Verify(x => x.DisposeDelegate(qldbSession), Times.Once);
+            qldbSession = new QldbSession(mockSession.Object, NullLogger.Instance);
         }
 
         [TestMethod]

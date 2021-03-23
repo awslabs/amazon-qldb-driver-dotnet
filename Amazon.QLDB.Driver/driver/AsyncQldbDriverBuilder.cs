@@ -41,21 +41,10 @@ namespace Amazon.QLDB.Driver
         {
             this.PrepareBuild();
             return new AsyncQldbDriver(
-                new AsyncSessionPool(
-                    (cancellationToken) => Session.StartSessionAsync(this.LedgerName, this.sessionClient, this.Logger),
-                    CreateDefaultRetryHandler(this.logRetries ? this.Logger : null),
-                    this.maxConcurrentTransactions,
-                    this.Logger));
-        }
-
-        /// <summary>
-        /// Create an AsyncRetryHandler object with the default set of retriable exceptions.
-        /// </summary>
-        /// <param name="logger">The logger.</param>
-        /// <returns>The constructed IRetryHandler instance.</returns>
-        internal static IAsyncRetryHandler CreateDefaultRetryHandler(ILogger logger)
-        {
-            return new AsyncRetryHandler(logger);
+                this.LedgerName,
+                this.sessionClient,
+                this.maxConcurrentTransactions,
+                this.Logger);
         }
     }
 }

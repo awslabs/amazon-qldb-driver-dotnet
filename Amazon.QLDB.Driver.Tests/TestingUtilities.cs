@@ -31,6 +31,90 @@ namespace Amazon.QLDB.Driver.Tests
 
     internal static class TestingUtilities
     {
+        internal static SendCommandResponse DefaultSendCommandResponse(
+            string sessionToken,
+            string transactionId,
+            string requestId,
+            byte[] digest)
+        {
+            return new SendCommandResponse
+            {
+                StartSession = new StartSessionResult
+                {
+                    SessionToken = sessionToken
+                },
+                StartTransaction = new StartTransactionResult
+                {
+                    TransactionId = transactionId
+                },
+                ExecuteStatement = new ExecuteStatementResult
+                {
+                    FirstPage = new Page
+                    {
+                        NextPageToken = null,
+                        Values = new List<ValueHolder>()
+                    }
+                },
+                CommitTransaction = new CommitTransactionResult
+                {
+                    CommitDigest = new MemoryStream(digest)
+                },
+                ResponseMetadata = new ResponseMetadata
+                {
+                    RequestId = requestId
+                }
+            };
+        }
+        
+        internal static SendCommandResponse StartSessionResponse(string requestId)
+        {
+            return new SendCommandResponse
+            {
+                StartSession = new StartSessionResult { SessionToken = "testToken" },
+                ResponseMetadata = new ResponseMetadata { RequestId = requestId }
+            };
+        }
+
+        internal static SendCommandResponse StartTransactionResponse(string transactionId, string requestId)
+        {
+            return new SendCommandResponse
+            {
+                StartTransaction = new StartTransactionResult { TransactionId = transactionId },
+                ResponseMetadata = new ResponseMetadata { RequestId = requestId }
+            };
+        }
+        
+        internal static SendCommandResponse ExecuteResponse(string requestId, List<ValueHolder> values)
+        {
+            Page firstPage;
+            if (values == null)
+            {
+                firstPage = new Page {NextPageToken = null};
+            }
+            else
+            {
+                firstPage = new Page {NextPageToken = null, Values = values};
+            }
+            return new SendCommandResponse
+            {
+                ExecuteStatement = new ExecuteStatementResult { FirstPage = firstPage },
+                ResponseMetadata = new ResponseMetadata { RequestId = requestId }
+            };
+        }
+        
+        internal static SendCommandResponse CommitResponse(string transactionId, string requestId, byte[] hash)
+        {
+            return new SendCommandResponse
+            {
+                CommitTransaction = new CommitTransactionResult
+                {
+                    CommitDigest = new MemoryStream(hash),
+                    TransactionId = transactionId
+                },
+                ResponseMetadata = new ResponseMetadata { RequestId = requestId }
+            };
+        }
+
         internal static ValueHolder CreateValueHolder(IIonValue ionValue)
         {
             MemoryStream stream = new MemoryStream();
@@ -125,8 +209,8 @@ namespace Amazon.QLDB.Driver.Tests
                     typeof(RetriableException), typeof(InvalidSessionException),
                     Times.Never()},
                 new object[] { new QldbTransactionException(string.Empty, true, new BadRequestException("Bad request")),
-                    typeof(QldbTransactionException), typeof(BadRequestException),
-                    Times.Never()},
+                    typeof(QldbTransactionException), typeof(QldbTransactionException),
+                    Times.Once()},
                 new object[] { new TransactionAbortedException("testTransactionIdddddd", true),
                     typeof(TransactionAbortedException), null,
                     Times.Never()},

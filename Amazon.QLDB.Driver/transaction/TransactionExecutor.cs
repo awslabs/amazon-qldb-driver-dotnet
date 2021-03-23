@@ -18,19 +18,21 @@ namespace Amazon.QLDB.Driver
     using Amazon.Runtime;
 
     /// <summary>
-    /// Transaction object used within lambda executions to provide a reduced view that allows only the operations that are
-    /// valid within the context of an active managed transaction.
+    /// Transaction object used within lambda executions to provide a reduced view that allows only the operations that
+    /// are valid within the context of an active managed transaction.
     /// </summary>
     public class TransactionExecutor : IExecutable
     {
-        private readonly ITransaction transaction;
+        private readonly Transaction transaction;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TransactionExecutor"/> class.
         /// </summary>
         ///
-        /// <param name="transaction">The <see cref="ITransaction"/> object the <see cref="TransactionExecutor"/> wraps.</param>
-        internal TransactionExecutor(ITransaction transaction)
+        /// <param name="transaction">
+        /// The <see cref="Transaction"/> object the <see cref="TransactionExecutor"/> wraps.
+        /// </param>
+        internal TransactionExecutor(Transaction transaction)
         {
             this.transaction = transaction;
         }

@@ -26,7 +26,6 @@ namespace Amazon.QLDB.Driver
         protected readonly string txnId;
         protected readonly ILogger logger;
         protected QldbHash qldbHash;
-        protected bool isClosed = false;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BaseTransaction"/> class.
