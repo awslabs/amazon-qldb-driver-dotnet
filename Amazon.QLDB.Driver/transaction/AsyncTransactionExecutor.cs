@@ -14,43 +14,26 @@
 namespace Amazon.QLDB.Driver
 {
     using System.Collections.Generic;
+    using System.Threading.Tasks;
     using Amazon.IonDotnet.Tree;
     using Amazon.Runtime;
 
     /// <summary>
-    /// Transaction object used within lambda executions to provide a reduced view that allows only the operations that
-    /// are valid within the context of an active managed transaction.
+    /// Transaction object used within asynchronous lambda executions to provide a reduced view that allows only the operations that are
+    /// valid within the context of an active managed transaction.
     /// </summary>
-    public class TransactionExecutor : IExecutable
+    public class AsyncTransactionExecutor : IAsyncExecutable
     {
-        private readonly Transaction transaction;
+        private readonly AsyncTransaction transaction;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TransactionExecutor"/> class.
+        /// Initializes a new instance of the <see cref="AsyncTransactionExecutor"/> class.
         /// </summary>
         ///
-        /// <param name="transaction">
-        /// The <see cref="Transaction"/> object the <see cref="TransactionExecutor"/> wraps.
-        /// </param>
-        internal TransactionExecutor(Transaction transaction)
+        /// <param name="transaction">The <see cref="AsyncTransaction"/> object the <see cref="AsyncTransactionExecutor"/> wraps.</param>
+        internal AsyncTransactionExecutor(AsyncTransaction transaction)
         {
             this.transaction = transaction;
-        }
-
-        /// <summary>
-        /// Abort the transaction and roll back any changes.
-        /// </summary>
-        public void Abort()
-        {
-            try
-            {
-                this.transaction.Abort();
-                throw new TransactionAbortedException(this.transaction.Id, true);
-            }
-            catch (AmazonServiceException ase)
-            {
-                throw new TransactionAbortedException(this.transaction.Id, false, ase);
-            }
         }
 
         /// <summary>
@@ -62,7 +45,7 @@ namespace Amazon.QLDB.Driver
         /// <returns>Result from executed statement.</returns>
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        public IResult Execute(string statement)
+        public Task<IAsyncResult> Execute(string statement)
         {
             return this.transaction.Execute(statement);
         }
@@ -77,7 +60,8 @@ namespace Amazon.QLDB.Driver
         /// <returns>Result from executed statement.</returns>
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        public IResult Execute(string statement, List<IIonValue> parameters)
+        public Task<IAsyncResult> Execute(
+            string statement, List<IIonValue> parameters)
         {
             return this.transaction.Execute(statement, parameters);
         }
@@ -92,9 +76,27 @@ namespace Amazon.QLDB.Driver
         /// <returns>Result from executed statement.</returns>
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        public IResult Execute(string statement, params IIonValue[] parameters)
+        public Task<IAsyncResult> Execute(string statement, params IIonValue[] parameters)
         {
             return this.transaction.Execute(statement, parameters);
+        }
+
+        /// <summary>
+        /// Abort the transaction and roll back any changes.
+        /// </summary>
+        ///
+        /// <returns>No object or value is returned by this method when it completes.</returns>
+        public async Task Abort()
+        {
+            try
+            {
+                await this.transaction.Abort();
+                throw new TransactionAbortedException(this.transaction.Id, true);
+            }
+            catch (AmazonServiceException ase)
+            {
+                throw new TransactionAbortedException(this.transaction.Id, false, ase);
+            }
         }
     }
 }

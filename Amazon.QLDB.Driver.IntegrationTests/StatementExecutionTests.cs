@@ -13,7 +13,6 @@
 
 namespace Amazon.QLDB.Driver.IntegrationTests
 {
-    using Amazon.QLDB.Driver.IntegrationTests.utils;
     using Amazon.QLDBSession;
     using Amazon.QLDBSession.Model;
     using Amazon.IonDotnet.Builders;
@@ -22,8 +21,6 @@ namespace Amazon.QLDB.Driver.IntegrationTests
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using System;
     using System.Collections.Generic;
-    using System.Text;
-    using System.Threading.Tasks;
 
     [TestClass]
     public class StatementExecutionTests
@@ -579,7 +576,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         public void Execute_UpdateSameRecordAtSameTime_ThrowsOccException()
         {
             // Create a driver that does not retry OCC errors
-            QldbDriver driver = integrationTestBase.CreateDriver(amazonQldbSessionConfig, default, default, 0);
+            QldbDriver driver = integrationTestBase.CreateDriver(amazonQldbSessionConfig, default, default);
 
             // Insert document.
             // Create Ion struct with int value 0 to insert.
@@ -626,7 +623,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        [DynamicData(nameof(CreateIonValues), DynamicDataSourceType.Method)]
+        [CreateIonValues]
         public void Execute_InsertAndReadIonTypes_IonTypesAreInsertedAndRead(IIonValue ionValue)
         {
             // Given.
@@ -692,7 +689,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        [DynamicData(nameof(CreateIonValues), DynamicDataSourceType.Method)]
+        [CreateIonValues]
         public void Execute_UpdateIonTypes_IonTypesAreUpdated(IIonValue ionValue)
         {
             // Given.
@@ -830,17 +827,22 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             qldbDriver.Execute(txn =>
             {
                 var result = txn.Execute(selectQuery);
+                long readIOs = 0;
+                long processingTime = 0;
 
                 foreach (IIonValue row in result)
                 {
                     var ioUsage = result.GetConsumedIOs();
+                    if (ioUsage != null)
+                        readIOs = ioUsage.Value.ReadIOs;
                     var timingInfo = result.GetTimingInformation();
-
-                    Assert.IsNotNull(ioUsage);
-                    Assert.IsNotNull(timingInfo);
-                    Assert.IsTrue(ioUsage?.ReadIOs > 0);
-                    Assert.IsTrue(timingInfo?.ProcessingTimeMilliseconds > 0);
+                    if (timingInfo != null)
+                        processingTime = timingInfo.Value.ProcessingTimeMilliseconds;
                 }
+
+                // The 1092 value is from selectQuery, that performs self joins on a table.
+                Assert.AreEqual(1092, readIOs);
+                Assert.IsTrue(processingTime > 0);  
             });
 
             // When
@@ -854,196 +856,9 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             Assert.IsNotNull(ioUsage);
             Assert.IsNotNull(timingInfo);
+            // The 1092 value is from selectQuery, that performs self joins on a table.
             Assert.AreEqual(1092, ioUsage?.ReadIOs);
             Assert.IsTrue(timingInfo?.ProcessingTimeMilliseconds > 0);
-        }
-
-        public static IEnumerable<object[]> CreateIonValues()
-        {
-            var ionValues = new List<object[]>();
-
-            var ionBlob = ValueFactory.NewBlob(Encoding.ASCII.GetBytes("value"));
-            ionValues.Add(new object[] { ionBlob });
-
-            var ionBool = ValueFactory.NewBool(true);
-            ionValues.Add(new object[] { ionBool });
-
-            var ionClob = ValueFactory.NewClob(Encoding.ASCII.GetBytes("{{ 'Clob value.'}}"));
-            ionValues.Add(new object[] { ionClob });
-
-            var ionDecimal = ValueFactory.NewDecimal(0.1);
-            ionValues.Add(new object[] { ionDecimal });
-
-            var ionFloat = ValueFactory.NewFloat(1.1);
-            ionValues.Add(new object[] { ionFloat });
-
-            var ionInt = ValueFactory.NewInt(2);
-            ionValues.Add(new object[] { ionInt });
-
-            var ionList = ValueFactory.NewEmptyList();
-            ionList.Add(ValueFactory.NewInt(3));
-            ionValues.Add(new object[] { ionList });
-
-            var ionNull = ValueFactory.NewNull();
-            ionValues.Add(new object[] { ionNull });
-
-            var ionSexp = ValueFactory.NewEmptySexp();
-            ionSexp.Add(ValueFactory.NewString("value"));
-            ionValues.Add(new object[] { ionSexp });
-
-            var ionString = ValueFactory.NewString("value");
-            ionValues.Add(new object[] { ionString });
-
-            var ionStruct = ValueFactory.NewEmptyStruct();
-            ionStruct.SetField("value", ValueFactory.NewBool(true));
-            ionValues.Add(new object[] { ionStruct });
-
-            var ionSymbol = ValueFactory.NewSymbol("symbol");
-            ionValues.Add(new object[] { ionSymbol });
-
-            var ionTimestamp = ValueFactory.NewTimestamp(new IonDotnet.Timestamp(DateTime.Now));
-            ionValues.Add(new object[] { ionTimestamp });
-
-            var ionNullBlob = ValueFactory.NewNullBlob();
-            ionValues.Add(new object[] { ionNullBlob });
-
-            var ionNullBool = ValueFactory.NewNullBool();
-            ionValues.Add(new object[] { ionNullBool });
-
-            var ionNullClob = ValueFactory.NewNullClob();
-            ionValues.Add(new object[] { ionNullClob });
-
-            var ionNullDecimal = ValueFactory.NewNullDecimal();
-            ionValues.Add(new object[] { ionNullDecimal });
-
-            var ionNullFloat = ValueFactory.NewNullFloat();
-            ionValues.Add(new object[] { ionNullFloat });
-
-            var ionNullInt = ValueFactory.NewNullInt();
-            ionValues.Add(new object[] { ionNullInt });
-
-            var ionNullList = ValueFactory.NewNullList();
-            ionValues.Add(new object[] { ionNullList });
-
-            var ionNullSexp = ValueFactory.NewNullSexp();
-            ionValues.Add(new object[] { ionNullSexp });
-
-            var ionNullString = ValueFactory.NewNullString();
-            ionValues.Add(new object[] { ionNullString });
-
-            var ionNullStruct = ValueFactory.NewNullStruct();
-            ionValues.Add(new object[] { ionNullStruct });
-
-            var ionNullSymbol = ValueFactory.NewNullSymbol();
-            ionValues.Add(new object[] { ionNullSymbol });
-
-            var ionNullTimestamp = ValueFactory.NewNullTimestamp();
-            ionValues.Add(new object[] { ionNullTimestamp });
-
-            var ionBlobWithAnnotation = ValueFactory.NewBlob(Encoding.ASCII.GetBytes("value"));
-            ionBlobWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionBlobWithAnnotation });
-
-            var ionBoolWithAnnotation = ValueFactory.NewBool(true);
-            ionBoolWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionBoolWithAnnotation });
-
-            var ionClobWithAnnotation = ValueFactory.NewClob(Encoding.ASCII.GetBytes("{{ 'Clob value.'}}"));
-            ionClobWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionClobWithAnnotation });
-
-            var ionDecimalWithAnnotation = ValueFactory.NewDecimal(0.1);
-            ionDecimalWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionDecimalWithAnnotation });
-
-            var ionFloatWithAnnotation = ValueFactory.NewFloat(1.1);
-            ionFloatWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionFloatWithAnnotation });
-
-            var ionIntWithAnnotation = ValueFactory.NewInt(2);
-            ionIntWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionIntWithAnnotation });
-
-            var ionListWithAnnotation = ValueFactory.NewEmptyList();
-            ionListWithAnnotation.Add(ValueFactory.NewInt(3));
-            ionListWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionListWithAnnotation });
-
-            var ionNullWithAnnotation = ValueFactory.NewNull();
-            ionNullWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionNullWithAnnotation });
-
-            var ionSexpWithAnnotation = ValueFactory.NewEmptySexp();
-            ionSexpWithAnnotation.Add(ValueFactory.NewString("value"));
-            ionSexpWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionSexpWithAnnotation });
-
-            var ionStringWithAnnotation = ValueFactory.NewString("value");
-            ionStringWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionStringWithAnnotation });
-
-            var ionStructWithAnnotation = ValueFactory.NewEmptyStruct();
-            ionStructWithAnnotation.SetField("value", ValueFactory.NewBool(true));
-            ionStructWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionStructWithAnnotation });
-
-            var ionSymbolWithAnnotation = ValueFactory.NewSymbol("symbol");
-            ionSymbolWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionSymbolWithAnnotation });
-
-            var ionTimestampWithAnnotation = ValueFactory.NewTimestamp(new IonDotnet.Timestamp(DateTime.Now));
-            ionTimestampWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionTimestampWithAnnotation });
-
-            var ionNullBlobWithAnnotation = ValueFactory.NewNullBlob();
-            ionNullBlobWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionNullBlobWithAnnotation });
-
-            var ionNullBoolWithAnnotation = ValueFactory.NewNullBool();
-            ionNullBoolWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionNullBoolWithAnnotation });
-
-            var ionNullClobWithAnnotation = ValueFactory.NewNullClob();
-            ionNullClobWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionNullClobWithAnnotation });
-
-            var ionNullDecimalWithAnnotation = ValueFactory.NewNullDecimal();
-            ionNullDecimalWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionNullDecimalWithAnnotation });
-
-            var ionNullFloatWithAnnotation = ValueFactory.NewNullFloat();
-            ionNullFloatWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionNullFloatWithAnnotation });
-
-            var ionNullIntWithAnnotation = ValueFactory.NewNullInt();
-            ionNullIntWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionNullIntWithAnnotation });
-
-            var ionNullListWithAnnotation = ValueFactory.NewNullList();
-            ionNullListWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionNullListWithAnnotation });
-
-            var ionNullSexpWithAnnotation = ValueFactory.NewNullSexp();
-            ionNullSexpWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionNullSexpWithAnnotation });
-
-            var ionNullStringWithAnnotation = ValueFactory.NewNullString();
-            ionNullStringWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionNullStringWithAnnotation });
-
-            var ionNullStructWithAnnotation = ValueFactory.NewNullStruct();
-            ionNullStructWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionNullStructWithAnnotation });
-
-            var ionNullSymbolWithAnnotation = ValueFactory.NewNullSymbol();
-            ionNullSymbolWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionNullSymbolWithAnnotation });
-
-            var ionNullTimestampWithAnnotation = ValueFactory.NewNullTimestamp();
-            ionNullTimestampWithAnnotation.AddTypeAnnotation("annotation");
-            ionValues.Add(new object[] { ionNullTimestampWithAnnotation });
-
-            return ionValues;
-        }
+        }    
     }
 }

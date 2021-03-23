@@ -11,34 +11,40 @@
  * and limitations under the License.
  */
 
- namespace Amazon.QLDB.Driver
+namespace Amazon.QLDB.Driver
 {
+    using Microsoft.Extensions.Logging;
+
     /// <summary>
-    /// Builder object for creating a <see cref="QldbDriver"/>, allowing for configuration of the parameters of
+    /// Builder object for creating an <see cref="AsyncQldbDriver"/>, allowing for configuration of the parameters of
     /// construction.
     /// </summary>
-    public class QldbDriverBuilder : BaseQldbDriverBuilder<QldbDriverBuilder>
+    public class AsyncQldbDriverBuilder : BaseQldbDriverBuilder<AsyncQldbDriverBuilder>
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="QldbDriverBuilder"/> class.
+        /// Initializes a new instance of the <see cref="AsyncQldbDriverBuilder"/> class.
         /// </summary>
-        internal QldbDriverBuilder()
+        internal AsyncQldbDriverBuilder()
         {
         }
 
-        private protected override QldbDriverBuilder BuilderInstance => this;
+        private protected override AsyncQldbDriverBuilder BuilderInstance => this;
 
-        private protected override string UserAgentStringPrefix => " QLDB Driver for .NET v";
+        private protected override string UserAgentStringPrefix => "Async QLDB Driver for .NET v";
 
         /// <summary>
         /// Build a driver instance using the current configuration set with the builder.
         /// </summary>
         ///
         /// <returns>A newly created driver.</returns>
-        public QldbDriver Build()
+        public AsyncQldbDriver Build()
         {
             this.PrepareBuild();
-            return new QldbDriver(this.LedgerName, this.sessionClient, this.maxConcurrentTransactions, this.Logger);
+            return new AsyncQldbDriver(
+                this.LedgerName,
+                this.sessionClient,
+                this.maxConcurrentTransactions,
+                this.Logger);
         }
     }
 }

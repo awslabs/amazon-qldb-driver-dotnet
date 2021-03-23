@@ -39,7 +39,7 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <summary>
-        /// The builder class of <see cref="RetryPolicy">.
+        /// The builder class of <see cref="RetryPolicy"/>.
         /// </summary>.
         public class RetryPolicyBuilder
         {

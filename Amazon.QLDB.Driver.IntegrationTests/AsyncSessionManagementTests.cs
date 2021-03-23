@@ -17,9 +17,10 @@ namespace Amazon.QLDB.Driver.IntegrationTests
     using Amazon.QLDBSession.Model;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using System;
+    using System.Threading.Tasks;
 
     [TestClass]
-    public class SessionManagementTests
+    public class AsyncSessionManagementTests
     {
         private static AmazonQLDBSessionConfig amazonQldbSessionConfig;
         private static IntegrationTestBase integrationTestBase;
@@ -46,24 +47,24 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
         [TestMethod]
         [ExpectedException(typeof(BadRequestException))]
-        public void Connect_LedgerDoesNotExist_ThrowsBadRequestException()
+        public async Task ConnectAsync_LedgerDoesNotExist_ThrowsBadRequestException()
         {
-            using (var qldbDriver = integrationTestBase.CreateDriver(amazonQldbSessionConfig, 0, "NonExistentLedger"))
+            using (var qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig, 0, "NonExistentLedger"))
             {
-                qldbDriver.ListTableNames();
+                await qldbDriver.ListTableNames();
             }
         }
 
         [TestMethod]
-        public void GetSession_PoolDoesNotHaveSessionAndHasNotHitLimit_DoesNotThrowTimeoutException()
+        public async Task GetSessionAsync_PoolDoesNotHaveSessionAndHasNotHitLimit_DoesNotThrowTimeoutException()
         {
             try
             {
                 // Start a driver with default pool limit so it doesn't have sessions in the pool
                 // and has not hit the limit.
-                using (var qldbDriver = integrationTestBase.CreateDriver(amazonQldbSessionConfig))
+                using (var qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig))
                 {
-                    qldbDriver.ListTableNames();
+                    await qldbDriver.ListTableNames();
                 }
             }
             catch (TimeoutException e)
@@ -73,19 +74,19 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public void GetSession_PoolHasSessionAndHasNotHitLimit_DoesNotThrowTimeoutException()
+        public async Task GetSessionAsync_PoolHasSessionAndHasNotHitLimit_DoesNotThrowTimeoutException()
         {
             try
             {
                 // Start a driver with default pool limit so it doesn't have sessions in the pool
                 // and has not hit the limit.
-                using (var qldbDriver = integrationTestBase.CreateDriver(amazonQldbSessionConfig))
+                using (var qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig))
                 {
                     // Call the first ListTableNames() to start a session and put into pool.
-                    qldbDriver.ListTableNames();
+                    await qldbDriver.ListTableNames();
 
                     // Call the second ListTableNames() to use session from pool and is expected to execute successfully.
-                    qldbDriver.ListTableNames();
+                    await qldbDriver.ListTableNames();
                 }
             }
             catch (TimeoutException e)
@@ -96,34 +97,34 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
         [TestMethod]
         [ExpectedException(typeof(QldbDriverException))]
-        public void GetSession_PoolDoesNotHaveSessionAndHasHitLimit_ThrowsTimeoutException()
+        public async Task GetSessionAsync_PoolDoesNotHaveSessionAndHasHitLimit_ThrowsTimeoutException()
         {
             string TableNameQuery = "SELECT VALUE name FROM information_schema.user_tables WHERE status = 'ACTIVE'";
 
             // Create driver with session pool size = 1.
-            var qldbDriver = integrationTestBase.CreateDriver(amazonQldbSessionConfig, 1);
-            qldbDriver.Execute(txn =>
+            var qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig, 1);
+            await qldbDriver.Execute(async txn =>
             {
-                txn.Execute(TableNameQuery);
+                await txn.Execute(TableNameQuery);
 
                 // For testing purposes only. Forcefully fetch from the empty session pool.
                 // Do not invoke QldbDriver.Execute within the lambda function under normal circumstances.
-                qldbDriver.Execute(txn =>
+                await qldbDriver.Execute(async txn =>
                 {
-                    txn.Execute(TableNameQuery);
+                    await txn.Execute(TableNameQuery);
                 });
             });
         }
 
         [TestMethod]
         [ExpectedException(typeof(QldbDriverException))]
-        public void GetSession_DriverIsClosed_ThrowsObjectDisposedException()
+        public async Task GetSessionAsync_DriverIsClosed_ThrowsObjectDisposedException()
         {
-            using (var qldbDriver = integrationTestBase.CreateDriver(amazonQldbSessionConfig))
+            using (var qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig))
             {
                 qldbDriver.Dispose();
-
-                qldbDriver.ListTableNames();
+                         
+                await qldbDriver.ListTableNames();
             }
         }
     }

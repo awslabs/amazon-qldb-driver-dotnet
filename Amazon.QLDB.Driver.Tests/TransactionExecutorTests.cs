@@ -12,7 +12,7 @@
         private static TransactionExecutor transactionExecutor;
         private static readonly string query = "my query";
         private static Mock<IResult> mockResult;
-        private static Mock<ITransaction> mockTransaction;
+        private static Mock<Transaction> mockTransaction;
 
         [ClassInitialize]
 #pragma warning disable IDE0060 // Remove unused parameter
@@ -20,7 +20,7 @@
 #pragma warning restore IDE0060 // Remove unused parameter
         {
             mockResult = new Mock<IResult>();
-            mockTransaction = new Mock<ITransaction>();
+            mockTransaction = new Mock<Transaction>(It.IsAny<Session>(), It.IsAny<string>(), null);
             mockTransaction.Setup(transaction => transaction.Execute(It.IsAny<string>())).Returns(mockResult.Object);
             mockTransaction.Setup(transaction => transaction.Execute(It.IsAny<string>(), It.IsAny<List<IIonValue>>()))
                 .Returns(mockResult.Object);
