@@ -64,6 +64,7 @@ namespace Amazon.QLDB.Driver
         /// </exception>
         internal void Commit()
         {
+            // Prevent race condition between Commit and Executes, making them synchronous to ensure hash validity.
             lock (this)
             {
                 byte[] hashBytes = this.qldbHash.Hash;
@@ -104,11 +105,9 @@ namespace Amazon.QLDB.Driver
         {
             ValidationUtils.AssertStringNotEmpty(statement, "statement");
 
-            if (parameters == null)
-            {
-                parameters = new List<IIonValue>();
-            }
+            parameters ??= new List<IIonValue>();
 
+            // Prevent race condition between Commit and Executes, making them synchronous to ensure hash validity.
             lock (this)
             {
                 this.qldbHash = Dot(this.qldbHash, statement, parameters);

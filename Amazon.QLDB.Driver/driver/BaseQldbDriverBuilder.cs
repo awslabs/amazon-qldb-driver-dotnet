@@ -139,10 +139,7 @@ namespace Amazon.QLDB.Driver
         /// </summary>
         private protected void PrepareBuild()
         {
-            if (this.SessionConfig == null)
-            {
-                this.SessionConfig = new AmazonQLDBSessionConfig();
-            }
+            this.SessionConfig ??= new AmazonQLDBSessionConfig();
 
             // Set SDK retry to 0 in order to let driver handle retry logic.
             this.SessionConfig.MaxErrorRetry = 0;

@@ -16,6 +16,7 @@ namespace Amazon.QLDB.Driver
     using System;
     using System.Collections.Concurrent;
     using System.Threading;
+    using System.Threading.Tasks;
     using Amazon.QLDBSession;
     using Amazon.QLDBSession.Model;
     using Microsoft.Extensions.Logging;
@@ -31,9 +32,9 @@ namespace Amazon.QLDB.Driver
         internal readonly string LedgerName;
         internal readonly IAmazonQLDBSession SessionClient;
         internal readonly ILogger Logger;
-        internal SemaphoreSlim PoolPermits;
-        internal BlockingCollection<T> SessionPool;
-        internal bool IsClosed = false;
+        private readonly SemaphoreSlim poolPermits;
+        private readonly BlockingCollection<T> sessionPool;
+        private bool isClosed = false;
 
         internal QldbDriverBase(
             string ledgerName,
@@ -44,101 +45,36 @@ namespace Amazon.QLDB.Driver
             this.LedgerName = ledgerName;
             this.SessionClient = sessionClient;
             this.Logger = logger;
-            this.PoolPermits = new SemaphoreSlim(maxConcurrentTransactions, maxConcurrentTransactions);
-            this.SessionPool = new BlockingCollection<T>(maxConcurrentTransactions);
+            this.poolPermits = new SemaphoreSlim(maxConcurrentTransactions, maxConcurrentTransactions);
+            this.sessionPool = new BlockingCollection<T>(maxConcurrentTransactions);
         }
 
         public void Dispose()
         {
-            if (!this.IsClosed)
+            if (!this.isClosed)
             {
-                this.IsClosed = true;
-                while (this.SessionPool.Count > 0)
+                this.isClosed = true;
+                while (this.sessionPool.Count > 0)
                 {
-                    this.SessionPool.Take().Close();
+                    this.sessionPool.Take().Close();
                 }
 
-                this.SessionPool.Dispose();
+                this.sessionPool.Dispose();
                 this.SessionClient.Dispose();
-                this.PoolPermits.Dispose();
+                this.poolPermits.Dispose();
             }
         }
 
         internal void ReleaseSession(T session)
         {
-            this.SessionPool.Add(session);
-            this.Logger.LogDebug("Session returned to pool; pool size is now {}.", this.SessionPool.Count);
-            this.PoolPermits.Release();
-        }
-
-        internal void ThrowIfNoRetry(
-            QldbTransactionException qte,
-            T currentSession,
-            int maxRetries,
-            ref bool replaceDeadSession,
-            ref int retryAttempt)
-        {
-            if (qte is RetriableException)
-            {
-                retryAttempt++;
-
-                // Always retry on the first attempt if failure was caused by a stale session in the pool.
-                if (qte.InnerException is InvalidSessionException && retryAttempt == 1)
-                {
-                    this.Logger.LogDebug("Initial session received from pool invalid. Retrying...");
-                    replaceDeadSession = true;
-                    return;
-                }
-
-                // Normal retry logic.
-                if (retryAttempt > maxRetries)
-                {
-                    if (qte.IsSessionAlive)
-                    {
-                        this.ReleaseSession(currentSession);
-                    }
-                    else
-                    {
-                        this.PoolPermits.Release();
-                    }
-
-                    throw qte.InnerException;
-                }
-
-                this.Logger.LogInformation("A recoverable error has occurred. Attempting retry #{}.", retryAttempt);
-                this.Logger.LogDebug(
-                    "Errored Transaction ID: {}. Error cause: {}",
-                    qte.TransactionId,
-                    qte.InnerException.ToString());
-                replaceDeadSession = !qte.IsSessionAlive;
-                if (replaceDeadSession)
-                {
-                    this.Logger.LogDebug("Replacing invalid session...");
-                }
-                else
-                {
-                    this.Logger.LogDebug("Retrying with a different session...");
-                    this.ReleaseSession(currentSession);
-                }
-            }
-            else
-            {
-                if (qte.IsSessionAlive)
-                {
-                    this.ReleaseSession(currentSession);
-                }
-                else
-                {
-                    this.PoolPermits.Release();
-                }
-
-                throw qte.InnerException;
-            }
+            this.sessionPool.Add(session);
+            this.Logger.LogDebug("Session returned to pool; pool size is now {}.", this.sessionPool.Count);
+            this.poolPermits.Release();
         }
 
         internal void ThrowIfClosed()
         {
-            if (this.IsClosed)
+            if (this.isClosed)
             {
                 this.Logger.LogError(ExceptionMessages.DriverClosed);
                 throw new QldbDriverException(ExceptionMessages.DriverClosed);
@@ -149,16 +85,16 @@ namespace Amazon.QLDB.Driver
         {
             this.Logger.LogDebug(
                 "Getting session. There are {} free sessions and {} available permits.",
-                this.SessionPool.Count,
-                this.SessionPool.BoundedCapacity - this.PoolPermits.CurrentCount);
+                this.sessionPool.Count,
+                this.sessionPool.BoundedCapacity - this.poolPermits.CurrentCount);
 
-            if (this.PoolPermits.Wait(0))
+            if (this.poolPermits.Wait(0))
             {
                 lock (this)
                 {
-                    if (this.SessionPool.Count > 0)
+                    if (this.sessionPool.Count > 0)
                     {
-                        return this.SessionPool.Take();
+                        return this.sessionPool.Take();
                     }
                     else
                     {
@@ -170,6 +106,133 @@ namespace Amazon.QLDB.Driver
             {
                 this.Logger.LogError(ExceptionMessages.MaxConcurrentTransactionsExceeded);
                 throw new QldbDriverException(ExceptionMessages.MaxConcurrentTransactionsExceeded);
+            }
+        }
+
+        internal bool GetShouldReplaceDeadSessionOrThrowIfNoRetry(
+            QldbTransactionException qte,
+            T currentSession,
+            int retryAttempt,
+            RetryPolicy retryPolicy,
+            Action<int> retryAction)
+        {
+            bool replaceDeadSession = this.GetIsSessionDeadAndThrowIfNoRetry(
+                qte,
+                currentSession,
+                retryPolicy.MaxRetries,
+                retryAttempt);
+            try
+            {
+                retryAction?.Invoke(retryAttempt);
+                Thread.Sleep(retryPolicy.BackoffStrategy.CalculateDelay(
+                    new RetryPolicyContext(retryAttempt, qte.InnerException)));
+            }
+            catch (Exception)
+            {
+                // Safeguard against semaphore leak if parameter actions throw exceptions.
+                if (replaceDeadSession)
+                {
+                    this.poolPermits.Release();
+                }
+
+                throw;
+            }
+
+            return replaceDeadSession;
+        }
+
+        internal async Task<bool> GetShouldReplaceDeadSessionOrThrowIfNoRetryAsync(
+            QldbTransactionException qte,
+            T currentSession,
+            int retryAttempt,
+            RetryPolicy retryPolicy,
+            CancellationToken token)
+        {
+            bool replaceDeadSession = this.GetIsSessionDeadAndThrowIfNoRetry(
+                qte,
+                currentSession,
+                retryPolicy.MaxRetries,
+                retryAttempt);
+            try
+            {
+                var backoffDelay = retryPolicy.BackoffStrategy.CalculateDelay(
+                    new RetryPolicyContext(retryAttempt, qte.InnerException));
+                await Task.Delay(backoffDelay, token);
+            }
+            catch (Exception)
+            {
+                // Safeguard against semaphore leak if parameter actions throw exceptions.
+                if (replaceDeadSession)
+                {
+                    this.poolPermits.Release();
+                }
+
+                throw;
+            }
+
+            return replaceDeadSession;
+        }
+
+        private bool GetIsSessionDeadAndThrowIfNoRetry(
+            QldbTransactionException qte,
+            T currentSession,
+            int maxRetries,
+            int retryAttempt)
+        {
+            if (qte is RetriableException)
+            {
+                // Always retry on the first attempt if failure was caused by a stale session in the pool.
+                if (qte.InnerException is InvalidSessionException && retryAttempt == 1)
+                {
+                    this.Logger.LogDebug("Initial session received from pool invalid. Retrying...");
+                    return true;
+                }
+
+                // Normal retry logic.
+                if (retryAttempt > maxRetries)
+                {
+                    if (qte.IsSessionAlive)
+                    {
+                        this.ReleaseSession(currentSession);
+                    }
+                    else
+                    {
+                        this.poolPermits.Release();
+                    }
+
+                    throw qte.InnerException;
+                }
+
+                this.Logger.LogInformation("A recoverable error has occurred. Attempting retry #{}.", retryAttempt);
+                this.Logger.LogDebug(
+                    "Errored Transaction ID: {}. Error cause: {}",
+                    qte.TransactionId,
+                    qte.InnerException.ToString());
+                bool replaceDeadSession = !qte.IsSessionAlive;
+                if (replaceDeadSession)
+                {
+                    this.Logger.LogDebug("Replacing invalid session...");
+                }
+                else
+                {
+                    this.Logger.LogDebug("Retrying with a different session...");
+                    this.ReleaseSession(currentSession);
+                }
+
+                return replaceDeadSession;
+            }
+            else
+            {
+                if (qte.IsSessionAlive)
+                {
+                    this.ReleaseSession(currentSession);
+                }
+                else
+                {
+                    this.poolPermits.Release();
+                }
+
+                throw qte.InnerException;
             }
         }
     }

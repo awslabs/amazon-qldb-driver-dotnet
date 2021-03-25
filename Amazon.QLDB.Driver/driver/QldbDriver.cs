@@ -16,7 +16,6 @@ namespace Amazon.QLDB.Driver
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Threading;
     using Amazon.QLDBSession;
     using Amazon.Runtime;
     using Microsoft.Extensions.Logging;
@@ -271,8 +270,7 @@ namespace Amazon.QLDB.Driver
             this.driverBase.ThrowIfClosed();
 
             bool replaceDeadSession = false;
-            int retryAttempt = 0;
-            while (true)
+            for (int retryAttempt = 1; true; retryAttempt++)
             {
                 QldbSession session = null;
                 try
@@ -292,42 +290,19 @@ namespace Amazon.QLDB.Driver
                 }
                 catch (QldbTransactionException qte)
                 {
-                    this.driverBase.ThrowIfNoRetry(
+                    replaceDeadSession = this.driverBase.GetShouldReplaceDeadSessionOrThrowIfNoRetry(
                         qte,
                         session,
-                        retryPolicy.MaxRetries,
-                        ref replaceDeadSession,
-                        ref retryAttempt);
-
-                    try
-                    {
-                        retryAction?.Invoke(retryAttempt);
-                        Thread.Sleep(retryPolicy.BackoffStrategy.CalculateDelay(
-                            new RetryPolicyContext(retryAttempt, qte.InnerException)));
-                    }
-                    catch (Exception)
-                    {
-                        // Safeguard against semaphore leak if parameter actions throw exceptions.
-                        if (replaceDeadSession)
-                        {
-                            this.driverBase.PoolPermits.Release();
-                        }
-
-                        throw;
-                    }
+                        retryAttempt,
+                        retryPolicy,
+                        retryAction);
                 }
             }
         }
 
         internal QldbSession GetSession()
         {
-            QldbSession session = this.driverBase.GetSessionFromPool();
-            if (session == null)
-            {
-                session = this.StartNewSession();
-            }
-
-            return session;
+            return this.driverBase.GetSessionFromPool() ?? this.StartNewSession();
         }
 
         private QldbSession StartNewSession()

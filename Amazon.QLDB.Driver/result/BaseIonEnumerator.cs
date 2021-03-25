@@ -97,12 +97,8 @@ namespace Amazon.QLDB.Driver
         /// <returns>The current TimingInformation statistics.</returns>
         internal TimingInformation? GetTimingInformation()
         {
-            if (this.processingTimeMilliseconds == null)
-            {
-                return null;
-            }
-
-            return new TimingInformation(this.processingTimeMilliseconds.Value);
+            return this.processingTimeMilliseconds == null ? null :
+                new TimingInformation(this.processingTimeMilliseconds.Value);
         }
 
         /// <summary>

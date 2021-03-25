@@ -113,8 +113,7 @@ namespace Amazon.QLDB.Driver
             this.driverBase.ThrowIfClosed();
 
             bool replaceDeadSession = false;
-            int retryAttempt = 0;
-            while (true)
+            for (int retryAttempt = 1; true; retryAttempt++)
             {
                 AsyncQldbSession session = null;
                 try
@@ -134,29 +133,12 @@ namespace Amazon.QLDB.Driver
                 }
                 catch (QldbTransactionException qte)
                 {
-                    this.driverBase.ThrowIfNoRetry(
+                    replaceDeadSession = await this.driverBase.GetShouldReplaceDeadSessionOrThrowIfNoRetryAsync(
                         qte,
                         session,
-                        retryPolicy.MaxRetries,
-                        ref replaceDeadSession,
-                        ref retryAttempt);
-
-                    try
-                    {
-                        var backoffDelay = retryPolicy.BackoffStrategy.CalculateDelay(
-                            new RetryPolicyContext(retryAttempt, qte.InnerException));
-                        await Task.Delay(backoffDelay, cancellationToken);
-                    }
-                    catch (Exception)
-                    {
-                        // Safeguard against semaphore leak if parameter actions throw exceptions.
-                        if (replaceDeadSession)
-                        {
-                            this.driverBase.PoolPermits.Release();
-                        }
-
-                        throw;
-                    }
+                        retryAttempt,
+                        retryPolicy,
+                        cancellationToken);
                 }
             }
         }
@@ -172,13 +154,7 @@ namespace Amazon.QLDB.Driver
 
         internal async Task<AsyncQldbSession> GetSession(CancellationToken token)
         {
-            AsyncQldbSession session = this.driverBase.GetSessionFromPool();
-            if (session == null)
-            {
-                session = await this.StartNewSession(token);
-            }
-
-            return session;
+            return this.driverBase.GetSessionFromPool() ?? await this.StartNewSession(token);
         }
 
         private async Task<AsyncQldbSession> StartNewSession(CancellationToken token)
