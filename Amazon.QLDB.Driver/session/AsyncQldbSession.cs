@@ -63,7 +63,8 @@ namespace Amazon.QLDB.Driver
         /// Thrown when there is an error executing against QLDB.
         /// </exception>
         internal async Task<T> Execute<T>(
-            Func<AsyncTransactionExecutor, Task<T>> func, CancellationToken cancellationToken = default)
+            Func<AsyncTransactionExecutor, Task<T>> func,
+            CancellationToken cancellationToken)
         {
             ValidationUtils.AssertNotNull(func, "func");
 
@@ -90,7 +91,10 @@ namespace Amazon.QLDB.Driver
             {
                 if (IsTransactionExpiredException(ise))
                 {
-                    throw new QldbTransactionException(transactionId, await this.TryAbort(transaction), ise);
+                    throw new QldbTransactionException(
+                        transactionId,
+                        await this.TryAbort(transaction, cancellationToken),
+                        ise);
                 }
                 else
                 {
@@ -106,14 +110,23 @@ namespace Amazon.QLDB.Driver
                 if (ase.StatusCode == HttpStatusCode.InternalServerError ||
                     ase.StatusCode == HttpStatusCode.ServiceUnavailable)
                 {
-                    throw new RetriableException(transactionId, await this.TryAbort(transaction), ase);
+                    throw new RetriableException(
+                        transactionId,
+                        await this.TryAbort(transaction, cancellationToken),
+                        ase);
                 }
 
-                throw new QldbTransactionException(transactionId, await this.TryAbort(transaction), ase);
+                throw new QldbTransactionException(
+                    transactionId,
+                    await this.TryAbort(transaction, cancellationToken),
+                    ase);
             }
             catch (Exception e)
             {
-                throw new QldbTransactionException(transactionId, await this.TryAbort(transaction), e);
+                throw new QldbTransactionException(
+                    transactionId,
+                    await this.TryAbort(transaction, cancellationToken),
+                    e);
             }
             finally
             {
@@ -131,7 +144,7 @@ namespace Amazon.QLDB.Driver
         /// </param>
         ///
         /// <returns>The newly created transaction object.</returns>
-        internal virtual async Task<AsyncTransaction> StartTransaction(CancellationToken cancellationToken = default)
+        internal virtual async Task<AsyncTransaction> StartTransaction(CancellationToken cancellationToken)
         {
             var startTransactionResult = await this.session.StartTransactionAsync(cancellationToken);
             return new AsyncTransaction(
@@ -153,7 +166,7 @@ namespace Amazon.QLDB.Driver
         /// </param>
         ///
         /// <returns>Whether the abort call has succeeded.</returns>
-        private async Task<bool> TryAbort(AsyncTransaction transaction, CancellationToken cancellationToken = default)
+        private async Task<bool> TryAbort(AsyncTransaction transaction, CancellationToken cancellationToken)
         {
             try
             {
@@ -166,9 +179,9 @@ namespace Amazon.QLDB.Driver
                     await this.session.AbortTransactionAsync(cancellationToken);
                 }
             }
-            catch (AmazonServiceException ase)
+            catch (Exception e)
             {
-                this.logger.LogWarning("This session is invalid on ABORT: {}", ase);
+                this.logger.LogWarning("This session is invalid on ABORT: {}", e);
                 return false;
             }
 

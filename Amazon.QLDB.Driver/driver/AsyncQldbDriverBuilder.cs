@@ -13,8 +13,6 @@
 
 namespace Amazon.QLDB.Driver
 {
-    using Microsoft.Extensions.Logging;
-
     /// <summary>
     /// Builder object for creating an <see cref="AsyncQldbDriver"/>, allowing for configuration of the parameters of
     /// construction.
@@ -30,7 +28,7 @@ namespace Amazon.QLDB.Driver
 
         private protected override AsyncQldbDriverBuilder BuilderInstance => this;
 
-        private protected override string UserAgentStringPrefix => "Async QLDB Driver for .NET v";
+        private protected override string UserAgentStringPrefix => "Async " + base.UserAgentStringPrefix;
 
         /// <summary>
         /// Build a driver instance using the current configuration set with the builder.

@@ -19,8 +19,8 @@ namespace Amazon.QLDB.Driver
     using Amazon.Runtime;
 
     /// <summary>
-    /// Transaction object used within asynchronous lambda executions to provide a reduced view that allows only the operations that are
-    /// valid within the context of an active managed transaction.
+    /// Transaction object used within asynchronous lambda executions to provide a reduced view that allows only the
+    /// operations that are valid within the context of an active managed transaction.
     /// </summary>
     public class AsyncTransactionExecutor : IAsyncExecutable
     {
@@ -30,7 +30,9 @@ namespace Amazon.QLDB.Driver
         /// Initializes a new instance of the <see cref="AsyncTransactionExecutor"/> class.
         /// </summary>
         ///
-        /// <param name="transaction">The <see cref="AsyncTransaction"/> object the <see cref="AsyncTransactionExecutor"/> wraps.</param>
+        /// <param name="transaction">
+        /// The <see cref="AsyncTransaction"/> object the <see cref="AsyncTransactionExecutor"/> wraps.
+        /// </param>
         internal AsyncTransactionExecutor(AsyncTransaction transaction)
         {
             this.transaction = transaction;

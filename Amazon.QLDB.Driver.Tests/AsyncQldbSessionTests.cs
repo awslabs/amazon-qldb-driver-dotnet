@@ -84,7 +84,7 @@ namespace Amazon.QLDB.Driver.Tests
 
             try
             {
-                var result = await asyncQldbSession.Execute(transaction);
+                var result = await asyncQldbSession.Execute(transaction, CancellationToken.None);
 
                 Assert.IsNull(expectedExceptionType);
                 Assert.AreEqual(expected, result);
@@ -155,7 +155,8 @@ namespace Amazon.QLDB.Driver.Tests
             try
             {
                 await asyncQldbSession.Execute(
-                    async (AsyncTransactionExecutor txn) => { await txn.Execute("testStatement"); return true; });
+                    async (AsyncTransactionExecutor txn) => { await txn.Execute("testStatement"); return true; },
+                    CancellationToken.None);
             }
             catch (Exception e)
             {
@@ -178,7 +179,8 @@ namespace Amazon.QLDB.Driver.Tests
             mockSession.Setup(x => x.StartTransactionAsync(It.IsAny<CancellationToken>())).Throws(new BadRequestException("bad request"));
 
             var ex = asyncQldbSession.Execute(
-                    async (AsyncTransactionExecutor txn) => { await txn.Execute("testStatement"); return true; });
+                    async (AsyncTransactionExecutor txn) => { await txn.Execute("testStatement"); return true; },
+                    CancellationToken.None);
 
             Assert.IsTrue(ex.GetAwaiter().GetResult());
             mockSession.Verify(s => s.AbortTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -192,7 +194,8 @@ namespace Amazon.QLDB.Driver.Tests
 
             var ex = await Assert.ThrowsExceptionAsync<QldbTransactionException>(
                 async () => await asyncQldbSession.Execute(
-                    async (AsyncTransactionExecutor txn) => { await txn.Execute("testStatement"); return true; }));
+                    async (AsyncTransactionExecutor txn) => { await txn.Execute("testStatement"); return true; },
+                    CancellationToken.None));
 
             Assert.IsFalse(ex.IsSessionAlive);
             mockSession.Verify(s => s.AbortTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -211,14 +214,16 @@ namespace Amazon.QLDB.Driver.Tests
             {
                 await Assert.ThrowsExceptionAsync<QldbTransactionException>(
                     async () => await asyncQldbSession.Execute(
-                        async (AsyncTransactionExecutor txn) => { await txn.Execute("testStatement"); return true; }));
+                        async (AsyncTransactionExecutor txn) => { await txn.Execute("testStatement"); return true; },
+                        CancellationToken.None));
 
             }
             else
             {
                 await Assert.ThrowsExceptionAsync<RetriableException>(
                     async () => await asyncQldbSession.Execute(
-                        async (AsyncTransactionExecutor txn) => { await txn.Execute("testStatement"); return true; }));
+                        async (AsyncTransactionExecutor txn) => { await txn.Execute("testStatement"); return true; },
+                        CancellationToken.None));
             }
         }
 
@@ -230,7 +235,7 @@ namespace Amazon.QLDB.Driver.Tests
                 TransactionId = "testTransactionIdddddd"
             });
 
-            var transaction = asyncQldbSession.StartTransaction();
+            var transaction = asyncQldbSession.StartTransaction(CancellationToken.None);
             Assert.IsNotNull(transaction);
         }
 

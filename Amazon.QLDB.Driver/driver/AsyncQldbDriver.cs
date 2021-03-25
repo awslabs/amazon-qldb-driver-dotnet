@@ -110,11 +110,7 @@ namespace Amazon.QLDB.Driver
             RetryPolicy retryPolicy,
             CancellationToken cancellationToken = default)
         {
-            if (this.driverBase.IsClosed)
-            {
-                this.driverBase.Logger.LogError(ExceptionMessages.DriverClosed);
-                throw new QldbDriverException(ExceptionMessages.DriverClosed);
-            }
+            this.driverBase.ThrowIfClosed();
 
             bool replaceDeadSession = false;
             int retryAttempt = 0;
@@ -125,14 +121,14 @@ namespace Amazon.QLDB.Driver
                 {
                     if (replaceDeadSession)
                     {
-                        session = await this.StartNewSession();
+                        session = await this.StartNewSession(cancellationToken);
                     }
                     else
                     {
-                        session = await this.GetSession();
+                        session = await this.GetSession(cancellationToken);
                     }
 
-                    T returnedValue = await session.Execute(func);
+                    T returnedValue = await session.Execute(func, cancellationToken);
                     this.driverBase.ReleaseSession(session);
                     return returnedValue;
                 }
@@ -174,32 +170,32 @@ namespace Amazon.QLDB.Driver
             return (await result.ToListAsync(cancellationToken)).Select(i => i.StringValue);
         }
 
-        internal async Task<AsyncQldbSession> GetSession()
+        internal async Task<AsyncQldbSession> GetSession(CancellationToken token)
         {
-            this.driverBase.LogSessionPoolState();
+            AsyncQldbSession session = this.driverBase.GetSessionFromPool();
+            if (session == null)
+            {
+                session = await this.StartNewSession(token);
+            }
 
-            if (await this.driverBase.PoolPermits.WaitAsync(QldbDriverBase<AsyncQldbSession>.DefaultTimeoutInMs))
-            {
-                return this.driverBase.SessionPool.Count > 0 ? this.driverBase.SessionPool.Take() :
-                    await this.StartNewSession();
-            }
-            else
-            {
-                this.driverBase.Logger.LogError(ExceptionMessages.SessionPoolEmpty);
-                throw new QldbDriverException(ExceptionMessages.SessionPoolEmpty);
-            }
+            return session;
         }
 
-        private async Task<AsyncQldbSession> StartNewSession()
+        private async Task<AsyncQldbSession> StartNewSession(CancellationToken token)
         {
             try
             {
                 Session session = await Session.StartSessionAsync(
                     this.driverBase.LedgerName,
                     this.driverBase.SessionClient,
-                    this.driverBase.Logger);
+                    this.driverBase.Logger,
+                    token);
                 this.driverBase.Logger.LogDebug("Creating new pooled session with ID {}.", session.SessionId);
                 return new AsyncQldbSession(session, this.driverBase.Logger);
+            }
+            catch (OperationCanceledException oce)
+            {
+                throw new QldbTransactionException(QldbTransactionException.DefaultTransactionId, false, oce);
             }
             catch (Exception e)
             {

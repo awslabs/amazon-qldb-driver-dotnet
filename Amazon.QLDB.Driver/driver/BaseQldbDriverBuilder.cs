@@ -29,7 +29,7 @@ namespace Amazon.QLDB.Driver
 
         private protected abstract TBuilder BuilderInstance { get; }
 
-        private protected abstract string UserAgentStringPrefix { get; }
+        private protected virtual string UserAgentStringPrefix { get; } = "QLDB Driver for .NET v";
 
         /// <summary>
         /// Gets or sets the AWS credentials to construct the <see cref="AmazonQLDBSessionClient"/> object.
@@ -144,6 +144,7 @@ namespace Amazon.QLDB.Driver
                 this.SessionConfig = new AmazonQLDBSessionConfig();
             }
 
+            // Set SDK retry to 0 in order to let driver handle retry logic.
             this.SessionConfig.MaxErrorRetry = 0;
             this.sessionClient = this.Credentials == null ? new AmazonQLDBSessionClient(this.SessionConfig)
                 : new AmazonQLDBSessionClient(this.Credentials, this.SessionConfig);

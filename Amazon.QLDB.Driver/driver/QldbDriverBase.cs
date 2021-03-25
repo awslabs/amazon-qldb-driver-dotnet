@@ -26,7 +26,6 @@ namespace Amazon.QLDB.Driver
         internal const string TableNameQuery =
                 "SELECT VALUE name FROM information_schema.user_tables WHERE status = 'ACTIVE'";
 
-        internal const int DefaultTimeoutInMs = 1;
         internal static readonly RetryPolicy DefaultRetryPolicy = RetryPolicy.Builder().Build();
 
         internal readonly string LedgerName;
@@ -83,7 +82,7 @@ namespace Amazon.QLDB.Driver
             {
                 retryAttempt++;
 
-                // If initial session is invalid, always retry once with a new session.
+                // Always retry on the first attempt if failure was caused by a stale session in the pool.
                 if (qte.InnerException is InvalidSessionException && retryAttempt == 1)
                 {
                     this.Logger.LogDebug("Initial session received from pool invalid. Retrying...");
@@ -137,12 +136,41 @@ namespace Amazon.QLDB.Driver
             }
         }
 
-        internal void LogSessionPoolState()
+        internal void ThrowIfClosed()
+        {
+            if (this.IsClosed)
+            {
+                this.Logger.LogError(ExceptionMessages.DriverClosed);
+                throw new QldbDriverException(ExceptionMessages.DriverClosed);
+            }
+        }
+
+        internal T GetSessionFromPool()
         {
             this.Logger.LogDebug(
                 "Getting session. There are {} free sessions and {} available permits.",
                 this.SessionPool.Count,
                 this.SessionPool.BoundedCapacity - this.PoolPermits.CurrentCount);
+
+            if (this.PoolPermits.Wait(0))
+            {
+                lock (this)
+                {
+                    if (this.SessionPool.Count > 0)
+                    {
+                        return this.SessionPool.Take();
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
+            }
+            else
+            {
+                this.Logger.LogError(ExceptionMessages.MaxConcurrentTransactionsExceeded);
+                throw new QldbDriverException(ExceptionMessages.MaxConcurrentTransactionsExceeded);
+            }
         }
     }
 }

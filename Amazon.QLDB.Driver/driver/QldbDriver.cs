@@ -268,11 +268,7 @@ namespace Amazon.QLDB.Driver
 
         internal T Execute<T>(Func<TransactionExecutor, T> func, RetryPolicy retryPolicy, Action<int> retryAction)
         {
-            if (this.driverBase.IsClosed)
-            {
-                this.driverBase.Logger.LogError(ExceptionMessages.DriverClosed);
-                throw new QldbDriverException(ExceptionMessages.DriverClosed);
-            }
+            this.driverBase.ThrowIfClosed();
 
             bool replaceDeadSession = false;
             int retryAttempt = 0;
@@ -325,18 +321,13 @@ namespace Amazon.QLDB.Driver
 
         internal QldbSession GetSession()
         {
-            this.driverBase.LogSessionPoolState();
+            QldbSession session = this.driverBase.GetSessionFromPool();
+            if (session == null)
+            {
+                session = this.StartNewSession();
+            }
 
-            if (this.driverBase.PoolPermits.Wait(QldbDriverBase<QldbSession>.DefaultTimeoutInMs))
-            {
-                return this.driverBase.SessionPool.Count > 0 ? this.driverBase.SessionPool.Take() :
-                    this.StartNewSession();
-            }
-            else
-            {
-                this.driverBase.Logger.LogError(ExceptionMessages.SessionPoolEmpty);
-                throw new QldbDriverException(ExceptionMessages.SessionPoolEmpty);
-            }
+            return session;
         }
 
         private QldbSession StartNewSession()

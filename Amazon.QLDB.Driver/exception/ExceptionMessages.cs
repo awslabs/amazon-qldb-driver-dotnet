@@ -22,10 +22,7 @@ namespace Amazon.QLDB.Driver
         internal const string DriverClosed = "Operation is invalid as this QldbDriver has already been disposed.";
         internal const string FailedToSerializeParameter = "Error serializing statement parameters: ";
         internal const string ResultEnumeratorRetrieved = "The Enumerator of a Result can only be retrieved once. Please execute a new statement or buffer the results.";
-        internal const string SessionClosed = "Operation is invalid as this QldbSession has already been disposed.";
-        internal const string SessionPoolEmpty = "No sessions were returned to the pool and the timeout has been reached. Dispose some active sessions and retry.";
-        internal const string TransactionAlreadyOpened = "Transaction has already been opened.";
-        internal const string TransactionClosed = "Operation is invalid as this Transaction has been closed after a commit or abort operation, and cannot be reused.";
+        internal const string MaxConcurrentTransactionsExceeded = "The maximum amount of concurrent transactions was exceeded. Complete some active transactions and retry.";
         internal const string TransactionDigestMismatch = "Transaction's commit digest did not match returned value from QLDB. Please retry with a new transaction.";
 #pragma warning restore SA1600 // Elements should be documented
     }

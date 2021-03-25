@@ -74,7 +74,7 @@ namespace Amazon.QLDB.Driver
             string ledgerName,
             IAmazonQLDBSession sessionClient,
             ILogger logger,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken)
         {
             var startSessionRequest = new StartSessionRequest
             {
@@ -106,7 +106,8 @@ namespace Amazon.QLDB.Driver
         /// <returns>A newly created <see cref="Session"/>.</returns>
         internal static Session StartSession(string ledgerName, IAmazonQLDBSession sessionClient, ILogger logger)
         {
-            return StartSessionAsync(ledgerName, sessionClient, logger).GetAwaiter().GetResult();
+            return
+                StartSessionAsync(ledgerName, sessionClient, logger, CancellationToken.None).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -118,8 +119,7 @@ namespace Amazon.QLDB.Driver
         /// </param>
         ///
         /// <returns>The result of the abort transaction request.</returns>
-        internal virtual async Task<AbortTransactionResult> AbortTransactionAsync(
-            CancellationToken cancellationToken = default)
+        internal virtual async Task<AbortTransactionResult> AbortTransactionAsync(CancellationToken cancellationToken)
         {
             var abortTransactionRequest = new AbortTransactionRequest();
             var request = new SendCommandRequest
@@ -137,7 +137,7 @@ namespace Amazon.QLDB.Driver
         /// <returns>The result of the abort transaction request.</returns>
         internal virtual AbortTransactionResult AbortTransaction()
         {
-            return this.AbortTransactionAsync().GetAwaiter().GetResult();
+            return this.AbortTransactionAsync(CancellationToken.None).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -147,7 +147,7 @@ namespace Amazon.QLDB.Driver
         {
             try
             {
-                await this.EndSessionAsync();
+                await this.EndSessionAsync(CancellationToken.None);
             }
             catch (AmazonServiceException ase)
             {
@@ -164,7 +164,7 @@ namespace Amazon.QLDB.Driver
         /// </param>
         ///
         /// <returns>The result of the end session request.</returns>
-        internal virtual async Task<EndSessionResult> EndSessionAsync(CancellationToken cancellationToken = default)
+        internal virtual async Task<EndSessionResult> EndSessionAsync(CancellationToken cancellationToken)
         {
             var endSessionRequest = new EndSessionRequest();
             var request = new SendCommandRequest
@@ -182,7 +182,7 @@ namespace Amazon.QLDB.Driver
         /// <returns>The result of the end session request.</returns>
         internal virtual EndSessionResult EndSession()
         {
-            return this.EndSessionAsync().GetAwaiter().GetResult();
+            return this.EndSessionAsync(CancellationToken.None).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -197,9 +197,13 @@ namespace Amazon.QLDB.Driver
         ///
         /// <returns>The result of the commit transaction request.</returns>
         ///
-        /// <exception cref="OccConflictException">Thrown if an OCC conflict has been detected within the transaction.</exception>
+        /// <exception cref="OccConflictException">
+        /// Thrown if an OCC conflict has been detected within the transaction.
+        /// </exception>
         internal virtual async Task<CommitTransactionResult> CommitTransactionAsync(
-            string txnId, MemoryStream commitDigest, CancellationToken cancellationToken = default)
+            string txnId,
+            MemoryStream commitDigest,
+            CancellationToken cancellationToken)
         {
             var commitTransactionRequest = new CommitTransactionRequest
             {
@@ -223,10 +227,12 @@ namespace Amazon.QLDB.Driver
         ///
         /// <returns>The result of the commit transaction request.</returns>
         ///
-        /// <exception cref="OccConflictException">Thrown if an OCC conflict has been detected within the transaction.</exception>
+        /// <exception cref="OccConflictException">
+        /// Thrown if an OCC conflict has been detected within the transaction.
+        /// </exception>
         internal virtual CommitTransactionResult CommitTransaction(string txnId, MemoryStream commitDigest)
         {
-            return this.CommitTransactionAsync(txnId, commitDigest).GetAwaiter().GetResult();
+            return this.CommitTransactionAsync(txnId, commitDigest, CancellationToken.None).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -240,9 +246,11 @@ namespace Amazon.QLDB.Driver
         ///     A cancellation token that can be used by other objects or threads to receive notice of cancellation.
         /// </param>
         ///
-        /// <returns>The result of the execution, which contains a <see cref="Page"/> representing the first data chunk.</returns>
+        /// <returns>
+        /// The result of the execution, which contains a <see cref="Page"/> representing the first data chunk.
+        /// </returns>
         internal virtual async Task<ExecuteStatementResult> ExecuteStatementAsync(
-            string txnId, string statement, List<IIonValue> parameters, CancellationToken cancellationToken = default)
+            string txnId, string statement, List<IIonValue> parameters, CancellationToken cancellationToken)
         {
             List<ValueHolder> valueHolders = null;
 
@@ -301,11 +309,14 @@ namespace Amazon.QLDB.Driver
         /// <param name="statement">The PartiQL statement to execute.</param>
         /// <param name="parameters">The parameters to use with the PartiQL statement for execution.</param>
         ///
-        /// <returns>The result of the execution, which contains a <see cref="Page"/> representing the first data chunk.</returns>
+        /// <returns>
+        /// The result of the execution, which contains a <see cref="Page"/> representing the first data chunk.
+        /// </returns>
         internal virtual ExecuteStatementResult ExecuteStatement(
             string txnId, string statement, List<IIonValue> parameters)
         {
-            return this.ExecuteStatementAsync(txnId, statement, parameters).GetAwaiter().GetResult();
+            return this.ExecuteStatementAsync(txnId, statement, parameters, CancellationToken.None).GetAwaiter()
+                .GetResult();
         }
 
         /// <summary>
@@ -320,7 +331,9 @@ namespace Amazon.QLDB.Driver
         ///
         /// <returns>The result of the <see cref="FetchPageRequest"/>.</returns>
         internal virtual async Task<FetchPageResult> FetchPageAsync(
-            string txnId, string nextPageToken, CancellationToken cancellationToken = default)
+            string txnId,
+            string nextPageToken,
+            CancellationToken cancellationToken)
         {
             var fetchPageRequest = new FetchPageRequest
             {
@@ -345,7 +358,7 @@ namespace Amazon.QLDB.Driver
         /// <returns>The result of the <see cref="FetchPageRequest"/>.</returns>
         internal virtual FetchPageResult FetchPage(string txnId, string nextPageToken)
         {
-            return this.FetchPageAsync(txnId, nextPageToken).GetAwaiter().GetResult();
+            return this.FetchPageAsync(txnId, nextPageToken, CancellationToken.None).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -358,7 +371,7 @@ namespace Amazon.QLDB.Driver
         ///
         /// <returns>The result of the start transaction request.</returns>
         internal virtual async Task<StartTransactionResult> StartTransactionAsync(
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken)
         {
             var startTransactionRequest = new StartTransactionRequest();
             var request = new SendCommandRequest
@@ -376,7 +389,7 @@ namespace Amazon.QLDB.Driver
         /// <returns>The result of the start transaction request.</returns>
         internal virtual StartTransactionResult StartTransaction()
         {
-            return this.StartTransactionAsync().GetAwaiter().GetResult();
+            return this.StartTransactionAsync(CancellationToken.None).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -390,7 +403,7 @@ namespace Amazon.QLDB.Driver
         ///
         /// <returns>The result returned by QLDB for the request.</returns>
         private async Task<SendCommandResponse> SendCommand(
-            SendCommandRequest request, CancellationToken cancellationToken = default)
+            SendCommandRequest request, CancellationToken cancellationToken)
         {
             request.SessionToken = this.sessionToken;
             this.logger.LogDebug("Sending request: {}", request);

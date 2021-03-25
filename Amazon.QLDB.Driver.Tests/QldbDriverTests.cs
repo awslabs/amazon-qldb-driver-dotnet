@@ -38,7 +38,7 @@ namespace Amazon.QLDB.Driver.Tests
         private static MockSessionClient mockClient;
         private static QldbDriver testDriver;
         private static readonly byte[] digest =
-        { 
+        {
             172, 173, 243, 92, 129, 184, 254, 234, 173, 95, 107, 180, 60, 73, 11, 238,
             6, 87, 197, 229, 178, 142, 155, 122, 218, 197, 23, 15, 241, 117, 92, 132
         };
@@ -53,9 +53,9 @@ namespace Amazon.QLDB.Driver.Tests
                 .WithAWSCredentials(new Mock<AWSCredentials>().Object)
                 .WithQLDBSessionConfig(new AmazonQLDBSessionConfig());
             Assert.IsNotNull(builder);
-            
+
             mockClient = new MockSessionClient();
-            mockClient.SetDefaultResponse(DefaultSendCommandResponse("testToken", TestTransactionId, 
+            mockClient.SetDefaultResponse(DefaultSendCommandResponse("testToken", TestTransactionId,
                 TestRequestId, digest));
 
             testDriver = new QldbDriver(TestLedger, mockClient, 4, NullLogger.Instance);
@@ -130,7 +130,7 @@ namespace Amazon.QLDB.Driver.Tests
             try
             {
                 testDriver.GetSession();
-                
+
                 Assert.Fail("driver.GetSession() should have thrown retriable exception");
             }
             catch (RetriableException re)
@@ -190,7 +190,7 @@ namespace Amazon.QLDB.Driver.Tests
             {
                 Assert.Fail("driver.Execute() should not have thrown exception");
             }
-            
+
             Assert.IsTrue(executeInvoked);
         }
 
@@ -213,7 +213,7 @@ namespace Amazon.QLDB.Driver.Tests
             {
                 Assert.Fail("driver.Execute() should not have thrown exception");
             }
-            
+
             Assert.IsTrue(executeInvoked);
         }
 
@@ -230,7 +230,7 @@ namespace Amazon.QLDB.Driver.Tests
             Assert.IsTrue(executeInvoked);
             Assert.AreEqual("testReturnValue", result);
         }
-        
+
         [TestMethod]
         public void TestExecuteWithFuncLambdaAndRetryPolicyReturnsFuncOutput()
         {
@@ -316,9 +316,9 @@ namespace Amazon.QLDB.Driver.Tests
             catch (Exception e)
             {
                 Assert.IsTrue(expectThrow);
-                
+
                 Assert.IsTrue(exceptions.Count > 0);
-                
+
                 // The exception should be the same type as the last exception in our exception list.
                 Exception finalException = exceptions[exceptions.Count - 1];
                 Type expectedExceptionType = finalException.GetType();
@@ -366,13 +366,13 @@ namespace Amazon.QLDB.Driver.Tests
                 new object[] { defaultPolicy, new Exception[] { invalidSession, occConflict, http500 }, false,
                     Times.Exactly(3) },
                 // Retry OCC exceed limit.
-                new object[] { defaultPolicy, new Exception[] { occConflict, invalidSession, http500, invalidSession, 
+                new object[] { defaultPolicy, new Exception[] { occConflict, invalidSession, http500, invalidSession,
                     occConflict }, true, Times.Exactly(4) },
                 // Retry CapacityExceededException exceed limit.
                 new object[] { defaultPolicy, new Exception[] { capacityExceeded, capacityExceeded, capacityExceeded,
                     capacityExceeded, capacityExceeded }, true, Times.Exactly(4) },
                 // Retry customized policy within retry limit.
-                new object[] { customerPolicy, new Exception[] { invalidSession, invalidSession, invalidSession, 
+                new object[] { customerPolicy, new Exception[] { invalidSession, invalidSession, invalidSession,
                     invalidSession, invalidSession, invalidSession, invalidSession, invalidSession}, false,
                     Times.Exactly(8) },
             };

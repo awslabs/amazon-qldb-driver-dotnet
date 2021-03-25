@@ -45,7 +45,7 @@ namespace Amazon.QLDB.Driver
             Session session,
             string txnId,
             ExecuteStatementResult statementResult,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken)
         {
             this.ionEnumerator = new IonAsyncEnumerator(session, txnId, statementResult, cancellationToken);
         }
@@ -107,7 +107,7 @@ namespace Amazon.QLDB.Driver
                 Session session,
                 string txnId,
                 ExecuteStatementResult statementResult,
-                CancellationToken cancellationToken = default)
+                CancellationToken cancellationToken)
                 : base(session, txnId, statementResult)
             {
                 this.CancellationToken = cancellationToken;

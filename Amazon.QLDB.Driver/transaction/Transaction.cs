@@ -64,12 +64,15 @@ namespace Amazon.QLDB.Driver
         /// </exception>
         internal void Commit()
         {
-            byte[] hashBytes = this.qldbHash.Hash;
-            MemoryStream commitDigest = this.session.CommitTransaction(this.txnId, new MemoryStream(hashBytes))
-                .CommitDigest;
-            if (!hashBytes.SequenceEqual(commitDigest.ToArray()))
+            lock (this)
             {
-                throw new InvalidOperationException(ExceptionMessages.TransactionDigestMismatch);
+                byte[] hashBytes = this.qldbHash.Hash;
+                MemoryStream commitDigest = this.session.CommitTransaction(this.txnId, new MemoryStream(hashBytes))
+                    .CommitDigest;
+                if (!hashBytes.SequenceEqual(commitDigest.ToArray()))
+                {
+                    throw new InvalidOperationException(ExceptionMessages.TransactionDigestMismatch);
+                }
             }
         }
 
@@ -106,10 +109,13 @@ namespace Amazon.QLDB.Driver
                 parameters = new List<IIonValue>();
             }
 
-            this.qldbHash = Dot(this.qldbHash, statement, parameters);
-            ExecuteStatementResult executeStatementResult = this.session.ExecuteStatement(
-                this.txnId, statement, parameters);
-            return new Result(this.session, this.txnId, executeStatementResult);
+            lock (this)
+            {
+                this.qldbHash = Dot(this.qldbHash, statement, parameters);
+                ExecuteStatementResult executeStatementResult = this.session.ExecuteStatement(
+                    this.txnId, statement, parameters);
+                return new Result(this.session, this.txnId, executeStatementResult);
+            }
         }
 
         /// <summary>
