@@ -29,7 +29,7 @@ namespace Amazon.QLDB.Driver
 
         private protected abstract TBuilder BuilderInstance { get; }
 
-        private protected virtual string UserAgentStringPrefix { get; } = "QLDB Driver for .NET v";
+        private protected virtual string UserAgentString { get; } = "QLDB Driver for .NET v" + Version;
 
         /// <summary>
         /// Gets or sets the AWS credentials to construct the <see cref="AmazonQLDBSessionClient"/> object.
@@ -168,10 +168,9 @@ namespace Amazon.QLDB.Driver
                 return;
             }
 
-            var metric = this.UserAgentStringPrefix + Version;
-            if (!args.Headers[UserAgentHeader].Contains(metric))
+            if (!args.Headers[UserAgentHeader].Contains(this.UserAgentString))
             {
-                args.Headers[UserAgentHeader] = args.Headers[UserAgentHeader] + metric;
+                args.Headers[UserAgentHeader] = args.Headers[UserAgentHeader] + this.UserAgentString;
             }
         }
 

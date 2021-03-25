@@ -28,7 +28,7 @@ namespace Amazon.QLDB.Driver
 
         private protected override AsyncQldbDriverBuilder BuilderInstance => this;
 
-        private protected override string UserAgentStringPrefix => "Async " + base.UserAgentStringPrefix;
+        private protected override string UserAgentString => base.UserAgentString + " Async";
 
         /// <summary>
         /// Build a driver instance using the current configuration set with the builder.
