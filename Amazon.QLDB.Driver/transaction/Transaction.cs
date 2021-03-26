@@ -29,6 +29,8 @@ namespace Amazon.QLDB.Driver
     /// </summary>
     internal class Transaction : BaseTransaction
     {
+        private readonly object hashLock = new object();
+
         /// <summary>
         /// Initializes a new instance of the <see cref="Transaction"/> class.
         /// </summary>
@@ -65,7 +67,7 @@ namespace Amazon.QLDB.Driver
         internal void Commit()
         {
             // Prevent race condition between Commit and Executes, making them synchronous to ensure hash validity.
-            lock (this)
+            lock (this.hashLock)
             {
                 byte[] hashBytes = this.qldbHash.Hash;
                 MemoryStream commitDigest = this.session.CommitTransaction(this.txnId, new MemoryStream(hashBytes))
@@ -108,7 +110,7 @@ namespace Amazon.QLDB.Driver
             parameters ??= new List<IIonValue>();
 
             // Prevent race condition between Commit and Executes, making them synchronous to ensure hash validity.
-            lock (this)
+            lock (this.hashLock)
             {
                 this.qldbHash = Dot(this.qldbHash, statement, parameters);
                 ExecuteStatementResult executeStatementResult = this.session.ExecuteStatement(

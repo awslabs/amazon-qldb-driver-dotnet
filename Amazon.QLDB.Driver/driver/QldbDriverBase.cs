@@ -199,18 +199,17 @@ namespace Amazon.QLDB.Driver
                     "Errored Transaction ID: {}. Error cause: {}",
                     qte.TransactionId,
                     qte.InnerException.ToString());
-                bool replaceDeadSession = !qte.IsSessionAlive;
-                if (replaceDeadSession)
-                {
-                    this.Logger.LogDebug("Replacing invalid session...");
-                }
-                else
+                if (qte.IsSessionAlive)
                 {
                     this.Logger.LogDebug("Retrying with a different session...");
                     this.ReleaseSession(currentSession);
                 }
+                else
+                {
+                    this.Logger.LogDebug("Replacing invalid session...");
+                }
 
-                return replaceDeadSession;
+                return !qte.IsSessionAlive;
             }
             else
             {

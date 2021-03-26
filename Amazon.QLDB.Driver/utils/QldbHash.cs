@@ -67,8 +67,7 @@ namespace Amazon.QLDB.Driver
         /// <returns>Hashed result.</returns>
         internal static QldbHash ToQldbHash(string value)
         {
-            return value == null ? ToQldbHash(ValueFactory.NewString(string.Empty)) :
-                ToQldbHash(ValueFactory.NewString(value));
+            return ToQldbHash(ValueFactory.NewString(value ?? string.Empty));
         }
 
         /// <summary>
