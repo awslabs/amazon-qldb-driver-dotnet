@@ -90,17 +90,8 @@ namespace Amazon.QLDB.Driver
 
             if (this.poolPermits.Wait(0))
             {
-                lock (this)
-                {
-                    if (this.sessionPool.Count > 0)
-                    {
-                        return this.sessionPool.Take();
-                    }
-                    else
-                    {
-                        return null;
-                    }
-                }
+                T session;
+                return this.sessionPool.TryTake(out session) ? session : null;
             }
             else
             {

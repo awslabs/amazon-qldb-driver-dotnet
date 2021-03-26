@@ -49,13 +49,18 @@ namespace Amazon.QLDB.Driver
             this.hashLock = new SemaphoreSlim(1, 1);
         }
 
+        public void Dispose()
+        {
+            this.hashLock.Dispose();
+        }
+
         /// <summary>
         /// Abort the transaction asynchronously and roll back any changes.
         /// Any open <see cref="IAsyncResult"/> created by the transaction will be invalidated.
         /// </summary>
         ///
         /// <returns>A task representing the asynchronous abort operation.</returns>
-        public virtual async Task Abort()
+        internal virtual async Task Abort()
         {
             await this.session.AbortTransactionAsync(this.cancellationToken);
         }
@@ -75,7 +80,7 @@ namespace Amazon.QLDB.Driver
         /// </exception
         ///
         /// <returns>A task representing the asynchronous commit operation.</returns>
-        public async Task Commit()
+        internal async Task Commit()
         {
             await this.hashLock.WaitAsync(this.cancellationToken);
             try
@@ -105,7 +110,7 @@ namespace Amazon.QLDB.Driver
         /// <returns>Result from executed statement.</returns>
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        public virtual async Task<IAsyncResult> Execute(string statement)
+        internal virtual async Task<IAsyncResult> Execute(string statement)
         {
             return await this.Execute(statement, new List<IIonValue>());
         }
@@ -120,7 +125,7 @@ namespace Amazon.QLDB.Driver
         /// <returns>Result from executed statement.</returns>
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        public virtual async Task<IAsyncResult> Execute(string statement, List<IIonValue> parameters)
+        internal virtual async Task<IAsyncResult> Execute(string statement, List<IIonValue> parameters)
         {
             ValidationUtils.AssertStringNotEmpty(statement, "statement");
 
@@ -150,14 +155,9 @@ namespace Amazon.QLDB.Driver
         /// <returns>Result from executed statement.</returns>
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        public virtual async Task<IAsyncResult> Execute(string statement, params IIonValue[] parameters)
+        internal virtual async Task<IAsyncResult> Execute(string statement, params IIonValue[] parameters)
         {
             return await this.Execute(statement, new List<IIonValue>(parameters));
-        }
-
-        public void Dispose()
-        {
-            this.hashLock.Dispose();
         }
     }
 }
