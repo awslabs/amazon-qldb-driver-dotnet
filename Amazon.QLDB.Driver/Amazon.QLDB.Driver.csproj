@@ -5,7 +5,7 @@
     <RootNamespace>Amazon.QLDB.Driver</RootNamespace>
     <Company>Amazon.com, Inc.</Company>
     <Authors>Amazon Web Services</Authors>
-    <Version>1.1.1</Version>
+    <Version>1.2.0</Version>
     <PackageId>Amazon.QLDB.Driver</PackageId>
     <Description>A .NET implementation of the Amazon QLDB driver that can be used to programmatically access and interact with data in Amazon QLDB ledgers.</Description>
     <Copyright>Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.</Copyright>
