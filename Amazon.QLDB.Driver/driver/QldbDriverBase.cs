@@ -54,9 +54,9 @@ namespace Amazon.QLDB.Driver
             if (!this.isClosed)
             {
                 this.isClosed = true;
-                while (this.sessionPool.Count > 0)
+                while (this.sessionPool.TryTake(out T session))
                 {
-                    this.sessionPool.Take().Close();
+                    session.End();
                 }
 
                 this.sessionPool.Dispose();
@@ -90,8 +90,7 @@ namespace Amazon.QLDB.Driver
 
             if (this.poolPermits.Wait(0))
             {
-                T session;
-                return this.sessionPool.TryTake(out session) ? session : null;
+                return this.sessionPool.TryTake(out T session) ? session : null;
             }
             else
             {
