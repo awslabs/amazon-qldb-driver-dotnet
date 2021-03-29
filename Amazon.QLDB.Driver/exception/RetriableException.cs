@@ -14,7 +14,6 @@
 namespace Amazon.QLDB.Driver
 {
     using System;
-    using Amazon.Runtime;
 
     /// <summary>
     /// This exception is used internally to allow lower level exceptions to be retried. In some cases, only

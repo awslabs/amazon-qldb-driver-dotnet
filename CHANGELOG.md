@@ -1,3 +1,7 @@
+## Release v1.2.0
+
+* C# version updated to 9.0.0 minimum
+
 ## Release v1.1.1
 
 * Update the minimum version of the driver's logging dependency to 2.0.0

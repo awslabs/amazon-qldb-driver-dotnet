@@ -17,26 +17,49 @@ namespace Amazon.QLDB.Driver
     using Amazon.IonDotnet.Tree;
 
     /// <summary>
-    /// Interface for the result of executing a statement in QLDB.
-    /// Implements IEnumerable to allow iteration over Ion values within the result.
-    ///
-    /// Note that due to the fact that a result can only be retrieved from QLDB once, the IResult may only be
-    /// iterated over once and is not thread-safe. Attempts to do so multiple times will result in an exception.
+    /// Base class for Buffered Result.
     /// </summary>
-    public interface IResult : IEnumerable<IIonValue>
+    public abstract class BaseBufferedResult
     {
+        private protected readonly List<IIonValue> values;
+        private protected readonly IOUsage? consumedIOs;
+        private protected readonly TimingInformation? timingInformation;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BaseBufferedResult"/> class.
+        /// </summary>
+        ///
+        /// <param name="values">Buffer values.</param>
+        /// <param name="consumedIOs">IOUsage statistics.</param>
+        /// <param name="timingInformation">TimingInformation statistics.</param>
+        private protected BaseBufferedResult(
+            List<IIonValue> values,
+            IOUsage? consumedIOs,
+            TimingInformation? timingInformation)
+        {
+            this.values = values;
+            this.consumedIOs = consumedIOs;
+            this.timingInformation = timingInformation;
+        }
+
         /// <summary>
         /// Gets the current query statistics for the number of read IO requests. The statistics are stateful.
         /// </summary>
         ///
         /// <returns>The current IOUsage statistics.</returns>
-        IOUsage? GetConsumedIOs();
+        public IOUsage? GetConsumedIOs()
+        {
+            return this.consumedIOs;
+        }
 
         /// <summary>
         /// Gets the current query statistics for server-side processing time. The statistics are stateful.
         /// </summary>
         ///
         /// <returns>The current TimingInformation statistics.</returns>
-        TimingInformation? GetTimingInformation();
+        public TimingInformation? GetTimingInformation()
+        {
+            return this.timingInformation;
+        }
     }
 }
