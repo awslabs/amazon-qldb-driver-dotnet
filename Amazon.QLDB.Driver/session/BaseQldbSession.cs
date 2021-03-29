@@ -32,15 +32,15 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <summary>
-        /// Close the internal session object.
+        /// End the underlying internal session.
         /// </summary>
-        internal void Close()
+        internal void End()
         {
             this.session.End();
         }
 
         /// <summary>
-        /// Retrieve the ID of this session..
+        /// Retrieve the ID of this session.
         /// </summary>
         ///
         /// <returns>The ID of this session.</returns>
