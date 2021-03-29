@@ -1,6 +1,16 @@
 ## Release v1.2.0
 
-* C# version updated to 9.0.0 minimum
+v1.2 adds the asynchronous version of the driver. C# version updated to 9.0.0 minimum for development of the driver.
+
+### :hammer_and_wrench: Improvements
+
+* Added `AsyncQldbDriver`, `AsyncQldbDriverBuilder`, and various other classes to support asynchronous workflows
+* Improved retry logic to now handle more types of failure
+
+### :beetle: Bug Fixes:
+* Fixed some resource leaks upon calling `Dispose` on the driver
+* Fixed a rare race condition when calling `Execute` on the driver
+* Added a safeguard to release resources when user-passed functions threw exceptions in `retryAction` and `BackoffPolicy`
 
 ## Release v1.1.1
 
