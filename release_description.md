@@ -10,9 +10,7 @@ The following is some sample usage for the async driver:
 
 Create async driver:
 ```c#
-    AmazonQLDBSessionConfig amazonQLDBSessionConfig = new AmazonQLDBSessionConfig();
     IAsyncQldbDriver driver = AsyncQldbDriver.Builder()
-        .WithQLDBSessionConfig(amazonQLDBSessionConfig)
         .WithLedger("testLedger")
         .Build();
 ```
