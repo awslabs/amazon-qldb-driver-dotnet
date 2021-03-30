@@ -8,19 +8,19 @@ The full list of changes are included in the [change log](https://github.com/aws
 
 The following is some sample usage for the async driver:
 
-Create async driver:
+    Create async driver:
 ```c#
     IAsyncQldbDriver driver = AsyncQldbDriver.Builder()
         .WithLedger("testLedger")
         .Build();
 ```
 
-Execute a query:
+    Execute a query:
 ```c#
     IAsyncResult result = await driver.Execute(async txn => await txn.Execute("SELECT * from Person");
 ```
 
-Iterate through a result:
+    Iterate through a result:
 ```c#
     await foreach (IIonValue ionValue in result)
     {
