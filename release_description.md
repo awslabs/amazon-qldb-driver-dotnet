@@ -2,6 +2,13 @@
 
 * Add the asynchronous version of the driver.
 * Improved retry logic to now handle more types of failure.
-* Fixed some resource leaks upon calling `Dispose` on the driver.
-* Fixed a rare race condition when calling `Execute` on the driver.
-* Added a safeguard to release resources when user-passed functions threw exceptions in `retryAction` and `IBackoffStrategy.CalculateDelay`.
+
+The full list of changes are included in the [change log](https://github.com/awslabs/amazon-qldb-driver-dotnet/blob/master/CHANGELOG.md).
+
+Here is some sample usage for creating an async driver and executing a query:
+
+```c#
+    AsyncQldbDriver driver = AsyncQldbDriver.Builder().WithQLDBSessionConfig(config).WithLedger(ledgerName).Build();
+
+    var result = await driver.Execute(async txn => await txn.Execute(query));
+```
