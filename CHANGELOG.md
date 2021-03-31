@@ -10,7 +10,7 @@ v1.2 adds the asynchronous version of the driver. C# version updated to 9.0.0 mi
 ### :beetle: Bug Fixes:
 * Fixed some resource leaks upon calling `Dispose` on the driver
 * Fixed a rare race condition when calling `Execute` on the driver
-* Added a safeguard to release resources when user-passed functions threw exceptions in `retryAction` and `BackoffPolicy`
+* Added a safeguard to release resources when user-passed functions threw exceptions in `retryAction` and `IBackoffStrategy.CalculateDelay`
 
 ## Release v1.1.1
 
