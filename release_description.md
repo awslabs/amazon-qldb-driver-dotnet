@@ -3,6 +3,7 @@ The Amazon QLDB team is pleased to announce the release of v1.2.0 of the QLDB .N
 ## Enhancements
 * Add the asynchronous version of the driver.
 * Improved retry logic to now handle more types of failure.
+* Various bug fixes.
 
 The full list of changes are included in the [change log](https://github.com/awslabs/amazon-qldb-driver-dotnet/blob/master/CHANGELOG.md).
 
