@@ -6,7 +6,7 @@ on:
     inputs:
         version:
           required: true
-          description: 'Release version'
+          description: 'Release version (e.g. v1.1.0)'
         target:
           required: true
           description: 'Target branch or commit ID'
@@ -22,5 +22,5 @@ jobs:
       uses: actions/checkout@v2.0.0
       
     - name: create draft release
-      run: gh release create -d ${{github.event.inputs.version}} -F 'release_description.md' -t 'Release of QLDB .Net driver v${{github.event.inputs.version}}' --target ${{github.event.inputs.target}}
+      run: gh release create -d ${{github.event.inputs.version}} -F 'release_description.md' -t 'Release of QLDB .Net driver ${{github.event.inputs.version}}' --target ${{github.event.inputs.target}}
 
