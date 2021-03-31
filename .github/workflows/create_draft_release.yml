@@ -1,0 +1,26 @@
+name: Create draft release
+
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+        version:
+          required: true
+          description: 'Release version'
+        target:
+          required: true
+          description: 'Target branch or commit ID'
+
+jobs:
+  create_release:
+    runs-on: ubuntu-latest 
+      
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v2.0.0
+      
+    - name: create draft release
+      run: gh release create -d ${{github.event.inputs.version}} -F 'release_description.md' 
+      -t 'Release of QLDB .Net driver v${{github.event.inputs.version}}' --target ${{github.event.inputs.target}}
+    env:
+      GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
