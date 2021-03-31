@@ -12,8 +12,10 @@ on:
           description: 'Target branch or commit ID'
 
 jobs:
-  create_release:
+  create_draft_release:
     runs-on: ubuntu-latest 
+    env:
+      GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
       
     steps:
     - name: Checkout the code
@@ -21,5 +23,4 @@ jobs:
       
     - name: create draft release
       run: gh release create -d ${{github.event.inputs.version}} -F 'release_description.md' -t 'Release of QLDB .Net driver v${{github.event.inputs.version}}' --target ${{github.event.inputs.target}}
-    env:
-      GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
