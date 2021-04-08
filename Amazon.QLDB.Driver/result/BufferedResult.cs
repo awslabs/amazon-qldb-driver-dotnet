@@ -13,8 +13,10 @@
 
 namespace Amazon.QLDB.Driver
 {
+    using System;
     using System.Collections;
     using System.Collections.Generic;
+    using System.IO;
     using Amazon.IonDotnet.Tree;
 
     /// <summary>
@@ -62,6 +64,11 @@ namespace Amazon.QLDB.Driver
         public IEnumerator<IIonValue> GetEnumerator()
         {
             return this.values.GetEnumerator();
+        }
+
+        public IEnumerable<R> Select<R>(Func<Stream, R> selector)
+        {
+            throw new NotImplementedException("Cannot Select a BufferedResult as the Stream is not available");
         }
 
         /// <summary>

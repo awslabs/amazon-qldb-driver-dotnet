@@ -14,6 +14,7 @@
 namespace Amazon.QLDB.Driver
 {
     using System;
+    using System.IO;
     using System.Collections;
     using System.Collections.Generic;
     using Amazon.IonDotnet.Tree;
@@ -80,6 +81,67 @@ namespace Amazon.QLDB.Driver
         public TimingInformation? GetTimingInformation()
         {
             return this.ionEnumerator.GetTimingInformation();
+        }
+
+        /// <summary>
+        /// Convert this IEnumerable to enumerate over a different value.
+        /// </summary>
+        public IEnumerable<R> Select<R>(Func<Stream, R> selector) 
+        {
+            return new MappedEnumerable<R>(this.ionEnumerator, selector);
+        }
+
+        private class MappedEnumerable<T> : IEnumerable<T>
+        {
+            private readonly IonEnumerator ionEnumerator;
+            private readonly Func<Stream, T> selector;
+
+            public MappedEnumerable(IonEnumerator ionEnumerator, Func<Stream, T> selector)
+            {
+                this.ionEnumerator = ionEnumerator;
+                this.selector = selector;
+            }
+
+            public IEnumerator<T> GetEnumerator()
+            {
+                return new MappedEnumerator<T>(ionEnumerator, selector);
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return this.GetEnumerator();
+            }
+        }
+
+        private class MappedEnumerator<T> : IEnumerator<T> 
+        {
+            private readonly IonEnumerator ionEnumerator;
+            private readonly Func<Stream, T> selector;
+
+            public MappedEnumerator(IonEnumerator ionEnumerator, Func<Stream, T> selector)
+            {
+                this.ionEnumerator = ionEnumerator;
+                this.selector = selector;
+            }
+
+            public T Current => selector(ionEnumerator.CurrentIonBinary);
+
+            object IEnumerator.Current => Current;
+
+            public void Dispose()
+            {
+                ionEnumerator.Dispose();
+            }
+
+            public bool MoveNext()
+            {
+                return ionEnumerator.MoveNext();
+            }
+
+            public void Reset()
+            {
+                ionEnumerator.Reset();
+            }
         }
 
         /// <summary>

@@ -13,7 +13,7 @@
 
 namespace Amazon.QLDB.Driver
 {
-    using System;
+    using System.IO;
     using System.Collections.Generic;
     using Amazon.IonDotnet.Builders;
     using Amazon.IonDotnet.Tree;
@@ -73,6 +73,15 @@ namespace Amazon.QLDB.Driver
                 return IonLoader.Load(this.currentEnumerator.Current.IonBinary).GetElementAt(0);
             }
         }
+
+        public Stream CurrentIonBinary
+        {
+            get
+            {
+                return this.currentEnumerator.Current.IonBinary;
+            }
+        }
+
 
         /// <summary>
         /// Gets the current query statistics for the number of read IO requests.

@@ -13,6 +13,8 @@
 
 namespace Amazon.QLDB.Driver
 {
+    using System;
+    using System.IO;
     using System.Collections.Generic;
     using Amazon.IonDotnet.Tree;
 
@@ -38,5 +40,7 @@ namespace Amazon.QLDB.Driver
         ///
         /// <returns>The current TimingInformation statistics.</returns>
         TimingInformation? GetTimingInformation();
+
+        IEnumerable<R> Select<R>(Func<Stream, R> selector);
     }
 }
