@@ -4,7 +4,6 @@ This is the .NET driver for [Amazon Quantum Ledger Database (QLDB)](https://aws.
 to write software that makes use of AmazonQLDB.
 
 [![nuget](https://img.shields.io/nuget/v/Amazon.QLDB.Driver.svg)](https://www.nuget.org/packages/Amazon.QLDB.Driver/)
-[![License](https://img.shields.io/github/license/awslabs/amazon-qldb-driver-dotnet)](https://github.com/awslabs/amazon-qldb-driver-dotnet/blob/doc/badge_and_doc_link/LICENSE)
 [![license](https://img.shields.io/badge/license-Apache%202.0-blue)](https://github.com/awslabs/amazon-qldb-driver-dotnet/blob/master/LICENSE)
 [![AWS Provider](https://img.shields.io/badge/provider-AWS-orange?logo=amazon-aws&color=ff9900)](https://aws.amazon.com/qldb/)
 
