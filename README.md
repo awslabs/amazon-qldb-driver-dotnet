@@ -1,12 +1,11 @@
 # Amazon QLDB .NET Driver
 
-This is the .NET driver for [Amazon Quantum Ledger Database (QLDB)](https://aws.amazon.com/qldb/), which allows .NET developers
-to write software that makes use of AmazonQLDB.
-
 [![nuget](https://img.shields.io/nuget/v/Amazon.QLDB.Driver.svg)](https://www.nuget.org/packages/Amazon.QLDB.Driver/)
 [![license](https://img.shields.io/badge/license-Apache%202.0-blue)](https://github.com/awslabs/amazon-qldb-driver-dotnet/blob/master/LICENSE)
 [![AWS Provider](https://img.shields.io/badge/provider-AWS-orange?logo=amazon-aws&color=ff9900)](https://aws.amazon.com/qldb/)
 
+This is the .NET driver for [Amazon Quantum Ledger Database (QLDB)](https://aws.amazon.com/qldb/), which allows .NET developers
+to write software that makes use of AmazonQLDB.
 
 ## Requirements
 
@@ -56,6 +55,19 @@ Alternatively you can run the unit tests on the command line with the following:
 To run the integration tests, you must run it on the command line with the following:
 
 ```dotnet test Amazon.QLDB.Driver.IntegrationTests --settings Amazon.QLDB.Driver.IntegrationTests/.runsettings```
+
+## Getting Help
+
+Please use these community resources for getting help.
+* Ask a question on StackOverflow and tag it with the [amazon-qldb](https://stackoverflow.com/questions/tagged/amazon-qldb) tag.
+* Open a support ticket with [AWS Support](http://docs.aws.amazon.com/awssupport/latest/user/getting-started.html).
+* If you think you may have found a bug, please open an [issue](https://github.com/awslabs/amazon-qldb-driver-dotnet/issues/new).
+
+## Opening Issues
+
+If you encounter a bug with the Amazon QLDB Dotnet Driver, we would like to hear about it. Please search the [existing issues](https://github.com/awslabs/amazon-qldb-driver-dotnet/issues) and see if others are also experiencing the issue before opening a new issue. When opening a new issue, we will need the version of Amazon QLDB Dotnet Driver, Dotnet language version, and OS you’re using. Please also include reproduction case for the issue when appropriate.
+
+The GitHub issues are intended for bug reports and feature requests. For help and questions with using AWS SDK for GO please make use of the resources listed in the [Getting Help](https://github.com/awslabs/amazon-qldb-driver-dotnet#getting-help) section. Keeping the list of open issues lean will help us respond in a timely manner.
 
 ### Documentation 
 
