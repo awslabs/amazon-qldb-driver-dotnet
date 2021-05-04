@@ -5,7 +5,7 @@
 [![AWS Provider](https://img.shields.io/badge/provider-AWS-orange?logo=amazon-aws&color=ff9900)](https://aws.amazon.com/qldb/)
 
 This is the .NET driver for [Amazon Quantum Ledger Database (QLDB)](https://aws.amazon.com/qldb/), which allows .NET developers
-to write software that makes use of AmazonQLDB.
+to write software that makes use of Amazon QLDB.
 
 ## Requirements
 
@@ -56,6 +56,14 @@ To run the integration tests, you must run it on the command line with the follo
 
 ```dotnet test Amazon.QLDB.Driver.IntegrationTests --settings Amazon.QLDB.Driver.IntegrationTests/.runsettings```
 
+### Documentation 
+
+DocFx is used for documentation. Download [Docfx](https://github.com/dotnet/docfx/releases) as docfx.zip, unzip and extract it to a local folder, and add it to PATH.
+
+You can generate the docstring HTML locally by running the following in the root directory of this repository:
+
+```docfx docs/docfx.json --serve```
+
 ## Getting Help
 
 Please use these community resources for getting help.
@@ -65,18 +73,9 @@ Please use these community resources for getting help.
 
 ## Opening Issues
 
-If you encounter a bug with the Amazon QLDB Dotnet Driver, we would like to hear about it. Please search the [existing issues](https://github.com/awslabs/amazon-qldb-driver-dotnet/issues) and see if others are also experiencing the issue before opening a new issue. When opening a new issue, we will need the version of Amazon QLDB Dotnet Driver, Dotnet language version, and OS you’re using. Please also include reproduction case for the issue when appropriate.
+If you encounter a bug with the Amazon QLDB .NET Driver, we would like to hear about it. Please search the [existing issues](https://github.com/awslabs/amazon-qldb-driver-dotnet/issues) and see if others are also experiencing the issue before opening a new issue. When opening a new issue, we will need the version of Amazon QLDB .NET Driver, .NET language version, and OS you’re using. Please also include reproduction case for the issue when appropriate.
 
-The GitHub issues are intended for bug reports and feature requests. For help and questions with using AWS SDK for GO please make use of the resources listed in the [Getting Help](https://github.com/awslabs/amazon-qldb-driver-dotnet#getting-help) section. Keeping the list of open issues lean will help us respond in a timely manner.
-
-### Documentation 
-
-DocFx is used for documentation. Download [Docfx](https://github.com/dotnet/docfx/releases) as docfx.zip, unzip and extract it to a local folder, and add it to PATH.
-
-You can generate the docstring HTML locally by running the following in the root directory of this repository:
-
-```docfx docs/docfx.json --serve```
-
+The GitHub issues are intended for bug reports and feature requests. For help and questions with using AWS QLDB .NET Driver, please make use of the resources listed in the [Getting Help](https://github.com/awslabs/amazon-qldb-driver-dotnet#getting-help) section. Keeping the list of open issues lean will help us respond in a timely manner.
 
 ## License
 
