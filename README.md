@@ -7,6 +7,8 @@
 This is the .NET driver for [Amazon Quantum Ledger Database (QLDB)](https://aws.amazon.com/qldb/), which allows .NET developers
 to write software that makes use of Amazon QLDB.
 
+For getting started with the driver, see [.NET and Amazon QLDB](https://docs.aws.amazon.com/qldb/latest/developerguide/getting-started.dotnet.html).
+
 ## Requirements
 
 ### Basic Configuration
@@ -31,10 +33,12 @@ Please see the [Quickstart guide for the Amazon QLDB Driver for .Net](https://do
 ### See Also
 
 1. Using the Amazon QLDB Driver for .NET — The best way to get familiar with the Amazon QLDB Driver for .NET is to read [Getting Started with the Amazon QLDB Driver](https://docs.aws.amazon.com/qldb/latest/developerguide/getting-started.dotnet.html) in the [Amazon QLDB Developer Guide](https://docs.aws.amazon.com/qldb/latest/developerguide/what-is.html).
-1. QLDB .NET Driver accepts and returns [Amazon ION](http://amzn.github.io/ion-docs/) Documents. Amazon Ion is a richly-typed, self-describing, hierarchical data serialization format offering interchangeable binary and text representations. For more information read the [ION docs](http://amzn.github.io/ion-docs/docs.html).
-1. [Amazon ION Cookbook](http://amzn.github.io/ion-docs/guides/cookbook.html): This cookbook provides code samples for some simple Amazon Ion use cases.
-1. Amazon QLDB supports the [PartiQL](https://partiql.org/) query language. PartiQL provides SQL-compatible query access across multiple data stores containing structured data, semistructured data, and nested data. For more information read the [PartiQL docs](https://partiql.org/docs.html).
-1. Refer the section [Common Errors while using the Amazon QLDB Drivers](https://docs.aws.amazon.com/qldb/latest/developerguide/driver-errors.html) which describes runtime errors that can be thrown by the Amazon QLDB Driver when calling the qldb-session APIs.
+2. [QLDB .NET Driver Cookbook](https://docs.aws.amazon.com/qldb/latest/developerguide/driver-cookbook-dotnet.html) The cookbook provides code samples for some simple QLDB Python driver use cases. 
+3. [Amazon QLDB .NET Driver Samples](https://github.com/aws-samples/amazon-qldb-dmv-sample-dotnet): A DMV based example application which demonstrates how to use QLDB with the QLDB Driver for Python.
+4. QLDB .NET Driver accepts and returns [Amazon ION](http://amzn.github.io/ion-docs/) Documents. Amazon Ion is a richly-typed, self-describing, hierarchical data serialization format offering interchangeable binary and text representations. For more information read the [ION docs](http://amzn.github.io/ion-docs/docs.html).
+5. [Amazon ION Cookbook](http://amzn.github.io/ion-docs/guides/cookbook.html): This cookbook provides code samples for some simple Amazon Ion use cases.
+6. Amazon QLDB supports the [PartiQL](https://partiql.org/) query language. PartiQL provides SQL-compatible query access across multiple data stores containing structured data, semistructured data, and nested data. For more information read the [PartiQL docs](https://partiql.org/docs.html).
+7. Refer the section [Common Errors while using the Amazon QLDB Drivers](https://docs.aws.amazon.com/qldb/latest/developerguide/driver-errors.html) which describes runtime errors that can be thrown by the Amazon QLDB Driver when calling the qldb-session APIs.
 
 ## Development
 
@@ -69,6 +73,7 @@ You can generate the docstring HTML locally by running the following in the root
 Please use these community resources for getting help.
 * Ask a question on StackOverflow and tag it with the [amazon-qldb](https://stackoverflow.com/questions/tagged/amazon-qldb) tag.
 * Open a support ticket with [AWS Support](http://docs.aws.amazon.com/awssupport/latest/user/getting-started.html).
+* Make a new thread at [AWS QLDB Forum](https://forums.aws.amazon.com/forum.jspa?forumID=353&start=0).
 * If you think you may have found a bug, please open an [issue](https://github.com/awslabs/amazon-qldb-driver-dotnet/issues/new).
 
 ## Opening Issues
