@@ -39,6 +39,12 @@ Please see the [Quickstart guide for the Amazon QLDB Driver for .Net](https://do
 5. [Amazon ION Cookbook](http://amzn.github.io/ion-docs/guides/cookbook.html): This cookbook provides code samples for some simple Amazon Ion use cases.
 6. Amazon QLDB supports the [PartiQL](https://partiql.org/) query language. PartiQL provides SQL-compatible query access across multiple data stores containing structured data, semistructured data, and nested data. For more information read the [PartiQL docs](https://partiql.org/docs.html).
 7. Refer the section [Common Errors while using the Amazon QLDB Drivers](https://docs.aws.amazon.com/qldb/latest/developerguide/driver-errors.html) which describes runtime errors that can be thrown by the Amazon QLDB Driver when calling the qldb-session APIs.
+8. **Driver Recommendations** &mdash; Check them out in the [Best Practices](https://docs.aws.amazon.com/qldb/latest/developerguide/driver.best-practices.html) 
+in the QLDB documentation.
+9. **Exception handling when using QLDB Drivers** &mdash; Refer to the section [Common Errors while using the Amazon 
+QLDB Drivers](https://docs.aws.amazon.com/qldb/latest/developerguide/driver-errors.html) 
+which describes runtime exceptions that can be thrown by the Amazon QLDB Driver when calling the qldb-session APIs.
+
 
 ## Development
 
