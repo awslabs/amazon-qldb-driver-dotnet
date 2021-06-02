@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.QLDBSession" Version="3.5.2" /> 
+    <ProjectReference Include="..\Amazon.QLDB.Driver\Amazon.QLDB.Driver.csproj" />
+    <ProjectReference Include="..\..\..\alpian\ion-object-mapper-dotnet\Amazon.Ion.ObjectMapper\Amazon.Ion.ObjectMapper.csproj" />
+  </ItemGroup>
+
+</Project>

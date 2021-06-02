@@ -145,6 +145,25 @@ namespace Amazon.QLDB.Driver
             }
         }
 
+        internal virtual async Task<Amazon.QLDB.Driver.Generic.IAsyncResult<T>> Execute<T>(IQuery<T> query)
+        {
+            await this.hashLock.WaitAsync(this.cancellationToken);
+            try
+            {
+                this.qldbHash = Dot(this.qldbHash, query.Statement, query.Parameters);
+                ExecuteStatementResult executeStatementResult = await this.session.ExecuteStatementAsync(
+                    this.txnId, 
+                    query.Statement, 
+                    query.Parameters, 
+                    this.cancellationToken);
+                return new Amazon.QLDB.Driver.Generic.AsyncResult<T>(this.session, this.txnId, executeStatementResult, this.cancellationToken, query);
+            }
+            finally
+            {
+                this.hashLock.Release();
+            }
+        }
+
         /// <summary>
         /// Execute the statement using the specified parameters against QLDB and retrieve the result.
         /// </summary>

@@ -42,7 +42,8 @@ namespace Amazon.QLDB.Driver
                 this.LedgerName,
                 this.sessionClient,
                 this.maxConcurrentTransactions,
-                this.Logger);
+                this.Logger,
+                this.serializer);
         }
     }
 }

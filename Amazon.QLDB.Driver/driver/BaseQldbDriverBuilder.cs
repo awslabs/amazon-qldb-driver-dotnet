@@ -26,6 +26,7 @@ namespace Amazon.QLDB.Driver
         private protected AmazonQLDBSessionClient sessionClient;
         private protected int maxConcurrentTransactions = 0;
         private protected bool logRetries = false;
+        private protected ISerializer serializer = null;
 
         private protected abstract TBuilder BuilderInstance { get; }
 
@@ -131,6 +132,12 @@ namespace Amazon.QLDB.Driver
         public TBuilder WithRetryLogging()
         {
             this.logRetries = true;
+            return this.BuilderInstance;
+        }
+
+        public TBuilder WithSerializer(ISerializer serializer)
+        {
+            this.serializer = serializer;
             return this.BuilderInstance;
         }
 
