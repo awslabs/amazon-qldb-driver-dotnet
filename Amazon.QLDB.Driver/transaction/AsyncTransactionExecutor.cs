@@ -25,6 +25,7 @@ namespace Amazon.QLDB.Driver
     public class AsyncTransactionExecutor : IAsyncExecutable
     {
         private readonly AsyncTransaction transaction;
+        private readonly ISerializer serializer;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AsyncTransactionExecutor"/> class.
@@ -33,9 +34,10 @@ namespace Amazon.QLDB.Driver
         /// <param name="transaction">
         /// The <see cref="AsyncTransaction"/> object the <see cref="AsyncTransactionExecutor"/> wraps.
         /// </param>
-        internal AsyncTransactionExecutor(AsyncTransaction transaction)
+        internal AsyncTransactionExecutor(AsyncTransaction transaction, ISerializer serializer = null)
         {
             this.transaction = transaction;
+            this.serializer = serializer;
         }
 
         /// <summary>
@@ -50,6 +52,19 @@ namespace Amazon.QLDB.Driver
         public Task<IAsyncResult> Execute(string statement)
         {
             return this.transaction.Execute(statement);
+        }
+
+        /// <summary>
+        /// Execute the IQuery against QLDB and retrieve the result.
+        /// </summary>
+        public  Task<Amazon.QLDB.Driver.Generic.IAsyncResult<T>> Execute<T>(IQuery<T> query)
+        {
+            return this.transaction.Execute(query);
+        }
+
+        public IQuery<T> Query<T>(string statement, params object[] parameters)
+        {
+            return new QueryData<T>(statement, parameters, serializer);
         }
 
         /// <summary>

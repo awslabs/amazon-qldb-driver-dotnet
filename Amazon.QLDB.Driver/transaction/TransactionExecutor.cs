@@ -13,7 +13,9 @@
 
 namespace Amazon.QLDB.Driver
 {
+    using System;
     using System.Collections.Generic;
+    using System.IO;
     using Amazon.IonDotnet.Tree;
     using Amazon.Runtime;
 
@@ -24,6 +26,7 @@ namespace Amazon.QLDB.Driver
     public class TransactionExecutor : IExecutable
     {
         private readonly Transaction transaction;
+        private readonly ISerializer serializer;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TransactionExecutor"/> class.
@@ -32,9 +35,10 @@ namespace Amazon.QLDB.Driver
         /// <param name="transaction">
         /// The <see cref="Transaction"/> object the <see cref="TransactionExecutor"/> wraps.
         /// </param>
-        internal TransactionExecutor(Transaction transaction)
+        internal TransactionExecutor(Transaction transaction, ISerializer serializer = null)
         {
             this.transaction = transaction;
+            this.serializer = serializer;
         }
 
         /// <summary>
@@ -65,6 +69,19 @@ namespace Amazon.QLDB.Driver
         public IResult Execute(string statement)
         {
             return this.transaction.Execute(statement);
+        }
+        
+        /// <summary>
+        /// Execute the IQuery against QLDB and retrieve the result.
+        /// </summary>
+        public Amazon.QLDB.Driver.Generic.IResult<T> Execute<T>(IQuery<T> query)
+        {
+            return this.transaction.Execute(query);
+        }
+
+        public IQuery<T> Query<T>(string statement, params object[] parameters)
+        {
+            return new QueryData<T>(statement, parameters, serializer);
         }
 
         /// <summary>

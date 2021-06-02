@@ -269,6 +269,48 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             Assert.AreEqual(Constants.SingleDocumentValue, value);
         }
 
+        class ParameterObject 
+        {
+            string Name
+            {
+                get 
+                {
+                    return Constants.SingleDocumentValue;
+                }
+            }
+        }
+
+        class ResultObject 
+        {
+            string DocumentId
+            {
+                get; set;
+            }
+        }
+
+        [TestMethod]
+        public void Execute_InsertDocument_UsingObjectSerialization()
+        {
+            // Given.
+            // Create Ion struct to insert.
+            ParameterObject testObject = new ParameterObject();
+
+            // When.
+            var query = $"INSERT INTO {Constants.TableName} ?";
+            var count = qldbDriver.Execute(txn =>
+            {
+                var result = txn.Execute(txn.Query<ResultObject>(query, testObject));
+
+                var count = 0;
+                foreach (var row in result)
+                {
+                    count++;
+                }
+                return count;
+            });
+            Assert.AreEqual(1, count);
+        }
+
         [TestMethod]
         public void Execute_InsertDocumentWithMultipleFields_DocumentIsInserted()
         {

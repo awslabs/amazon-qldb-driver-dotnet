@@ -24,11 +24,13 @@ namespace Amazon.QLDB.Driver
     {
         private protected readonly ILogger logger;
         private protected Session session;
+        private protected readonly ISerializer serializer;
 
-        internal BaseQldbSession(Session session, ILogger logger)
+        internal BaseQldbSession(Session session, ILogger logger, ISerializer serializer)
         {
             this.session = session;
             this.logger = logger;
+            this.serializer = serializer;
         }
 
         /// <summary>
