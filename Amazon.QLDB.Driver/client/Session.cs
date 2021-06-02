@@ -15,6 +15,7 @@ namespace Amazon.QLDB.Driver
 {
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
     using Amazon.IonDotnet.Builders;
@@ -272,11 +273,31 @@ namespace Amazon.QLDB.Driver
                     return valueHolder;
                 });
 
+                return await ExecuteStatementAsync(txnId, statement, valueHolders.ToArray(), cancellationToken);
+            }
+            finally
+            {
+                if (valueHolders != null)
+                {
+                    valueHolders.ForEach(valueHolder =>
+                    {
+                        valueHolder.IonBinary.Dispose();
+                    });
+                }
+            }
+        }
+
+        internal virtual async Task<ExecuteStatementResult> ExecuteStatementAsync(
+            string txnId, string statement, ValueHolder[] parameters, CancellationToken cancellationToken)
+        {
+            try
+            {
+
                 var executeStatementRequest = new ExecuteStatementRequest
                 {
                     TransactionId = txnId,
                     Statement = statement,
-                    Parameters = valueHolders,
+                    Parameters = parameters.ToList(),
                 };
                 var request = new SendCommandRequest
                 {
@@ -288,16 +309,6 @@ namespace Amazon.QLDB.Driver
             catch (IOException e)
             {
                 throw new QldbDriverException(ExceptionMessages.FailedToSerializeParameter + e.Message, e);
-            }
-            finally
-            {
-                if (valueHolders != null)
-                {
-                    valueHolders.ForEach(valueHolder =>
-                    {
-                        valueHolder.IonBinary.Dispose();
-                    });
-                }
             }
         }
 
@@ -314,6 +325,13 @@ namespace Amazon.QLDB.Driver
         /// </returns>
         internal virtual ExecuteStatementResult ExecuteStatement(
             string txnId, string statement, List<IIonValue> parameters)
+        {
+            return this.ExecuteStatementAsync(txnId, statement, parameters, CancellationToken.None).GetAwaiter()
+                .GetResult();
+        }
+
+        internal virtual ExecuteStatementResult ExecuteStatement(
+            string txnId, string statement, ValueHolder[] parameters)
         {
             return this.ExecuteStatementAsync(txnId, statement, parameters, CancellationToken.None).GetAwaiter()
                 .GetResult();
