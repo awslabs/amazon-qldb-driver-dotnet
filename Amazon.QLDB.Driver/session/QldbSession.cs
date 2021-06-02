@@ -14,6 +14,7 @@
 namespace Amazon.QLDB.Driver
 {
     using System;
+    using System.IO;
     using System.Net;
     using Amazon.QLDBSession.Model;
     using Amazon.Runtime;
@@ -31,8 +32,8 @@ namespace Amazon.QLDB.Driver
         ///
         /// <param name="session">The session object representing a communication channel with QLDB.</param>
         /// <param name="logger">The logger to be used by this.</param>
-        internal QldbSession(Session session, ILogger logger)
-            : base(session, logger)
+        internal QldbSession(Session session, ILogger logger, ISerializer serializer = null)
+            : base(session, logger, serializer)
         {
         }
 
@@ -67,7 +68,7 @@ namespace Amazon.QLDB.Driver
             {
                 transaction = this.StartTransaction();
                 transactionId = transaction.Id;
-                T returnedValue = func(new TransactionExecutor(transaction));
+                T returnedValue = func(new TransactionExecutor(transaction, serializer));
                 if (returnedValue is IResult result)
                 {
                     returnedValue = (T)(object)BufferedResult.BufferResult(result);

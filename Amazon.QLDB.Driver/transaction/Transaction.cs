@@ -93,6 +93,19 @@ namespace Amazon.QLDB.Driver
             return this.Execute(statement, new List<IIonValue>());
         }
 
+        internal Amazon.QLDB.Driver.Generic.IResult<T> Execute<T>(IQuery<T> query)
+        {
+            lock (this.hashLock)
+            {
+                this.qldbHash = Dot(this.qldbHash, query.Statement, query.Parameters);
+                ExecuteStatementResult executeStatementResult = this.session.ExecuteStatement(
+                    this.txnId, 
+                    query.Statement, 
+                    query.Parameters);
+                return new Amazon.QLDB.Driver.Generic.Result<T>(this.session, this.txnId, executeStatementResult, query);
+            }
+        }
+
         /// <summary>
         /// Execute the statement against QLDB and retrieve the result.
         /// </summary>

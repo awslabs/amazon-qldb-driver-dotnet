@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Amazon.QLDB.Driver.Tests", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Amazon.QLDB.Driver.IntegrationTests", "Amazon.QLDB.Driver.IntegrationTests\Amazon.QLDB.Driver.IntegrationTests.csproj", "{43A3FB70-E041-4FED-8335-0D8DDBF59F45}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Amazon.QLDB.Driver.Serialization", "Amazon.QLDB.Driver.Serialization\Amazon.QLDB.Driver.Serialization.csproj", "{8625D344-BB30-4D95-BA2F-7FDA20A80089}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{43A3FB70-E041-4FED-8335-0D8DDBF59F45}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{43A3FB70-E041-4FED-8335-0D8DDBF59F45}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{43A3FB70-E041-4FED-8335-0D8DDBF59F45}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8625D344-BB30-4D95-BA2F-7FDA20A80089}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8625D344-BB30-4D95-BA2F-7FDA20A80089}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8625D344-BB30-4D95-BA2F-7FDA20A80089}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8625D344-BB30-4D95-BA2F-7FDA20A80089}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
