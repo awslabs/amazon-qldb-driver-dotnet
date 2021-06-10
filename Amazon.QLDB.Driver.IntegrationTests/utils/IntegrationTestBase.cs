@@ -25,6 +25,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using System.Reflection;
     using System.Globalization;
+    using Amazon.QLDB.Driver.Serialization;
 
     /// <summary>
     /// Helper class which provides functions that test QLDB directly and through the driver.
@@ -106,6 +107,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             return builder.WithQLDBSessionConfig(amazonQldbSessionConfig)
                 .WithLedger(finalLedgerName)
+                .WithSerializer(new ObjectSerializer())
                 .Build();
         }
 
