@@ -135,6 +135,13 @@ namespace Amazon.QLDB.Driver
             return this.BuilderInstance;
         }
 
+        /// <summary>
+        /// Specify the serializer that should be used to serialize and deserialize Ion data.
+        /// </summary>
+        ///
+        /// <param name="serializer">The serializer to create the driver with.</param>
+        ///
+        /// <returns>This builder object.</returns>
         public TBuilder WithSerializer(ISerializer serializer)
         {
             this.serializer = serializer;
