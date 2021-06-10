@@ -49,6 +49,11 @@ namespace Amazon.QLDB.Driver
         {
             Statement = statement;
             this.parameters = parameters;
+            if (serializer is null)
+            {
+                throw new QldbDriverException("Serializer cannot be null. Please specify a serializer in QldbDriverBuilder.");
+            }
+
             this.serializer = serializer;
         }
 

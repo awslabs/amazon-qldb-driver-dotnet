@@ -57,11 +57,27 @@ namespace Amazon.QLDB.Driver
         /// <summary>
         /// Execute the IQuery against QLDB and retrieve the result.
         /// </summary>
-        public  Task<Amazon.QLDB.Driver.Generic.IAsyncResult<T>> Execute<T>(IQuery<T> query)
+        ///
+        /// <param name="query">The query object containing the PartiQL statement and parameters to be executed against QLDB.</param>
+        /// <typeparam name="T">The return type.</typeparam>
+        ///
+        /// <returns>Result from executed statement.</returns>
+        ///
+        /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
+        public Task<Amazon.QLDB.Driver.Generic.IAsyncResult<T>> Execute<T>(IQuery<T> query)
         {
             return this.transaction.Execute(query);
         }
 
+        /// <summary>
+        /// Create a Query object containing the PartiQL statement and parameters to be executed against QLDB.
+        /// </summary>
+        ///
+        /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
+        /// <param name="parameters">Parameters to execute.</param>
+        /// <typeparam name="T">The return type.</typeparam>
+        ///
+        /// <returns>A Query object.</returns>
         public IQuery<T> Query<T>(string statement, params object[] parameters)
         {
             return new QueryData<T>(statement, parameters, serializer);

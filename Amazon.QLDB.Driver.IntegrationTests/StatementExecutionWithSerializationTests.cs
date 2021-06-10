@@ -105,7 +105,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         public void Execute_InsertDocument_UsingObjectSerialization()
         {
             // Given.
-            // Create Ion struct to insert.
+            // Create a C# object to insert.
             ParameterObject testObject = new ParameterObject();
 
             // When.
