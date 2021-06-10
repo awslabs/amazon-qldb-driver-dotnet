@@ -1,0 +1,3 @@
+[submodule "ion-object-mapper-dotnet"]
+	path = ion-object-mapper-dotnet
+	url = git@github.com:amzn/ion-object-mapper-dotnet.git
