@@ -61,7 +61,8 @@ namespace Amazon.QLDB.Driver
 
         public ValueHolder[] Parameters
         {
-            get {
+            get
+            {
                 return parameters.Select(serializer.Serialize).ToArray();
             }
         }
