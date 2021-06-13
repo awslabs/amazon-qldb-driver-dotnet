@@ -13,25 +13,46 @@
 
 namespace Amazon.QLDB.Driver.Serialization
 {
-    using System;
     using System.IO;
     using Amazon.Ion.ObjectMapper;
     using Amazon.QLDBSession.Model;
 
+    /// <summary>
+    /// Serializer that serialize/deserialize C# objects to ValueHolder object containing Ion data.
+    /// This uses the <see cref="Ion.ObjectMapper"></see> library to perform the serialization/deserialization.
+    /// </summary>
     public class ObjectSerializer : ISerializer
     {
         private readonly IonSerializer serializer;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ObjectSerializer"/> class.
+        /// </summary>
         public ObjectSerializer()
         {
             serializer = new IonSerializer();
         }
 
+        /// <summary>
+        /// Deserialize a ValueHolder object containing the Ion binary into an object of type T.
+        /// </summary>
+        ///
+        /// <param name="s">The ValueHolder object to be deserialized into an object of type T.</param>
+        /// <typeparam name="T">The return type.</typeparam>
+        ///
+        /// <returns>The object of type T.</returns>
         public T Deserialize<T>(ValueHolder v)
         {
             return serializer.Deserialize<T>(v.IonBinary);
         }
 
+        /// <summary>
+        /// Serialize a C# object into a ValueHolder object containing the Ion binary.
+        /// </summary>
+        ///
+        /// <param name="o">The C# object to be serialized into ValueHolder.</param>
+        ///
+        /// <returns>The ValueHolder object containing the Ion binary.</returns>
         public ValueHolder Serialize(object o)
         {
             MemoryStream memoryStream = new MemoryStream();
@@ -44,5 +65,4 @@ namespace Amazon.QLDB.Driver.Serialization
             };
         }
     }
-    
 }

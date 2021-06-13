@@ -13,6 +13,9 @@
 
 namespace Amazon.QLDB.Driver.Serialization
 {
+    /// <summary>
+    /// Document object used for inserting/updating rows in QLDB.
+    /// </summary>
     public class Document
     {
         string DocumentId { get; init; }
