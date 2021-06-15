@@ -33,6 +33,7 @@ namespace Amazon.QLDB.Driver
         ///
         /// <param name="session">The session object representing a communication channel with QLDB.</param>
         /// <param name="logger">The logger to be used by this.</param>
+        /// <param name="serializer">The serializer to serialize and deserialize Ion data.</param>
         internal AsyncQldbSession(Session session, ILogger logger, ISerializer serializer = null)
             : base(session, logger, serializer)
         {

@@ -20,6 +20,7 @@ namespace Amazon.QLDB.Driver
     /// An object encapsulating a query which can be executed against QLDB. The generic type T is the type
     /// of each document returned from the database.
     /// </summary>
+    /// <typeparam name="T">The return type of each document returned from the database.</typeparam>
     public interface IQuery<T>
     {
         /// <summary>
@@ -35,6 +36,12 @@ namespace Amazon.QLDB.Driver
         /// <summary>
         /// Given an Ion ValueHolder, deserialize it into an object of type T.
         /// </summary>
+        ///
+        /// <param name="ionValueHolder">
+        /// The ValueHolder object containing Ion data to be deserialized.
+        /// </param>
+        ///
+        /// <returns>The object of type T.</returns>
         T Deserialize(ValueHolder ionValueHolder);
     }
 

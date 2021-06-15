@@ -34,6 +34,7 @@ namespace Amazon.QLDB.Driver
         /// <param name="transaction">
         /// The <see cref="AsyncTransaction"/> object the <see cref="AsyncTransactionExecutor"/> wraps.
         /// </param>
+        /// <param name="serializer">The serializer to serialize and deserialize Ion data.</param>
         internal AsyncTransactionExecutor(AsyncTransaction transaction, ISerializer serializer = null)
         {
             this.transaction = transaction;
