@@ -45,6 +45,7 @@ namespace Amazon.QLDB.Driver
         /// <param name="sessionClient">AWS SDK session client for QLDB.</param>
         /// <param name="maxConcurrentTransactions">The maximum number of concurrent transactions.</param>
         /// <param name="logger">The logger to use.</param>
+        /// <param name="serializer">The serializer to serialize and deserialize Ion data.</param>
         internal QldbDriver(
             string ledgerName,
             IAmazonQLDBSession sessionClient,

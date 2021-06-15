@@ -26,19 +26,22 @@ namespace Amazon.QLDB.Driver.Generic
     ///
     /// This implementation should be used by default to avoid excess memory consumption and to improve performance.
     /// </summary>
+    ///
+    /// <typeparam name="T">The return type of each document returned from the database.</typeparam>
     internal class AsyncResult<T> : IAsyncResult<T>
     {
         private readonly IonAsyncEnumerator ionEnumerator;
         private bool isRetrieved = false;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="AsyncResult"/> class.
+        /// Initializes a new instance of the <see cref="AsyncResult{T}"/> class.
         /// </summary>
         ///
         /// <param name="session">The parent session that represents the communication channel to QLDB.</param>
         /// <param name="txnId">The ID of the parent transaction.</param>
         /// <param name="statementResult">The result of the statement execution.</param>
         /// <param name="cancellationToken">The CancellationToken to use for this AsyncResult.</param>
+        /// <param name="query">An object encapsulating a query to be executed against QLDB.</param>
         internal AsyncResult(
             Session session,
             string txnId,
