@@ -273,7 +273,7 @@ namespace Amazon.QLDB.Driver
                     return valueHolder;
                 });
 
-                return await ExecuteStatementAsync(txnId, statement, valueHolders.ToArray(), cancellationToken);
+                return await this.ExecuteStatementAsync(txnId, statement, valueHolders.ToArray(), cancellationToken);
             }
             finally
             {
@@ -292,7 +292,6 @@ namespace Amazon.QLDB.Driver
         {
             try
             {
-
                 var executeStatementRequest = new ExecuteStatementRequest
                 {
                     TransactionId = txnId,

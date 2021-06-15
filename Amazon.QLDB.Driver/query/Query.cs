@@ -13,13 +13,11 @@
 
 namespace Amazon.QLDB.Driver
 {
-    using System;
-    using System.IO;
     using System.Linq;
     using Amazon.QLDBSession.Model;
 
     /// <summary>
-    /// An object encapsulating a query which can be executed against QLDB. The generic type T is the type 
+    /// An object encapsulating a query which can be executed against QLDB. The generic type T is the type
     /// of each document returned from the database.
     /// </summary>
     public interface IQuery<T>
@@ -47,7 +45,7 @@ namespace Amazon.QLDB.Driver
 
         internal QueryData(string statement, object[] parameters, ISerializer serializer)
         {
-            Statement = statement;
+            this.Statement = statement;
             this.parameters = parameters;
             if (serializer is null)
             {
@@ -63,13 +61,13 @@ namespace Amazon.QLDB.Driver
         {
             get
             {
-                return parameters.Select(serializer.Serialize).ToArray();
+                return this.parameters.Select(this.serializer.Serialize).ToArray();
             }
         }
 
         public T Deserialize(ValueHolder ionValueHolder)
         {
-            return serializer.Deserialize<T>(ionValueHolder);
+            return this.serializer.Deserialize<T>(ionValueHolder);
         }
     }
 }

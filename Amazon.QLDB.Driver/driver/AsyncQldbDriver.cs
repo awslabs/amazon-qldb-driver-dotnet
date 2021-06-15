@@ -50,7 +50,7 @@ namespace Amazon.QLDB.Driver
             string ledgerName,
             IAmazonQLDBSession sessionClient,
             int maxConcurrentTransactions,
-            ILogger logger, 
+            ILogger logger,
             ISerializer serializer = null)
         {
             this.driverBase =
@@ -170,7 +170,7 @@ namespace Amazon.QLDB.Driver
                     this.driverBase.Logger,
                     token);
                 this.driverBase.Logger.LogDebug("Creating new pooled session with ID {}.", session.SessionId);
-                return new AsyncQldbSession(session, this.driverBase.Logger, serializer);
+                return new AsyncQldbSession(session, this.driverBase.Logger, this.serializer);
             }
             catch (OperationCanceledException oce)
             {

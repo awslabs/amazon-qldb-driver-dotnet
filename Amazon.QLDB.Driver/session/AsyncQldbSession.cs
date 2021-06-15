@@ -74,7 +74,7 @@ namespace Amazon.QLDB.Driver
             {
                 transaction = await this.StartTransaction(cancellationToken);
                 transactionId = transaction.Id;
-                T returnedValue = await func(new AsyncTransactionExecutor(transaction, serializer));
+                T returnedValue = await func(new AsyncTransactionExecutor(transaction, this.serializer));
                 if (returnedValue is IAsyncResult result)
                 {
                     returnedValue = (T)(object)(await AsyncBufferedResult.BufferResultAsync(result));

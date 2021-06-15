@@ -107,11 +107,11 @@ namespace Amazon.QLDB.Driver.Generic
             /// </summary>
             ///
             /// <returns>The current value.</returns>
-            new public T Current
+            public new T Current
             {
                 get
                 {
-                    return query.Deserialize(this.currentEnumerator.Current);
+                    return this.query.Deserialize(this.currentEnumerator.Current);
                 }
             }
 

@@ -14,7 +14,6 @@
 namespace Amazon.QLDB.Driver
 {
     using System;
-    using System.IO;
     using System.Net;
     using Amazon.QLDBSession.Model;
     using Amazon.Runtime;
@@ -68,7 +67,7 @@ namespace Amazon.QLDB.Driver
             {
                 transaction = this.StartTransaction();
                 transactionId = transaction.Id;
-                T returnedValue = func(new TransactionExecutor(transaction, serializer));
+                T returnedValue = func(new TransactionExecutor(transaction, this.serializer));
                 if (returnedValue is IResult result)
                 {
                     returnedValue = (T)(object)BufferedResult.BufferResult(result);
