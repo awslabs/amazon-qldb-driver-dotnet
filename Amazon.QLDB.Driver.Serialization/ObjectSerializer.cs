@@ -37,7 +37,7 @@ namespace Amazon.QLDB.Driver.Serialization
         /// Deserialize a ValueHolder object containing the Ion binary into an object of type T.
         /// </summary>
         ///
-        /// <param name="s">The ValueHolder object to be deserialized into an object of type T.</param>
+        /// <param name="v">The ValueHolder object to be deserialized into an object of type T.</param>
         /// <typeparam name="T">The return type.</typeparam>
         ///
         /// <returns>The object of type T.</returns>

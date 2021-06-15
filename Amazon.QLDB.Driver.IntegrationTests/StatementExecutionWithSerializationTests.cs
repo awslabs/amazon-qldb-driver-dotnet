@@ -19,8 +19,6 @@ namespace Amazon.QLDB.Driver.IntegrationTests
     using Amazon.IonDotnet.Tree;
     using Amazon.IonDotnet.Tree.Impl;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using System;
-    using System.Collections.Generic;
     using System.IO;
 
     [TestClass]
