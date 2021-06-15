@@ -85,7 +85,7 @@ namespace Amazon.QLDB.Driver
         /// <returns>A Query object.</returns>
         public IQuery<T> Query<T>(string statement, params object[] parameters)
         {
-            return new QueryData<T>(statement, parameters, serializer);
+            return new QueryData<T>(statement, parameters, this.serializer);
         }
 
         /// <summary>

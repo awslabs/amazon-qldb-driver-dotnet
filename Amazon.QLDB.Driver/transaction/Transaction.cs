@@ -99,8 +99,8 @@ namespace Amazon.QLDB.Driver
             {
                 this.qldbHash = Dot(this.qldbHash, query.Statement, query.Parameters);
                 ExecuteStatementResult executeStatementResult = this.session.ExecuteStatement(
-                    this.txnId, 
-                    query.Statement, 
+                    this.txnId,
+                    query.Statement,
                     query.Parameters);
                 return new Amazon.QLDB.Driver.Generic.Result<T>(this.session, this.txnId, executeStatementResult, query);
             }

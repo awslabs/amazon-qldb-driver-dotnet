@@ -152,9 +152,9 @@ namespace Amazon.QLDB.Driver
             {
                 this.qldbHash = Dot(this.qldbHash, query.Statement, query.Parameters);
                 ExecuteStatementResult executeStatementResult = await this.session.ExecuteStatementAsync(
-                    this.txnId, 
-                    query.Statement, 
-                    query.Parameters, 
+                    this.txnId,
+                    query.Statement,
+                    query.Parameters,
                     this.cancellationToken);
                 return new Amazon.QLDB.Driver.Generic.AsyncResult<T>(this.session, this.txnId, executeStatementResult, this.cancellationToken, query);
             }

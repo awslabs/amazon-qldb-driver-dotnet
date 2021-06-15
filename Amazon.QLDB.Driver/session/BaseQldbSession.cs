@@ -23,8 +23,8 @@ namespace Amazon.QLDB.Driver
     internal abstract class BaseQldbSession
     {
         private protected readonly ILogger logger;
-        private protected Session session;
         private protected readonly ISerializer serializer;
+        private protected Session session;
 
         internal BaseQldbSession(Session session, ILogger logger, ISerializer serializer)
         {
