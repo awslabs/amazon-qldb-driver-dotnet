@@ -17,7 +17,6 @@ namespace Amazon.QLDB.Driver.Generic
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
-    using Amazon.IonDotnet.Tree;
 
     /// <summary>
     /// Result implementation which asynchronously streams data from QLDB, discarding chunks as they are read.
@@ -108,7 +107,7 @@ namespace Amazon.QLDB.Driver.Generic
                 Session session,
                 string txnId,
                 QLDBSession.Model.ExecuteStatementResult statementResult,
-                CancellationToken cancellationToken, 
+                CancellationToken cancellationToken,
                 IQuery<T> query)
                 : base(session, txnId, statementResult)
             {
@@ -116,11 +115,11 @@ namespace Amazon.QLDB.Driver.Generic
                 this.query = query;
             }
 
-            new public T Current
+            public new T Current
             {
                 get
                 {
-                    return query.Deserialize(this.currentEnumerator.Current);
+                    return this.query.Deserialize(this.currentEnumerator.Current);
                 }
             }
 
