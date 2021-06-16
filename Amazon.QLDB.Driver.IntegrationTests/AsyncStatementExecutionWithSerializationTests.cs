@@ -13,22 +13,28 @@
 
 namespace Amazon.QLDB.Driver.IntegrationTests
 {
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
     using Amazon.QLDBSession;
+    using Amazon.IonDotnet.Tree;
+    using Amazon.IonDotnet.Tree.Impl;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 
     [TestClass]
-    public class StatementExecutionWithSerializationTests
+    public class AsyncStatementExecutionWithSerializationTests
     {
+        private static readonly IValueFactory ValueFactory = new ValueFactory();
         private static AmazonQLDBSessionConfig amazonQldbSessionConfig;
         private static IntegrationTestBase integrationTestBase;
-        private static QldbDriver qldbDriver;
+        private static AsyncQldbDriver qldbDriver;
 
         [ClassInitialize]
-        public static void SetUp(TestContext context)
+        public static async Task SetUp(TestContext context)
         {
             // Get AWS configuration properties from .runsettings file.
             string region = context.Properties["region"].ToString();
-            const string ledgerName = "DotnetStatementExecution";
+            const string ledgerName = "DotnetAsyncStatementExecution";
 
             amazonQldbSessionConfig = IntegrationTestBase.CreateAmazonQLDBSessionConfig(region);
             integrationTestBase = new IntegrationTestBase(ledgerName, region);
@@ -36,28 +42,14 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             integrationTestBase.RunForceDeleteLedger();
 
             integrationTestBase.RunCreateLedger();
-            qldbDriver = integrationTestBase.CreateDriver(amazonQldbSessionConfig, new MySerialization());
+            qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig, new MySerialization());
 
             // Create table.
             var query = $"CREATE TABLE {Constants.TableName}";
-            var count = qldbDriver.Execute(txn =>
-            {
-                var result = txn.Execute(query);
 
-                var count = 0;
-                foreach (var row in result)
-                {
-                    count++;
-                }
-                return count;
-            });
-            Assert.AreEqual(1, count);
+            Assert.AreEqual(1, await ExecuteAndReturnRowCount(query));
 
-            var result = qldbDriver.ListTableNames();
-            foreach (var row in result)
-            {
-                Assert.AreEqual(Constants.TableName, row);
-            }
+            Assert.IsTrue(await ConfirmTableExists(Constants.TableName));
         }
 
         [ClassCleanup]
@@ -68,14 +60,14 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestCleanup]
-        public void TestCleanup()
+        public async Task TestCleanup()
         {
             // Delete all documents in table.
-            qldbDriver.Execute(txn => txn.Execute($"DELETE FROM {Constants.TableName}"));
+            await qldbDriver.Execute(async txn => await txn.Execute($"DELETE FROM {Constants.TableName}"));
         }
 
         [TestMethod]
-        public void Execute_InsertDocument_UsingObjectSerialization()
+        public async Task ExecuteAsync_InsertDocument_UsingObjectSerialization()
         {
             // Given.
             // Create a C# object to insert.
@@ -83,18 +75,37 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             // When.
             var query = $"INSERT INTO {Constants.TableName} ?";
-            var count = qldbDriver.Execute(txn =>
+            var count = await qldbDriver.Execute(async txn =>
             {
-                var result = txn.Execute(txn.Query<ResultObject>(query, testObject));
+                var result = await txn.Execute(txn.Query<ResultObject>(query, testObject));
 
-                var count = 0;
-                foreach (var row in result)
-                {
-                    count++;
-                }
-                return count;
+                return await result.CountAsync();
             });
             Assert.AreEqual(1, count);
+        }
+
+        private static async Task<bool> ConfirmTableExists(string tableName)
+        {
+            var result = await qldbDriver.ListTableNames();
+
+            var tables = result.ToList();
+
+            return tables.Contains(tableName);
+        }
+
+        private static async Task<int> ExecuteAndReturnRowCount(string statement)
+        {
+            return await ExecuteWithParamsAndReturnRowCount(statement, new List<IIonValue>());
+        }
+
+        private static async Task<int> ExecuteWithParamsAndReturnRowCount(string statement, List<IIonValue> parameters)
+        {
+            return await qldbDriver.Execute(async txn =>
+            {
+                var result = await txn.Execute(statement, parameters);
+
+                return await result.CountAsync();
+            });
         }
     }
 }
