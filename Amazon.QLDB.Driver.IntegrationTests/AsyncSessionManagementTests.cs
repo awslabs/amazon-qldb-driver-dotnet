@@ -50,7 +50,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         [ExpectedException(typeof(BadRequestException))]
         public async Task ConnectAsync_LedgerDoesNotExist_ThrowsBadRequestException()
         {
-            using (var qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig, 0, "NonExistentLedger"))
+            using (var qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig, null, 0, "NonExistentLedger"))
             {
                 await qldbDriver.ListTableNames();
             }
@@ -63,7 +63,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             {
                 // Start a driver with default pool limit so it doesn't have sessions in the pool
                 // and has not hit the limit.
-                using (var qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig))
+                using (var qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig, null))
                 {
                     await qldbDriver.ListTableNames();
                 }
@@ -81,7 +81,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             {
                 // Start a driver with default pool limit so it doesn't have sessions in the pool
                 // and has not hit the limit.
-                using (var qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig))
+                using (var qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig, null))
                 {
                     // Call the first ListTableNames() to start a session and put into pool.
                     await qldbDriver.ListTableNames();
@@ -103,7 +103,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             string TableNameQuery = "SELECT VALUE name FROM information_schema.user_tables WHERE status = 'ACTIVE'";
 
             // Create driver with session pool size = 1.
-            var qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig, 1);
+            var qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig, null, 1);
             await qldbDriver.Execute(async txn =>
             {
                 await txn.Execute(TableNameQuery);
@@ -121,7 +121,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         [ExpectedException(typeof(QldbDriverException))]
         public async Task GetSessionAsync_DriverIsClosed_ThrowsObjectDisposedException()
         {
-            using (var qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig))
+            using (var qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig, null))
             {
                 qldbDriver.Dispose();
 

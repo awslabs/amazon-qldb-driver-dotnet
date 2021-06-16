@@ -13,19 +13,20 @@
 
 namespace Amazon.QLDB.Driver.IntegrationTests
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Globalization;
+    using System.IO;
+    using System.Reflection;
+    using System.Text;
+    using System.Threading;
+    using Amazon.IonDotnet.Builders;
+    using Amazon.IonDotnet.Tree;
+    using Amazon.IonDotnet.Tree.Impl;
     using Amazon.QLDB.Model;
     using Amazon.QLDBSession;
-    using Amazon.IonDotnet.Tree.Impl;
-    using Amazon.IonDotnet.Tree;
-    using NLog;
-    using System;
-    using System.Threading;
-    using System.Collections.Generic;
-    using System.Text;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using System.Reflection;
-    using System.Globalization;
-    using Amazon.QLDB.Driver.Serialization;
+    using NLog;
 
     /// <summary>
     /// Helper class which provides functions that test QLDB directly and through the driver.
@@ -84,6 +85,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
         public QldbDriver CreateDriver(
             AmazonQLDBSessionConfig amazonQldbSessionConfig,
+            ISerializer serializer,
             int maxConcurrentTransactions = default,
             string ledgerName = default)
         {
@@ -107,14 +109,16 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             return builder.WithQLDBSessionConfig(amazonQldbSessionConfig)
                 .WithLedger(finalLedgerName)
-                .WithSerializer(new ObjectSerializer())
+                .WithSerializer(serializer)
                 .Build();
         }
 
         public AsyncQldbDriver CreateAsyncDriver(
             AmazonQLDBSessionConfig amazonQldbSessionConfig,
+            ISerializer serializer,
             int maxConcurrentTransactions = default,
-            string ledgerName = default)
+            string ledgerName = default
+            )
         {
             AsyncQldbDriverBuilder builder = AsyncQldbDriver.Builder();
 
@@ -136,6 +140,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             return builder.WithQLDBSessionConfig(amazonQldbSessionConfig)
                 .WithLedger(finalLedgerName)
+                .WithSerializer(serializer)
                 .Build();
         }
 
@@ -429,6 +434,49 @@ namespace Amazon.QLDB.Driver.IntegrationTests
                 return string.Format(CultureInfo.CurrentCulture, "{0} ({1})", methodInfo.Name, string.Join(",", data));
             }
             return null;
+        }
+    }
+
+    internal class ParameterObject
+    {
+        string Name
+        {
+            get
+            {
+                return Constants.SingleDocumentValue;
+            }
+        }
+    }
+
+    internal class ResultObject
+    {
+        string DocumentId
+        {
+            get; set;
+        }
+    }
+
+    class MySerialization : ISerializer
+    {
+        private static readonly IValueFactory ValueFactory = new ValueFactory();
+
+        public T Deserialize<T>(QLDBSession.Model.ValueHolder v)
+        {
+            return (T)(object)new ResultObject();
+        }
+
+        public QLDBSession.Model.ValueHolder Serialize(object o)
+        {
+            IIonValue ionValue = ValueFactory.NewEmptyStruct();
+            ionValue.SetField(Constants.ColumnName, ValueFactory.NewString(Constants.SingleDocumentValue));
+            var stream = new MemoryStream();
+            using (var writer = IonBinaryWriterBuilder.Build(stream))
+            {
+                ionValue.WriteTo(writer);
+                writer.Finish();
+            }
+            stream.Position = 0;
+            return new QLDBSession.Model.ValueHolder { IonBinary = stream };
         }
     }
 }

@@ -21,6 +21,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using System;
     using System.Collections.Generic;
+    using Amazon.QLDB.Driver.Serialization;
 
     [TestClass]
     public class StatementExecutionTests
@@ -43,7 +44,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             integrationTestBase.RunForceDeleteLedger();
 
             integrationTestBase.RunCreateLedger();
-            qldbDriver = integrationTestBase.CreateDriver(amazonQldbSessionConfig);
+            qldbDriver = integrationTestBase.CreateDriver(amazonQldbSessionConfig, new ObjectSerializer());
 
             // Create table.
             var query = $"CREATE TABLE {Constants.TableName}";
@@ -267,25 +268,6 @@ namespace Amazon.QLDB.Driver.IntegrationTests
                 return value;
             });
             Assert.AreEqual(Constants.SingleDocumentValue, value);
-        }
-
-        class ParameterObject 
-        {
-            string Name
-            {
-                get 
-                {
-                    return Constants.SingleDocumentValue;
-                }
-            }
-        }
-
-        class ResultObject 
-        {
-            string DocumentId
-            {
-                get; set;
-            }
         }
 
         [TestMethod]

@@ -49,7 +49,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         [ExpectedException(typeof(BadRequestException))]
         public void Connect_LedgerDoesNotExist_ThrowsBadRequestException()
         {
-            using (var qldbDriver = integrationTestBase.CreateDriver(amazonQldbSessionConfig, 0, "NonExistentLedger"))
+            using (var qldbDriver = integrationTestBase.CreateDriver(amazonQldbSessionConfig, null, 0, "NonExistentLedger"))
             {
                 qldbDriver.ListTableNames();
             }
@@ -62,7 +62,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             {
                 // Start a driver with default pool limit so it doesn't have sessions in the pool
                 // and has not hit the limit.
-                using (var qldbDriver = integrationTestBase.CreateDriver(amazonQldbSessionConfig))
+                using (var qldbDriver = integrationTestBase.CreateDriver(amazonQldbSessionConfig, null))
                 {
                     qldbDriver.ListTableNames();
                 }
@@ -80,7 +80,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             {
                 // Start a driver with default pool limit so it doesn't have sessions in the pool
                 // and has not hit the limit.
-                using (var qldbDriver = integrationTestBase.CreateDriver(amazonQldbSessionConfig))
+                using (var qldbDriver = integrationTestBase.CreateDriver(amazonQldbSessionConfig, null))
                 {
                     // Call the first ListTableNames() to start a session and put into pool.
                     qldbDriver.ListTableNames();
@@ -102,7 +102,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             string TableNameQuery = "SELECT VALUE name FROM information_schema.user_tables WHERE status = 'ACTIVE'";
 
             // Create driver with session pool size = 1.
-            var qldbDriver = integrationTestBase.CreateDriver(amazonQldbSessionConfig, 1);
+            var qldbDriver = integrationTestBase.CreateDriver(amazonQldbSessionConfig, null, 1);
             qldbDriver.Execute(txn =>
             {
                 txn.Execute(TableNameQuery);
@@ -120,7 +120,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         [ExpectedException(typeof(QldbDriverException))]
         public void GetSession_DriverIsClosed_ThrowsObjectDisposedException()
         {
-            using (var qldbDriver = integrationTestBase.CreateDriver(amazonQldbSessionConfig))
+            using (var qldbDriver = integrationTestBase.CreateDriver(amazonQldbSessionConfig, null))
             {
                 qldbDriver.Dispose();
 
