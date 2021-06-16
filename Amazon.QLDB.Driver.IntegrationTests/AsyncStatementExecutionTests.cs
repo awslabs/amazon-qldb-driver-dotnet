@@ -23,6 +23,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
+    using Amazon.QLDB.Driver.Serialization;
 
     [TestClass]
     public class AsyncStatementExecutionTests
@@ -48,7 +49,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             integrationTestBase.RunForceDeleteLedger();
 
             integrationTestBase.RunCreateLedger();
-            qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig);
+            qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig, new ObjectSerializer());
 
             // Create table.
             var query = $"CREATE TABLE {Constants.TableName}";
@@ -157,6 +158,24 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             var ionVal = await ExecuteAndReturnIonValue(searchQuery);
             Assert.AreEqual(Constants.SingleDocumentValue, ionVal.StringValue);
+        }
+
+        [TestMethod]
+        public async Task Execute_InsertDocument_UsingObjectSerialization()
+        {
+            // Given.
+            // Create a C# object to insert.
+            ParameterObject testObject = new ParameterObject();
+
+            // When.
+            var query = $"INSERT INTO {Constants.TableName} ?";
+            var count = await qldbDriver.Execute(async txn =>
+            {
+                var result = await txn.Execute(txn.Query<ResultObject>(query, testObject));
+
+                return await result.CountAsync();
+            });
+            Assert.AreEqual(1, count);
         }
 
         [TestMethod]
@@ -521,7 +540,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
         private static async Task<int> ExecuteWithParamAndReturnRowCount(string statement, IIonValue param)
         {
-            return await ExecuteWithParamsAndReturnRowCount(statement, new List<IIonValue>{ param });
+            return await ExecuteWithParamsAndReturnRowCount(statement, new List<IIonValue> { param });
         }
 
         private static async Task<int> ExecuteWithParamsAndReturnRowCount(string statement, List<IIonValue> parameters)
@@ -541,7 +560,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
         private static async Task<IIonValue> ExecuteWithParamAndReturnIonValue(string statement, IIonValue param)
         {
-            return await ExecuteWithParamsAndReturnIonValue(statement, new List<IIonValue>{ param });
+            return await ExecuteWithParamsAndReturnIonValue(statement, new List<IIonValue> { param });
         }
 
         private static async Task<IIonValue> ExecuteWithParamsAndReturnIonValue(string statement, List<IIonValue> parameters)
