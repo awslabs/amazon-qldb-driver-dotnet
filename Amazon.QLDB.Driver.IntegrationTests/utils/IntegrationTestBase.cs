@@ -13,20 +13,20 @@
 
 namespace Amazon.QLDB.Driver.IntegrationTests
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Globalization;
-    using System.IO;
-    using System.Reflection;
-    using System.Text;
-    using System.Threading;
-    using Amazon.IonDotnet.Builders;
-    using Amazon.IonDotnet.Tree;
-    using Amazon.IonDotnet.Tree.Impl;
     using Amazon.QLDB.Model;
     using Amazon.QLDBSession;
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Amazon.IonDotnet.Builders;
+    using Amazon.IonDotnet.Tree.Impl;
+    using Amazon.IonDotnet.Tree;
     using NLog;
+    using System;
+    using System.Threading;
+    using System.Collections.Generic;
+    using System.Text;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using System.Reflection;
+    using System.Globalization;
+    using System.IO;
 
     /// <summary>
     /// Helper class which provides functions that test QLDB directly and through the driver.

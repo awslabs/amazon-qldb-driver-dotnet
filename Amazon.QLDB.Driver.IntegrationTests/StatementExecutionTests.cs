@@ -294,6 +294,31 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
+        public void Execute_InsertDocument_UsingCustomObjectSerialization()
+        {
+            var driverWithCustomSerialization = integrationTestBase.CreateDriver(amazonQldbSessionConfig, new MySerialization());
+
+            // Given.
+            // Create a C# object to insert.
+            ParameterObject testObject = new ParameterObject();
+
+            // When.
+            var query = $"INSERT INTO {Constants.TableName} ?";
+            var count = driverWithCustomSerialization.Execute(txn =>
+            {
+                var result = txn.Execute(txn.Query<ResultObject>(query, testObject));
+
+                var count = 0;
+                foreach (var row in result)
+                {
+                    count++;
+                }
+                return count;
+            });
+            Assert.AreEqual(1, count);
+        }
+
+        [TestMethod]
         public void Execute_InsertDocumentWithMultipleFields_DocumentIsInserted()
         {
             // Given.
