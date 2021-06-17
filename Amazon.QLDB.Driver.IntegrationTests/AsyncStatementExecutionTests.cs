@@ -179,6 +179,27 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
+        public async Task ExecuteAsync_InsertDocument_UsingCustomObjectSerialization()
+        {
+            var driverWithCustomSerialization = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig, new MySerialization());
+
+            // Given.
+            // Create a C# object to insert.
+            ParameterObject testObject = new ParameterObject();
+
+            // When.
+            var query = $"INSERT INTO {Constants.TableName} ?";
+            var count = await driverWithCustomSerialization.Execute(async txn =>
+            {
+                var result = await txn.Execute(txn.Query<ResultObject>(query, testObject));
+
+                return await result.CountAsync();
+            });
+            Assert.AreEqual(1, count);
+        }
+
+
+        [TestMethod]
         public async Task ExecuteAsync_InsertDocumentWithMultipleFields_DocumentIsInserted()
         {
             // Given.
@@ -540,7 +561,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
         private static async Task<int> ExecuteWithParamAndReturnRowCount(string statement, IIonValue param)
         {
-            return await ExecuteWithParamsAndReturnRowCount(statement, new List<IIonValue> { param });
+            return await ExecuteWithParamsAndReturnRowCount(statement, new List<IIonValue>{ param });
         }
 
         private static async Task<int> ExecuteWithParamsAndReturnRowCount(string statement, List<IIonValue> parameters)
@@ -560,7 +581,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
         private static async Task<IIonValue> ExecuteWithParamAndReturnIonValue(string statement, IIonValue param)
         {
-            return await ExecuteWithParamsAndReturnIonValue(statement, new List<IIonValue> { param });
+            return await ExecuteWithParamsAndReturnIonValue(statement, new List<IIonValue>{ param });
         }
 
         private static async Task<IIonValue> ExecuteWithParamsAndReturnIonValue(string statement, List<IIonValue> parameters)
