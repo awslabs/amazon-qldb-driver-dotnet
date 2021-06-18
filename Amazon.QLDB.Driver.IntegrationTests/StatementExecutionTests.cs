@@ -273,11 +273,8 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         [TestMethod]
         public void Execute_InsertDocument_UsingObjectSerialization()
         {
-            // Given.
-            // Create a C# object to insert.
             ParameterObject testObject = new ParameterObject();
 
-            // When.
             var query = $"INSERT INTO {Constants.TableName} ?";
             var count = qldbDriver.Execute(txn =>
             {
@@ -291,6 +288,21 @@ namespace Amazon.QLDB.Driver.IntegrationTests
                 return count;
             });
             Assert.AreEqual(1, count);
+
+            var searchQuery = $"SELECT * FROM {Constants.TableName}";
+            var searchResult = qldbDriver.Execute(txn =>
+            {
+                var result = txn.Execute(txn.Query<ParameterObject>(searchQuery));
+
+                ParameterObject value = null;
+                foreach (var row in result)
+                {
+                    value = row;
+                }
+                return value;
+            });
+
+            Assert.AreEqual(testObject.ToString(), searchResult.ToString());
         }
 
         [TestMethod]
@@ -298,24 +310,36 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         {
             var driverWithCustomSerialization = integrationTestBase.CreateDriver(amazonQldbSessionConfig, new MySerialization());
 
-            // Given.
-            // Create a C# object to insert.
-            ParameterObject testObject = new ParameterObject();
-
-            // When.
             var query = $"INSERT INTO {Constants.TableName} ?";
-            var count = driverWithCustomSerialization.Execute(txn =>
+            var insertResult = driverWithCustomSerialization.Execute(txn =>
             {
-                var result = txn.Execute(txn.Query<ResultObject>(query, testObject));
+                var result = txn.Execute(txn.Query<ResultObject>(query, "randomString"));
 
-                var count = 0;
+                ResultObject value = null;
                 foreach (var row in result)
                 {
-                    count++;
+                    value = row;
                 }
-                return count;
+                return value;
             });
-            Assert.AreEqual(1, count);
+
+            Assert.AreEqual(new ResultObject { DocumentId = "Deserialized using custom serializer" }.ToString(), insertResult.ToString());
+
+            // Validate custom serializer's serialize function.
+            var searchQuery = $@"SELECT VALUE {Constants.ColumnName} FROM {Constants.TableName} 
+                               WHERE {Constants.ColumnName} = '{Constants.SingleDocumentValue}'";
+            var searchResult = driverWithCustomSerialization.Execute(txn =>
+            {
+                var result = txn.Execute(searchQuery);
+
+                var value = "";
+                foreach (var row in result)
+                {
+                    value = row.StringValue;
+                }
+                return value;
+            });
+            Assert.AreEqual(Constants.SingleDocumentValue, searchResult);
         }
 
         [TestMethod]

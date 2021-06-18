@@ -437,22 +437,32 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
     }
 
-    internal class ParameterObject
+    class ParameterObject
     {
-        string Name
+        public string Name
         {
             get
             {
                 return Constants.SingleDocumentValue;
             }
         }
+
+        public override string ToString()
+        {
+            return "<ParameterObject>{ Name: " + Name + " }";
+        }
     }
 
-    internal class ResultObject
+    class ResultObject
     {
-        string DocumentId
+        public string DocumentId
         {
             get; set;
+        }
+
+        public override string ToString()
+        {
+            return "<ResultObject>{ DocumentId: " + DocumentId + " }";
         }
     }
 
@@ -462,7 +472,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
         public T Deserialize<T>(QLDBSession.Model.ValueHolder v)
         {
-            return (T)(object)new ResultObject();
+            return (T)(object)new ResultObject { DocumentId = "Deserialized using custom serializer" };
         }
 
         public QLDBSession.Model.ValueHolder Serialize(object o)
