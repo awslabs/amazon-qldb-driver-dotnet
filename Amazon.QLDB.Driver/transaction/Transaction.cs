@@ -93,7 +93,7 @@ namespace Amazon.QLDB.Driver
             return this.Execute(statement, new List<IIonValue>());
         }
 
-        internal Amazon.QLDB.Driver.Generic.IResult<T> Execute<T>(IQuery<T> query)
+        internal Generic.IResult<T> Execute<T>(IQuery<T> query)
         {
             lock (this.hashLock)
             {
@@ -102,7 +102,7 @@ namespace Amazon.QLDB.Driver
                     this.txnId,
                     query.Statement,
                     query.Parameters);
-                return new Amazon.QLDB.Driver.Generic.Result<T>(this.session, this.txnId, executeStatementResult, query);
+                return new Generic.Result<T>(this.session, this.txnId, executeStatementResult, query);
             }
         }
 
