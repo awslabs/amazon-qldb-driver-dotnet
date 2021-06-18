@@ -70,7 +70,7 @@ namespace Amazon.QLDB.Driver
         /// <returns>Result from executed statement.</returns>
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        public Task<Amazon.QLDB.Driver.Generic.IAsyncResult<T>> Execute<T>(IQuery<T> query)
+        public Task<Generic.IAsyncResult<T>> Execute<T>(IQuery<T> query)
         {
             return this.transaction.Execute(query);
         }

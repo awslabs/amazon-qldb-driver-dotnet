@@ -85,7 +85,7 @@ namespace Amazon.QLDB.Driver
         /// <returns>Result from executed statement.</returns>
         ///
         /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
-        public Amazon.QLDB.Driver.Generic.IResult<T> Execute<T>(IQuery<T> query)
+        public Generic.IResult<T> Execute<T>(IQuery<T> query)
         {
             return this.transaction.Execute(query);
         }

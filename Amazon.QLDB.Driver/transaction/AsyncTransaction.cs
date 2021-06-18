@@ -145,7 +145,7 @@ namespace Amazon.QLDB.Driver
             }
         }
 
-        internal virtual async Task<Amazon.QLDB.Driver.Generic.IAsyncResult<T>> Execute<T>(IQuery<T> query)
+        internal virtual async Task<Generic.IAsyncResult<T>> Execute<T>(IQuery<T> query)
         {
             await this.hashLock.WaitAsync(this.cancellationToken);
             try
@@ -156,7 +156,7 @@ namespace Amazon.QLDB.Driver
                     query.Statement,
                     query.Parameters,
                     this.cancellationToken);
-                return new Amazon.QLDB.Driver.Generic.AsyncResult<T>(this.session, this.txnId, executeStatementResult, this.cancellationToken, query);
+                return new Generic.AsyncResult<T>(this.session, this.txnId, executeStatementResult, this.cancellationToken, query);
             }
             finally
             {
