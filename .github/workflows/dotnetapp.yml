@@ -1,4 +1,4 @@
-name: dotnet Application
+name: .NET Library
 
 on:
   push:
@@ -26,9 +26,17 @@ jobs:
 
     - name: Install dependencies
       run: dotnet restore
+    - name: Install Codecov tool
+      run: dotnet tool install --global Codecov.Tool --version 1.13.0
     - name: Build
       run: dotnet build --configuration Release --no-restore
-    - name: Run Unit Test
-      run: dotnet test Amazon.QLDB.Driver.Tests
-    - name: Integration Test
+    - name: Unit test
+      run: dotnet test Amazon.QLDB.Driver.Tests /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
+    - name: Integration test
       run: dotnet test Amazon.QLDB.Driver.IntegrationTests --no-restore --verbosity normal --settings Amazon.QLDB.Driver.IntegrationTests/.runsettings
+
+    - name: Upload to Codecov
+      uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        flags: unittests
