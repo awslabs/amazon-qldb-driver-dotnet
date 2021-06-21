@@ -6,6 +6,7 @@ to write software that makes use of AmazonQLDB.
 [![nuget](https://img.shields.io/nuget/v/Amazon.QLDB.Driver.svg)](https://www.nuget.org/packages/Amazon.QLDB.Driver/)
 [![license](https://img.shields.io/badge/license-Apache%202.0-blue)](https://github.com/awslabs/amazon-qldb-driver-dotnet/blob/master/LICENSE)
 [![AWS Provider](https://img.shields.io/badge/provider-AWS-orange?logo=amazon-aws&color=ff9900)](https://aws.amazon.com/qldb/)
+[![codecov](https://codecov.io/gh/awslabs/amazon-qldb-driver-dotnet/branch/master/graph/badge.svg?token=JF7HMNH8IR)](https://codecov.io/gh/awslabs/amazon-qldb-driver-dotnet)
 
 
 ## Requirements
