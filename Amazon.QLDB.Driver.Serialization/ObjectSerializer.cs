@@ -14,12 +14,12 @@
 namespace Amazon.QLDB.Driver.Serialization
 {
     using System.IO;
-    using Amazon.Ion.ObjectMapper;
+    using Amazon.IonObjectMapper;
     using Amazon.QLDBSession.Model;
 
     /// <summary>
     /// Serializer that serialize/deserialize C# objects to ValueHolder object containing Ion data.
-    /// This uses the <see cref="Ion.ObjectMapper"></see> library to perform the serialization/deserialization.
+    /// This uses the <see cref="IonObjectMapper"></see> library to perform the serialization/deserialization.
     /// </summary>
     public class ObjectSerializer : ISerializer
     {
