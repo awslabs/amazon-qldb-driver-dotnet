@@ -306,43 +306,6 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public void Execute_InsertDocument_UsingCustomObjectSerialization()
-        {
-            var driverWithCustomSerialization = integrationTestBase.CreateDriver(amazonQldbSessionConfig, new MySerialization());
-
-            var query = $"INSERT INTO {Constants.TableName} ?";
-            var insertResult = driverWithCustomSerialization.Execute(txn =>
-            {
-                var result = txn.Execute(txn.Query<ResultObject>(query, "randomString"));
-
-                ResultObject value = null;
-                foreach (var row in result)
-                {
-                    value = row;
-                }
-                return value;
-            });
-
-            Assert.AreEqual(new ResultObject { DocumentId = "Deserialized using custom serializer" }.ToString(), insertResult.ToString());
-
-            // Validate custom serializer's serialize function.
-            var searchQuery = $@"SELECT VALUE {Constants.ColumnName} FROM {Constants.TableName} 
-                               WHERE {Constants.ColumnName} = '{Constants.SingleDocumentValue}'";
-            var searchResult = driverWithCustomSerialization.Execute(txn =>
-            {
-                var result = txn.Execute(searchQuery);
-
-                var value = "";
-                foreach (var row in result)
-                {
-                    value = row.StringValue;
-                }
-                return value;
-            });
-            Assert.AreEqual(Constants.SingleDocumentValue, searchResult);
-        }
-
-        [TestMethod]
         public void Execute_InsertDocumentWithMultipleFields_DocumentIsInserted()
         {
             // Given.

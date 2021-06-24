@@ -191,43 +191,6 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         }
 
         [TestMethod]
-        public async Task Execute_InsertDocument_UsingCustomSerialization()
-        {
-            var driverWithCustomSerialization = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig, new MySerialization());
-
-            var query = $"INSERT INTO {Constants.TableName} ?";
-            var insertResult = await driverWithCustomSerialization.Execute(async txn =>
-            {
-                var result = await txn.Execute(txn.Query<ResultObject>(query, "randomString"));
-
-                ResultObject value = null;
-                await foreach (var row in result)
-                {
-                    value = row;
-                }
-                return value;
-            });
-
-            Assert.AreEqual(new ResultObject { DocumentId = "Deserialized using custom serializer" }.ToString(), insertResult.ToString());
-
-            // Validate custom serializer's serialize function.
-            var searchQuery = $@"SELECT VALUE {Constants.ColumnName} FROM {Constants.TableName} 
-                               WHERE {Constants.ColumnName} = '{Constants.SingleDocumentValue}'";
-            var searchResult = await driverWithCustomSerialization.Execute(async txn =>
-            {
-                var result = await txn.Execute(searchQuery);
-
-                var value = "";
-                await foreach (var row in result)
-                {
-                    value = row.StringValue;
-                }
-                return value;
-            });
-            Assert.AreEqual(Constants.SingleDocumentValue, searchResult);
-        }
-
-        [TestMethod]
         public async Task ExecuteAsync_InsertDocumentWithMultipleFields_DocumentIsInserted()
         {
             // Given.
