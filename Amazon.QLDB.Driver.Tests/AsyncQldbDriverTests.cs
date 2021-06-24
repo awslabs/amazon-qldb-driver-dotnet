@@ -60,7 +60,7 @@ namespace Amazon.QLDB.Driver.Tests
             mockClient.SetDefaultResponse(DefaultSendCommandResponse("testToken", TestTransactionId,
                 TestRequestId, digest));
 
-            testDriver = new AsyncQldbDriver(TestLedger, mockClient, 4, NullLogger.Instance);
+            testDriver = new AsyncQldbDriver(TestLedger, mockClient, 4, NullLogger.Instance, null);
             Assert.IsNotNull(testDriver);
         }
 

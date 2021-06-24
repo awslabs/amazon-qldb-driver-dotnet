@@ -52,7 +52,7 @@ namespace Amazon.QLDB.Driver
             IAmazonQLDBSession sessionClient,
             int maxConcurrentTransactions,
             ILogger logger,
-            ISerializer serializer = null)
+            ISerializer serializer)
         {
             this.driverBase =
                 new QldbDriverBase<AsyncQldbSession>(ledgerName, sessionClient, maxConcurrentTransactions, logger);

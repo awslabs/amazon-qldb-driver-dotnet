@@ -85,7 +85,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
         public QldbDriver CreateDriver(
             AmazonQLDBSessionConfig amazonQldbSessionConfig,
-            ISerializer serializer,
+            ISerializer serializer = default,
             int maxConcurrentTransactions = default,
             string ledgerName = default)
         {
@@ -115,10 +115,9 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
         public AsyncQldbDriver CreateAsyncDriver(
             AmazonQLDBSessionConfig amazonQldbSessionConfig,
-            ISerializer serializer,
+            ISerializer serializer = default,
             int maxConcurrentTransactions = default,
-            string ledgerName = default
-            )
+            string ledgerName = default)
         {
             AsyncQldbDriverBuilder builder = AsyncQldbDriver.Builder();
 
