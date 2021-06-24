@@ -63,7 +63,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             {
                 // Start a driver with default pool limit so it doesn't have sessions in the pool
                 // and has not hit the limit.
-                using (var qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig, null))
+                using (var qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig))
                 {
                     await qldbDriver.ListTableNames();
                 }
@@ -81,7 +81,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             {
                 // Start a driver with default pool limit so it doesn't have sessions in the pool
                 // and has not hit the limit.
-                using (var qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig, null))
+                using (var qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig))
                 {
                     // Call the first ListTableNames() to start a session and put into pool.
                     await qldbDriver.ListTableNames();
@@ -121,7 +121,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         [ExpectedException(typeof(QldbDriverException))]
         public async Task GetSessionAsync_DriverIsClosed_ThrowsObjectDisposedException()
         {
-            using (var qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig, null))
+            using (var qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig))
             {
                 qldbDriver.Dispose();
 

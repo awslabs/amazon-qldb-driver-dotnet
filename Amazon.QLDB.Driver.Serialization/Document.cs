@@ -18,6 +18,6 @@ namespace Amazon.QLDB.Driver.Serialization
     /// </summary>
     public class Document
     {
-        string DocumentId { get; init; }
+        public string DocumentId { get; init; }
     }
 }
