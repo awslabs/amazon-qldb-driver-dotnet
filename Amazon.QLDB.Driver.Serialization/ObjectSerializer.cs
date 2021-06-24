@@ -30,7 +30,7 @@ namespace Amazon.QLDB.Driver.Serialization
         /// </summary>
         public ObjectSerializer()
         {
-            serializer = new IonSerializer();
+            serializer = new IonSerializer(new IonSerializationOptions{ NamingConvention = new TitleCaseNamingConvention() });
         }
 
         /// <summary>
@@ -56,7 +56,7 @@ namespace Amazon.QLDB.Driver.Serialization
         public ValueHolder Serialize(object o)
         {
             MemoryStream memoryStream = new MemoryStream();
-            serializer.Serialize(o).CopyTo(memoryStream);
+            serializer.Serialize(memoryStream, o);
             memoryStream.Flush();
             memoryStream.Position = 0;
             return new ValueHolder
