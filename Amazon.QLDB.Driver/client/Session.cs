@@ -255,36 +255,23 @@ namespace Amazon.QLDB.Driver
         {
             List<ValueHolder> valueHolders = null;
 
-            try
+            valueHolders = parameters.ConvertAll(ionValue =>
             {
-                valueHolders = parameters.ConvertAll(ionValue =>
+                MemoryStream stream = new MemoryStream();
+                using (var writer = IonBinaryWriterBuilder.Build(stream))
                 {
-                    MemoryStream stream = new MemoryStream();
-                    using (var writer = IonBinaryWriterBuilder.Build(stream))
-                    {
-                        ionValue.WriteTo(writer);
-                        writer.Finish();
-                    }
-
-                    var valueHolder = new ValueHolder
-                    {
-                        IonBinary = stream,
-                    };
-                    return valueHolder;
-                });
-
-                return await this.ExecuteStatementAsync(txnId, statement, valueHolders.ToArray(), cancellationToken);
-            }
-            finally
-            {
-                if (valueHolders != null)
-                {
-                    valueHolders.ForEach(valueHolder =>
-                    {
-                        valueHolder.IonBinary.Dispose();
-                    });
+                    ionValue.WriteTo(writer);
+                    writer.Finish();
                 }
-            }
+
+                var valueHolder = new ValueHolder
+                {
+                    IonBinary = stream,
+                };
+                return valueHolder;
+            });
+
+            return await this.ExecuteStatementAsync(txnId, statement, valueHolders.ToArray(), cancellationToken);
         }
 
         internal virtual async Task<ExecuteStatementResult> ExecuteStatementAsync(
@@ -308,6 +295,16 @@ namespace Amazon.QLDB.Driver
             catch (IOException e)
             {
                 throw new QldbDriverException(ExceptionMessages.FailedToSerializeParameter + e.Message, e);
+            }
+            finally
+            {
+                if (parameters != null && parameters.Length != 0)
+                {
+                    foreach (ValueHolder valueHolder in parameters)
+                    {
+                        valueHolder.IonBinary.Dispose();
+                    }
+                }
             }
         }
 

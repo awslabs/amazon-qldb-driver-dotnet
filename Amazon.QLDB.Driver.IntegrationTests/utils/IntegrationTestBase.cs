@@ -464,28 +464,4 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             return "<ResultObject>{ DocumentId: " + DocumentId + " }";
         }
     }
-
-    class MySerialization : ISerializer
-    {
-        private static readonly IValueFactory ValueFactory = new ValueFactory();
-
-        public T Deserialize<T>(QLDBSession.Model.ValueHolder v)
-        {
-            return (T)(object)new ResultObject { DocumentId = "Deserialized using custom serializer" };
-        }
-
-        public QLDBSession.Model.ValueHolder Serialize(object o)
-        {
-            IIonValue ionValue = ValueFactory.NewEmptyStruct();
-            ionValue.SetField(Constants.ColumnName, ValueFactory.NewString(Constants.SingleDocumentValue));
-            var stream = new MemoryStream();
-            using (var writer = IonBinaryWriterBuilder.Build(stream))
-            {
-                ionValue.WriteTo(writer);
-                writer.Finish();
-            }
-            stream.Position = 0;
-            return new QLDBSession.Model.ValueHolder { IonBinary = stream };
-        }
-    }
 }
