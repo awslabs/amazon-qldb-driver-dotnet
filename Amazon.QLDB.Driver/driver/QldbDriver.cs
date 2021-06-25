@@ -35,7 +35,6 @@ namespace Amazon.QLDB.Driver
     public class QldbDriver : IQldbDriver
     {
         private readonly QldbDriverBase<QldbSession> driverBase;
-        private readonly ISerializer serializer;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="QldbDriver"/> class.
@@ -54,8 +53,7 @@ namespace Amazon.QLDB.Driver
             ISerializer serializer)
         {
             this.driverBase =
-                new QldbDriverBase<QldbSession>(ledgerName, sessionClient, maxConcurrentTransactions, logger);
-            this.serializer = serializer;
+                new QldbDriverBase<QldbSession>(ledgerName, sessionClient, maxConcurrentTransactions, logger, serializer);
         }
 
         /// <summary>
@@ -318,7 +316,7 @@ namespace Amazon.QLDB.Driver
                     this.driverBase.SessionClient,
                     this.driverBase.Logger);
                 this.driverBase.Logger.LogDebug("Creating new pooled session with ID {}.", session.SessionId);
-                return new QldbSession(session, this.driverBase.Logger, this.serializer);
+                return new QldbSession(session, this.driverBase.Logger, this.driverBase.Serializer);
             }
             catch (Exception e)
             {
