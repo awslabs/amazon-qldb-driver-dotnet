@@ -36,7 +36,6 @@ namespace Amazon.QLDB.Driver
     public class AsyncQldbDriver : IAsyncQldbDriver
     {
         private readonly QldbDriverBase<AsyncQldbSession> driverBase;
-        private readonly ISerializer serializer;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AsyncQldbDriver"/> class.
@@ -55,8 +54,7 @@ namespace Amazon.QLDB.Driver
             ISerializer serializer)
         {
             this.driverBase =
-                new QldbDriverBase<AsyncQldbSession>(ledgerName, sessionClient, maxConcurrentTransactions, logger);
-            this.serializer = serializer;
+                new QldbDriverBase<AsyncQldbSession>(ledgerName, sessionClient, maxConcurrentTransactions, logger, serializer);
         }
 
         /// <summary>
@@ -171,7 +169,7 @@ namespace Amazon.QLDB.Driver
                     this.driverBase.Logger,
                     token);
                 this.driverBase.Logger.LogDebug("Creating new pooled session with ID {}.", session.SessionId);
-                return new AsyncQldbSession(session, this.driverBase.Logger, this.serializer);
+                return new AsyncQldbSession(session, this.driverBase.Logger, this.driverBase.Serializer);
             }
             catch (OperationCanceledException oce)
             {

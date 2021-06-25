@@ -32,6 +32,7 @@ namespace Amazon.QLDB.Driver
         internal readonly string LedgerName;
         internal readonly IAmazonQLDBSession SessionClient;
         internal readonly ILogger Logger;
+        internal readonly ISerializer Serializer;
         private readonly SemaphoreSlim poolPermits;
         private readonly BlockingCollection<T> sessionPool;
         private bool isClosed = false;
@@ -40,13 +41,15 @@ namespace Amazon.QLDB.Driver
             string ledgerName,
             IAmazonQLDBSession sessionClient,
             int maxConcurrentTransactions,
-            ILogger logger)
+            ILogger logger,
+            ISerializer serializer)
         {
             this.LedgerName = ledgerName;
             this.SessionClient = sessionClient;
             this.Logger = logger;
             this.poolPermits = new SemaphoreSlim(maxConcurrentTransactions, maxConcurrentTransactions);
             this.sessionPool = new BlockingCollection<T>(maxConcurrentTransactions);
+            this.Serializer = serializer;
         }
 
         public void Dispose()
