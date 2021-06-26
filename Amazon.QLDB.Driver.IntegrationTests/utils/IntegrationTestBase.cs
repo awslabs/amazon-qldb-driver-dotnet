@@ -438,7 +438,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
     class ParameterObject
     {
-        public string Name
+        internal string Name
         {
             get
             {
@@ -454,7 +454,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
     class ResultObject
     {
-        public string DocumentId
+        internal string DocumentId
         {
             get; set;
         }
