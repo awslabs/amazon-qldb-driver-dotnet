@@ -861,5 +861,20 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             Assert.AreEqual(1092, ioUsage?.ReadIOs);
             Assert.IsTrue(timingInfo?.ProcessingTimeMilliseconds > 0);
         }
+
+        [TestMethod]
+        public void Execute_ReturnTransactionIdAfterStatementExecution()
+        {
+            var query = $"SELECT * FROM {Constants.TableName}";
+            var txnId = qldbDriver.Execute(txn =>
+            {
+                txn.Execute(query);
+
+                return txn.Id;
+            });
+            
+            Assert.IsNotNull(txnId);
+            Assert.IsTrue(txnId.Length > 0);
+        }
     }
 }
