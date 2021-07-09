@@ -39,6 +39,11 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <summary>
+        /// Gets the transaction ID.
+        /// </summary>
+        public string Id => this.transaction.Id;
+
+        /// <summary>
         /// Execute the statement against QLDB and retrieve the result.
         /// </summary>
         ///
