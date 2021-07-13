@@ -38,6 +38,11 @@ namespace Amazon.QLDB.Driver
         }
 
         /// <summary>
+        /// Gets the transaction ID.
+        /// </summary>
+        public string Id => this.transaction.Id;
+
+        /// <summary>
         /// Abort the transaction and roll back any changes.
         /// </summary>
         public void Abort()

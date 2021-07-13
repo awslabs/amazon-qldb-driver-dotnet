@@ -489,6 +489,21 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             Assert.AreEqual(1092, ioUsage?.ReadIOs);
             Assert.IsTrue(timingInfo?.ProcessingTimeMilliseconds > 0);
         }
+        
+        [TestMethod]
+        public async Task ExecuteAsync_ReturnTransactionIdAfterStatementExecution()
+        {
+            var query = $"SELECT * FROM {Constants.TableName}";
+            var txnId = await qldbDriver.Execute(async txn =>
+            {
+                await txn.Execute(query);
+
+                return txn.Id;
+            });
+            
+            Assert.IsNotNull(txnId);
+            Assert.IsTrue(txnId.Length > 0);
+        }
 
         private static async Task<bool> ConfirmTableExists(string tableName)
         {
