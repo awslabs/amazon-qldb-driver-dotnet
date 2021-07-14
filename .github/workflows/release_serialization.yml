@@ -26,7 +26,9 @@ jobs:
         aws-region: us-east-2
 
     - uses: actions/checkout@v2
-
+      with: 
+        submodules: recursive
+        
     - name: Install dependencies
       run: dotnet restore
     - name: Build
@@ -60,6 +62,8 @@ jobs:
         uses: jakejarvis/wait-action@v0.1.1
       - name: Git Checkout
         uses: actions/checkout@v2
+        with: 
+          submodules: recursive
       - name: Setup .NET
         uses: actions/setup-dotnet@v1
         with:
