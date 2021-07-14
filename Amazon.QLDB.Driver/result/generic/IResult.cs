@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"). You may not use this file except in compliance with
@@ -17,11 +17,13 @@ namespace Amazon.QLDB.Driver.Generic
 
     /// <summary>
     /// Interface for the result of executing a statement in QLDB.
-    /// Implements IEnumerable<T> to allow iteration over generic values of T within the result.
+    /// Implements IEnumerable to allow iteration over generic values of T within the result.
     ///
     /// Note that due to the fact that a result can only be retrieved from QLDB once, the IResult may only be
     /// iterated over once and is not thread-safe. Attempts to do so multiple times will result in an exception.
     /// </summary>
+    ///
+    /// <typeparam name="T">The return type of each document returned from the database.</typeparam>
     public interface IResult<T> : IEnumerable<T>
     {
         /// <summary>

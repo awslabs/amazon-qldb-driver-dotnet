@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"). You may not use this file except in compliance with
@@ -43,38 +43,5 @@ namespace Amazon.QLDB.Driver
         ///
         /// <returns>The object of type T.</returns>
         T Deserialize(ValueHolder ionValueHolder);
-    }
-
-    internal class QueryData<T> : IQuery<T>
-    {
-        private readonly object[] parameters;
-        private readonly ISerializer serializer;
-
-        internal QueryData(string statement, object[] parameters, ISerializer serializer)
-        {
-            this.Statement = statement;
-            this.parameters = parameters;
-            if (serializer is null)
-            {
-                throw new QldbDriverException("Serializer cannot be null. Please specify a serializer in QldbDriverBuilder.");
-            }
-
-            this.serializer = serializer;
-        }
-
-        public string Statement { get; }
-
-        public ValueHolder[] Parameters
-        {
-            get
-            {
-                return this.parameters.Select(this.serializer.Serialize).ToArray();
-            }
-        }
-
-        public T Deserialize(ValueHolder ionValueHolder)
-        {
-            return this.serializer.Deserialize<T>(ionValueHolder);
-        }
     }
 }
