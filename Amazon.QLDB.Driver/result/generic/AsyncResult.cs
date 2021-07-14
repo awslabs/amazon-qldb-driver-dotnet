@@ -17,6 +17,7 @@ namespace Amazon.QLDB.Driver.Generic
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
+    using Amazon.QLDBSession.Model;
 
     /// <summary>
     /// Result implementation which asynchronously streams data from QLDB, discarding chunks as they are read.
@@ -45,7 +46,7 @@ namespace Amazon.QLDB.Driver.Generic
         internal AsyncResult(
             Session session,
             string txnId,
-            QLDBSession.Model.ExecuteStatementResult statementResult,
+            ExecuteStatementResult statementResult,
             CancellationToken cancellationToken,
             IQuery<T> query)
         {
@@ -74,7 +75,7 @@ namespace Amazon.QLDB.Driver.Generic
         /// </summary>
         ///
         /// <returns>The current IOUsage statistics.</returns>
-        public IOUsage? GetConsumedIOs()
+        public Driver.IOUsage? GetConsumedIOs()
         {
             return this.ionEnumerator.GetConsumedIOs();
         }
@@ -84,7 +85,7 @@ namespace Amazon.QLDB.Driver.Generic
         /// </summary>
         ///
         /// <returns>The current TimingInformation statistics.</returns>
-        public TimingInformation? GetTimingInformation()
+        public Driver.TimingInformation? GetTimingInformation()
         {
             return this.ionEnumerator.GetTimingInformation();
         }
@@ -109,7 +110,7 @@ namespace Amazon.QLDB.Driver.Generic
             internal IonAsyncEnumerator(
                 Session session,
                 string txnId,
-                QLDBSession.Model.ExecuteStatementResult statementResult,
+                ExecuteStatementResult statementResult,
                 CancellationToken cancellationToken,
                 IQuery<T> query)
                 : base(session, txnId, statementResult)
@@ -162,7 +163,7 @@ namespace Amazon.QLDB.Driver.Generic
             /// <returns>No object or value is returned by this method when it completes.</returns>
             private async Task FetchPage()
             {
-                QLDBSession.Model.FetchPageResult pageResult =
+                FetchPageResult pageResult =
                     await this.session.FetchPageAsync(this.txnId, this.nextPageToken, this.CancellationToken);
                 this.currentEnumerator = pageResult.Page.Values.GetEnumerator();
                 this.nextPageToken = pageResult.Page.NextPageToken;

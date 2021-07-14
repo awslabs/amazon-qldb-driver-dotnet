@@ -17,6 +17,7 @@ namespace Amazon.QLDB.Driver.Generic
     using System.Collections;
     using System.Collections.Generic;
     using Amazon.QLDB.Driver;
+    using Amazon.QLDBSession.Model;
 
     /// <summary>
     /// Generic Result implementation which streams data from QLDB, discarding chunks as they are read.
@@ -28,7 +29,7 @@ namespace Amazon.QLDB.Driver.Generic
     /// </summary>
     ///
     /// <typeparam name="T">The return type of each document returned from the database.</typeparam>
-    internal class Result<T> : Amazon.QLDB.Driver.Generic.IResult<T>
+    internal class Result<T> : IResult<T>
     {
         private readonly IonEnumerator ionEnumerator;
         private bool isRetrieved = false;
@@ -41,7 +42,7 @@ namespace Amazon.QLDB.Driver.Generic
         /// <param name="txnId">The ID of the parent transaction.</param>
         /// <param name="statementResult">The result of the statement execution.</param>
         /// <param name="query">An object encapsulating a query to be executed against QLDB.</param>
-        internal Result(Session session, string txnId, Amazon.QLDBSession.Model.ExecuteStatementResult statementResult, IQuery<T> query)
+        internal Result(Session session, string txnId, ExecuteStatementResult statementResult, IQuery<T> query)
         {
             this.ionEnumerator = new IonEnumerator(session, txnId, statementResult, query);
         }
@@ -69,7 +70,7 @@ namespace Amazon.QLDB.Driver.Generic
         /// </summary>
         ///
         /// <returns>The current IOUsage statistics.</returns>
-        public IOUsage? GetConsumedIOs()
+        public Driver.IOUsage? GetConsumedIOs()
         {
             return this.ionEnumerator.GetConsumedIOs();
         }
@@ -79,7 +80,7 @@ namespace Amazon.QLDB.Driver.Generic
         /// </summary>
         ///
         /// <returns>The current TimingInformation statistics.</returns>
-        public TimingInformation? GetTimingInformation()
+        public Driver.TimingInformation? GetTimingInformation()
         {
             return this.ionEnumerator.GetTimingInformation();
         }
@@ -99,7 +100,7 @@ namespace Amazon.QLDB.Driver.Generic
             /// <param name="session">The parent session that represents the communication channel to QLDB.</param>
             /// <param name="txnId">The unique ID of the transaction.</param>
             /// <param name="statementResult">The result of the statement execution.</param>
-            internal IonEnumerator(Session session, string txnId, Amazon.QLDBSession.Model.ExecuteStatementResult statementResult, IQuery<T> query)
+            internal IonEnumerator(Session session, string txnId, ExecuteStatementResult statementResult, IQuery<T> query)
                 : base(session, txnId, statementResult)
             {
                 this.query = query;
@@ -161,7 +162,7 @@ namespace Amazon.QLDB.Driver.Generic
             /// </summary>
             private void FetchPage()
             {
-                Amazon.QLDBSession.Model.FetchPageResult pageResult = this.session.FetchPage(this.txnId, this.nextPageToken);
+                FetchPageResult pageResult = this.session.FetchPage(this.txnId, this.nextPageToken);
                 this.currentEnumerator = pageResult.Page.Values.GetEnumerator();
                 this.nextPageToken = pageResult.Page.NextPageToken;
                 this.UpdateMetrics(pageResult);
