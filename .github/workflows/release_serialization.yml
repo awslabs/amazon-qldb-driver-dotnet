@@ -2,11 +2,15 @@ name: Serialization Library Release
 
 on:
   push:
+    branches:
+      - master
     tags:
       - "v*.*.*"
-
+      
 jobs:
   build:
+    name: Build
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ${{ matrix.os }}
     strategy:
       max-parallel: 1
@@ -32,8 +36,9 @@ jobs:
     - name: Integration test
       run: dotnet test Amazon.QLDB.Driver.IntegrationTests --no-restore --verbosity normal --settings Amazon.QLDB.Driver.IntegrationTests/.runsettings
 
-  sign:
-    name: Sign package
+  release:
+    name: Release
+    if: startsWith(github.ref, 'refs/tags/')
     needs: [build]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -60,34 +65,25 @@ jobs:
         with:
           dotnet-version: ${{ matrix.dotnet }}
         
-      - name: Create DLL
+      - name: Sign
         run: |
-          dotnet restore
-          dotnet build --configuration Release --no-restore
-        
-      - name: Push unsigned DLL to S3
-        id: get-version
-        run: |
-          version=$( aws s3api put-object --bucket ${{ secrets.AWS_UNSIGNED_BUCKET }} --key ${{ secrets.AWS_KEY }} --body Amazon.QLDB.Driver.Serialization/bin/Release/net5.0/Amazon.QLDB.Driver.Serialization.dll  --acl bucket-owner-full-control | jq '.VersionId' )
-          echo "::set-output name=version-id::$version"
-      - name: Wait 5 seconds for job ID tag to be populated in S3 object
-        run: sleep 5s
-  
-      - name: Get job ID
-        id: get-job-id
-        run: |
-          job=$( aws s3api get-object-tagging --bucket ${{ secrets.AWS_UNSIGNED_BUCKET }} --key ${{ secrets.AWS_KEY }} --version-id ${{ steps.get-version.outputs.version-id }} | jq '.TagSet[0].Value' )
-          echo "::set-output name=job-id::$job"
-        
-      - name: Poll signed S3 bucket to see if the signed artifact is there
-        run: |
-          echo ${{ steps.get-job-id.outputs.job-id }}
-          aws s3api wait object-exists --bucket ${{ secrets.AWS_SIGNED_BUCKET }} --key ${{ secrets.AWS_KEY }}-${{ steps.get-job-id.outputs.job-id }}
-      
-      - name: Get signed DLL from S3
-        run: |
-          aws s3api get-object --bucket ${{ secrets.AWS_SIGNED_BUCKET }} --key ${{ secrets.AWS_KEY }}-${{ steps.get-job-id.outputs.job-id }} Amazon.QLDB.Driver.Serialization/bin/Release/net5.0/Amazon.QLDB.Driver.Serialization.dll
-      
+          dotnet build --configuration Release
+          
+          # Push unsigned DLL to S3
+          version_id=$( aws s3api put-object --bucket ${{ secrets.AWS_UNSIGNED_BUCKET }} --key ${{ secrets.AWS_KEY }} --body Amazon.QLDB.Driver.Serialization/bin/Release/net5.0/Amazon.QLDB.Driver.Serialization.dll  --acl bucket-owner-full-control | jq '.VersionId' )
+          
+          # Wait 5 seconds for job ID tag to be populated in S3 object
+          sleep 5s
+          
+          # Get job ID
+          job_id=$( aws s3api get-object-tagging --bucket ${{ secrets.AWS_UNSIGNED_BUCKET }} --key ${{ secrets.AWS_KEY }} --version-id ${version_id} | jq -r '.TagSet[0].Value' )
+                  
+          # Poll signed S3 bucket to see if the signed artifact is there
+          aws s3api wait object-exists --bucket ${{ secrets.AWS_SIGNED_BUCKET }} --key ${{ secrets.AWS_KEY }}-${job_id}
+          
+          # Get signed DLL from S3
+          aws s3api get-object --bucket ${{ secrets.AWS_SIGNED_BUCKET }} --key ${{ secrets.AWS_KEY }}-${job_id} Amazon.QLDB.Driver.Serialization/bin/Release/net5.0/Amazon.QLDB.Driver.Serialization.dll
+
       - uses: actions/upload-artifact@v2
         with:
           name: signed-dll
