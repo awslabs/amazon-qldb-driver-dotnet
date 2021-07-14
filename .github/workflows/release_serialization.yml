@@ -1,0 +1,94 @@
+name: Serialization Library Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      max-parallel: 1
+      matrix:
+        os: [windows-latest, macos-latest]
+        
+    steps:
+    - uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+        aws-region: us-east-2
+
+    - uses: actions/checkout@v2
+
+    - name: Install dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+    - name: Unit test
+      run: dotnet test Amazon.QLDB.Driver.Tests
+    - name: Integration test
+      run: dotnet test Amazon.QLDB.Driver.IntegrationTests --no-restore --verbosity normal --settings Amazon.QLDB.Driver.IntegrationTests/.runsettings
+
+  sign:
+    name: Sign package
+    needs: [build]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ] 
+        dotnet: ['5.0.x']
+      
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_SIGNING_ACCOUNT }}
+          aws-secret-access-key: ${{ secrets.SIGNING_AWS_SECRET_ACCESS_KEY_SIGNING_ACCOUNT }}
+          aws-region: us-west-2
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-external-id: ${{ secrets.AWS_ROLE_EXTERNAL_ID }}
+          role-duration-seconds: 900
+          
+      - name: Wait / Sleep
+        uses: jakejarvis/wait-action@v0.1.1
+      - name: Git Checkout
+        uses: actions/checkout@v2
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: ${{ matrix.dotnet }}
+        
+      - name: Create DLL
+        run: |
+          dotnet restore
+          dotnet build --configuration Release --no-restore
+        
+      - name: Push unsigned DLL to S3
+        id: get-version
+        run: |
+          version=$( aws s3api put-object --bucket ${{ secrets.AWS_UNSIGNED_BUCKET }} --key ${{ secrets.AWS_KEY }} --body Amazon.QLDB.Driver.Serialization/bin/Release/net5.0/Amazon.QLDB.Driver.Serialization.dll  --acl bucket-owner-full-control | jq '.VersionId' )
+          echo "::set-output name=version-id::$version"
+      - name: Wait 5 seconds for job ID tag to be populated in S3 object
+        run: sleep 5s
+  
+      - name: Get job ID
+        id: get-job-id
+        run: |
+          job=$( aws s3api get-object-tagging --bucket ${{ secrets.AWS_UNSIGNED_BUCKET }} --key ${{ secrets.AWS_KEY }} --version-id ${{ steps.get-version.outputs.version-id }} | jq '.TagSet[0].Value' )
+          echo "::set-output name=job-id::$job"
+        
+      - name: Poll signed S3 bucket to see if the signed artifact is there
+        run: |
+          echo ${{ steps.get-job-id.outputs.job-id }}
+          aws s3api wait object-exists --bucket ${{ secrets.AWS_SIGNED_BUCKET }} --key ${{ secrets.AWS_KEY }}-${{ steps.get-job-id.outputs.job-id }}
+      
+      - name: Get signed DLL from S3
+        run: |
+          aws s3api get-object --bucket ${{ secrets.AWS_SIGNED_BUCKET }} --key ${{ secrets.AWS_KEY }}-${{ steps.get-job-id.outputs.job-id }} Amazon.QLDB.Driver.Serialization/bin/Release/net5.0/Amazon.QLDB.Driver.Serialization.dll
+      
+      - uses: actions/upload-artifact@v2
+        with:
+          name: signed-dll
+          path: Amazon.QLDB.Driver.Serialization/bin/Release/net5.0/Amazon.QLDB.Driver.Serialization.dll
