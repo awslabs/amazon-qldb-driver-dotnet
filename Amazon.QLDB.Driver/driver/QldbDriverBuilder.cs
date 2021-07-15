@@ -36,7 +36,7 @@
         public QldbDriver Build()
         {
             this.PrepareBuild();
-            return new QldbDriver(this.LedgerName, this.sessionClient, this.maxConcurrentTransactions, this.Logger);
+            return new QldbDriver(this.LedgerName, this.sessionClient, this.maxConcurrentTransactions, this.Logger, this.serializer);
         }
     }
 }

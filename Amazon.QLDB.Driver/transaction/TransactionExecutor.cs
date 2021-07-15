@@ -24,6 +24,7 @@ namespace Amazon.QLDB.Driver
     public class TransactionExecutor : IExecutable
     {
         private readonly Transaction transaction;
+        private readonly ISerializer serializer;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TransactionExecutor"/> class.
@@ -32,9 +33,11 @@ namespace Amazon.QLDB.Driver
         /// <param name="transaction">
         /// The <see cref="Transaction"/> object the <see cref="TransactionExecutor"/> wraps.
         /// </param>
-        internal TransactionExecutor(Transaction transaction)
+        /// <param name="serializer">The serializer to serialize and deserialize Ion data.</param>
+        internal TransactionExecutor(Transaction transaction, ISerializer serializer = null)
         {
             this.transaction = transaction;
+            this.serializer = serializer;
         }
 
         /// <summary>
@@ -70,6 +73,35 @@ namespace Amazon.QLDB.Driver
         public IResult Execute(string statement)
         {
             return this.transaction.Execute(statement);
+        }
+
+        /// <summary>
+        /// Execute the IQuery against QLDB and retrieve the result.
+        /// </summary>
+        ///
+        /// <param name="query">The query object containing the PartiQL statement and parameters to be executed against QLDB.</param>
+        /// <typeparam name="T">The return type.</typeparam>
+        ///
+        /// <returns>Result from executed statement.</returns>
+        ///
+        /// <exception cref="AmazonServiceException">Thrown when there is an error executing against QLDB.</exception>
+        public Generic.IResult<T> Execute<T>(IQuery<T> query)
+        {
+            return this.transaction.Execute(query);
+        }
+
+        /// <summary>
+        /// Create a Query object containing the PartiQL statement and parameters to be executed against QLDB.
+        /// </summary>
+        ///
+        /// <param name="statement">The PartiQL statement to be executed against QLDB.</param>
+        /// <param name="parameters">Parameters to execute.</param>
+        /// <typeparam name="T">The return type.</typeparam>
+        ///
+        /// <returns>A Query object.</returns>
+        public IQuery<T> Query<T>(string statement, params object[] parameters)
+        {
+            return new QueryData<T>(statement, parameters, this.serializer);
         }
 
         /// <summary>

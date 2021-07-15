@@ -23,6 +23,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
+    using Amazon.QLDB.Driver.Serialization;
 
     [TestClass]
     public class AsyncStatementExecutionTests
@@ -48,7 +49,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             integrationTestBase.RunForceDeleteLedger();
 
             integrationTestBase.RunCreateLedger();
-            qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig);
+            qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig, new ObjectSerializer());
 
             // Create table.
             var query = $"CREATE TABLE {Constants.TableName}";
@@ -157,6 +158,36 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             var ionVal = await ExecuteAndReturnIonValue(searchQuery);
             Assert.AreEqual(Constants.SingleDocumentValue, ionVal.StringValue);
+        }
+
+        [TestMethod]
+        public async Task Execute_InsertDocument_UsingObjectSerialization()
+        {
+            ParameterObject testObject = new ParameterObject();
+
+            var query = $"INSERT INTO {Constants.TableName} ?";
+            var count = await qldbDriver.Execute(async txn =>
+            {
+                var result = await txn.Execute(txn.Query<ResultObject>(query, testObject));
+
+                return await result.CountAsync();
+            });
+            Assert.AreEqual(1, count);
+
+            var searchQuery = $"SELECT * FROM {Constants.TableName}";
+            var searchResult = await qldbDriver.Execute(async txn =>
+            {
+                var result = await txn.Execute(txn.Query<ParameterObject>(searchQuery));
+
+                ParameterObject value = null;
+                await foreach (var row in result)
+                {
+                    value = row;
+                }
+                return value;
+            });
+
+            Assert.AreEqual(testObject.ToString(), searchResult.ToString());
         }
 
         [TestMethod]

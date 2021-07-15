@@ -21,6 +21,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using System;
     using System.Collections.Generic;
+    using Amazon.QLDB.Driver.Serialization;
 
     [TestClass]
     public class StatementExecutionTests
@@ -43,7 +44,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             integrationTestBase.RunForceDeleteLedger();
 
             integrationTestBase.RunCreateLedger();
-            qldbDriver = integrationTestBase.CreateDriver(amazonQldbSessionConfig);
+            qldbDriver = integrationTestBase.CreateDriver(amazonQldbSessionConfig, new ObjectSerializer());
 
             // Create table.
             var query = $"CREATE TABLE {Constants.TableName}";
@@ -267,6 +268,41 @@ namespace Amazon.QLDB.Driver.IntegrationTests
                 return value;
             });
             Assert.AreEqual(Constants.SingleDocumentValue, value);
+        }
+
+        [TestMethod]
+        public void Execute_InsertDocument_UsingObjectSerialization()
+        {
+            ParameterObject testObject = new ParameterObject();
+
+            var query = $"INSERT INTO {Constants.TableName} ?";
+            var count = qldbDriver.Execute(txn =>
+            {
+                var result = txn.Execute(txn.Query<ResultObject>(query, testObject));
+
+                var count = 0;
+                foreach (var row in result)
+                {
+                    count++;
+                }
+                return count;
+            });
+            Assert.AreEqual(1, count);
+
+            var searchQuery = $"SELECT * FROM {Constants.TableName}";
+            var searchResult = qldbDriver.Execute(txn =>
+            {
+                var result = txn.Execute(txn.Query<ParameterObject>(searchQuery));
+
+                ParameterObject value = null;
+                foreach (var row in result)
+                {
+                    value = row;
+                }
+                return value;
+            });
+
+            Assert.AreEqual(testObject.ToString(), searchResult.ToString());
         }
 
         [TestMethod]

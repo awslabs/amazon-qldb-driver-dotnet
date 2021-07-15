@@ -3,7 +3,7 @@
     {
       "src": [
         {
-         "files": "Amazon.QLDB.Driver/**.csproj",
+         "files": ["Amazon.QLDB.Driver/**.csproj", "Amazon.QLDB.Driver.Serialization/**.csproj"],
          "src":"../"
         }
       ],

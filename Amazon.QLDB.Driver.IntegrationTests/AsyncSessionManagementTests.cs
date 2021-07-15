@@ -50,7 +50,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         [ExpectedException(typeof(BadRequestException))]
         public async Task ConnectAsync_LedgerDoesNotExist_ThrowsBadRequestException()
         {
-            using (var qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig, 0, "NonExistentLedger"))
+            using (var qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig, null, 0, "NonExistentLedger"))
             {
                 await qldbDriver.ListTableNames();
             }
@@ -103,7 +103,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             string TableNameQuery = "SELECT VALUE name FROM information_schema.user_tables WHERE status = 'ACTIVE'";
 
             // Create driver with session pool size = 1.
-            var qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig, 1);
+            var qldbDriver = integrationTestBase.CreateAsyncDriver(amazonQldbSessionConfig, null, 1);
             await qldbDriver.Execute(async txn =>
             {
                 await txn.Execute(TableNameQuery);

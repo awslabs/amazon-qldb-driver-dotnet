@@ -33,8 +33,9 @@ namespace Amazon.QLDB.Driver
         ///
         /// <param name="session">The session object representing a communication channel with QLDB.</param>
         /// <param name="logger">The logger to be used by this.</param>
-        internal AsyncQldbSession(Session session, ILogger logger)
-            : base(session, logger)
+        /// <param name="serializer">The serializer to serialize and deserialize Ion data.</param>
+        internal AsyncQldbSession(Session session, ILogger logger, ISerializer serializer = null)
+            : base(session, logger, serializer)
         {
         }
 
@@ -74,7 +75,7 @@ namespace Amazon.QLDB.Driver
             {
                 transaction = await this.StartTransaction(cancellationToken);
                 transactionId = transaction.Id;
-                T returnedValue = await func(new AsyncTransactionExecutor(transaction));
+                T returnedValue = await func(new AsyncTransactionExecutor(transaction, this.serializer));
                 if (returnedValue is IAsyncResult result)
                 {
                     returnedValue = (T)(object)(await AsyncBufferedResult.BufferResultAsync(result));

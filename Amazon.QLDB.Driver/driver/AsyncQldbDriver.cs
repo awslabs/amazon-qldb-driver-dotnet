@@ -45,14 +45,16 @@ namespace Amazon.QLDB.Driver
         /// <param name="sessionClient">AWS SDK session client for QLDB.</param>
         /// <param name="maxConcurrentTransactions">The maximum number of concurrent transactions.</param>
         /// <param name="logger">The logger to use.</param>
+        /// <param name="serializer">The serializer to serialize and deserialize Ion data.</param>
         internal AsyncQldbDriver(
             string ledgerName,
             IAmazonQLDBSession sessionClient,
             int maxConcurrentTransactions,
-            ILogger logger)
+            ILogger logger,
+            ISerializer serializer)
         {
             this.driverBase =
-                new QldbDriverBase<AsyncQldbSession>(ledgerName, sessionClient, maxConcurrentTransactions, logger);
+                new QldbDriverBase<AsyncQldbSession>(ledgerName, sessionClient, maxConcurrentTransactions, logger, serializer);
         }
 
         /// <summary>
@@ -167,7 +169,7 @@ namespace Amazon.QLDB.Driver
                     this.driverBase.Logger,
                     token);
                 this.driverBase.Logger.LogDebug("Creating new pooled session with ID {}.", session.SessionId);
-                return new AsyncQldbSession(session, this.driverBase.Logger);
+                return new AsyncQldbSession(session, this.driverBase.Logger, this.driverBase.Serializer);
             }
             catch (OperationCanceledException oce)
             {

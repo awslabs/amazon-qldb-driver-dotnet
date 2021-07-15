@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp2.1;netcoreapp3.1;net48</TargetFrameworks>
+    <TargetFrameworks>net5.0</TargetFrameworks>
     <IsPackable>false</IsPackable>
     <ReleaseVersion>1.1.1</ReleaseVersion>
     <LangVersion>Latest</LangVersion>
@@ -22,5 +22,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Amazon.QLDB.Driver\Amazon.QLDB.Driver.csproj" />
+    <ProjectReference Include="..\Amazon.QLDB.Driver.Serialization\Amazon.QLDB.Driver.Serialization.csproj" />
   </ItemGroup>
 </Project>

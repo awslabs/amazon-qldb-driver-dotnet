@@ -58,7 +58,7 @@ namespace Amazon.QLDB.Driver.Tests
             mockClient.SetDefaultResponse(DefaultSendCommandResponse("testToken", TestTransactionId,
                 TestRequestId, digest));
 
-            testDriver = new QldbDriver(TestLedger, mockClient, 4, NullLogger.Instance);
+            testDriver = new QldbDriver(TestLedger, mockClient, 4, NullLogger.Instance, null);
             Assert.IsNotNull(testDriver);
         }
 
@@ -114,7 +114,7 @@ namespace Amazon.QLDB.Driver.Tests
         [TestMethod]
         public void TestGetSession_GetTwoSessionsFromPoolOfOne_TimeoutOnSecondGet()
         {
-            var driver = new QldbDriver(TestLedger, mockClient, 1, NullLogger.Instance);
+            var driver = new QldbDriver(TestLedger, mockClient, 1, NullLogger.Instance, null);
             QldbSession returnedSession = driver.GetSession();
             Assert.ThrowsException<QldbDriverException>(() => driver.GetSession());
 

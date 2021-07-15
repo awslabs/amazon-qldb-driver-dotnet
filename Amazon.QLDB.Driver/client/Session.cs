@@ -15,6 +15,7 @@ namespace Amazon.QLDB.Driver
 {
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
     using Amazon.IonDotnet.Builders;
@@ -254,29 +255,35 @@ namespace Amazon.QLDB.Driver
         {
             List<ValueHolder> valueHolders = null;
 
+            valueHolders = parameters.ConvertAll(ionValue =>
+            {
+                MemoryStream stream = new MemoryStream();
+                using (var writer = IonBinaryWriterBuilder.Build(stream))
+                {
+                    ionValue.WriteTo(writer);
+                    writer.Finish();
+                }
+
+                var valueHolder = new ValueHolder
+                {
+                    IonBinary = stream,
+                };
+                return valueHolder;
+            });
+
+            return await this.ExecuteStatementAsync(txnId, statement, valueHolders.ToArray(), cancellationToken);
+        }
+
+        internal virtual async Task<ExecuteStatementResult> ExecuteStatementAsync(
+            string txnId, string statement, ValueHolder[] parameters, CancellationToken cancellationToken)
+        {
             try
             {
-                valueHolders = parameters.ConvertAll(ionValue =>
-                {
-                    MemoryStream stream = new MemoryStream();
-                    using (var writer = IonBinaryWriterBuilder.Build(stream))
-                    {
-                        ionValue.WriteTo(writer);
-                        writer.Finish();
-                    }
-
-                    var valueHolder = new ValueHolder
-                    {
-                        IonBinary = stream,
-                    };
-                    return valueHolder;
-                });
-
                 var executeStatementRequest = new ExecuteStatementRequest
                 {
                     TransactionId = txnId,
                     Statement = statement,
-                    Parameters = valueHolders,
+                    Parameters = parameters.ToList(),
                 };
                 var request = new SendCommandRequest
                 {
@@ -291,12 +298,12 @@ namespace Amazon.QLDB.Driver
             }
             finally
             {
-                if (valueHolders != null)
+                if (parameters != null && parameters.Length != 0)
                 {
-                    valueHolders.ForEach(valueHolder =>
+                    foreach (ValueHolder valueHolder in parameters)
                     {
                         valueHolder.IonBinary.Dispose();
-                    });
+                    }
                 }
             }
         }
@@ -314,6 +321,13 @@ namespace Amazon.QLDB.Driver
         /// </returns>
         internal virtual ExecuteStatementResult ExecuteStatement(
             string txnId, string statement, List<IIonValue> parameters)
+        {
+            return this.ExecuteStatementAsync(txnId, statement, parameters, CancellationToken.None).GetAwaiter()
+                .GetResult();
+        }
+
+        internal virtual ExecuteStatementResult ExecuteStatement(
+            string txnId, string statement, ValueHolder[] parameters)
         {
             return this.ExecuteStatementAsync(txnId, statement, parameters, CancellationToken.None).GetAwaiter()
                 .GetResult();

@@ -26,6 +26,7 @@ namespace Amazon.QLDB.Driver
         private protected AmazonQLDBSessionClient sessionClient;
         private protected int maxConcurrentTransactions = 0;
         private protected bool logRetries = false;
+        private protected ISerializer serializer = null;
 
         private protected abstract TBuilder BuilderInstance { get; }
 
@@ -131,6 +132,19 @@ namespace Amazon.QLDB.Driver
         public TBuilder WithRetryLogging()
         {
             this.logRetries = true;
+            return this.BuilderInstance;
+        }
+
+        /// <summary>
+        /// Specify the serializer that should be used to serialize and deserialize Ion data.
+        /// </summary>
+        ///
+        /// <param name="serializer">The serializer to create the driver with.</param>
+        ///
+        /// <returns>This builder object.</returns>
+        public TBuilder WithSerializer(ISerializer serializer)
+        {
+            this.serializer = serializer;
             return this.BuilderInstance;
         }
 

@@ -22,6 +22,7 @@ namespace Amazon.QLDB.Driver
     using Amazon.IonDotnet.Tree;
     using Amazon.IonDotnet.Tree.Impl;
     using Amazon.IonHashDotnet;
+    using Amazon.QLDBSession.Model;
 
     /// <summary>
     /// A QLDB hash is either a 256 bit number or a special empty hash.
@@ -79,7 +80,16 @@ namespace Amazon.QLDB.Driver
         /// <returns>Hashed result.</returns>
         internal static QldbHash ToQldbHash(IIonValue value)
         {
-            IIonReader reader = IonReaderBuilder.Build(value);
+            return ToQldbHash(IonReaderBuilder.Build(value));
+        }
+
+        internal static QldbHash ToQldbHash(ValueHolder value)
+        {
+            return ToQldbHash(IonReaderBuilder.Build(value.IonBinary));
+        }
+
+        internal static QldbHash ToQldbHash(IIonReader reader)
+        {
             IIonHashReader hashReader = IonHashReaderBuilder.Standard()
                 .WithHasherProvider(HasherProvider)
                 .WithReader(reader)

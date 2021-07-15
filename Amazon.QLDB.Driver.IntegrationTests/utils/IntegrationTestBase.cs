@@ -15,6 +15,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 {
     using Amazon.QLDB.Model;
     using Amazon.QLDBSession;
+    using Amazon.IonDotnet.Builders;
     using Amazon.IonDotnet.Tree.Impl;
     using Amazon.IonDotnet.Tree;
     using NLog;
@@ -25,6 +26,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using System.Reflection;
     using System.Globalization;
+    using System.IO;
 
     /// <summary>
     /// Helper class which provides functions that test QLDB directly and through the driver.
@@ -83,6 +85,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
         public QldbDriver CreateDriver(
             AmazonQLDBSessionConfig amazonQldbSessionConfig,
+            ISerializer serializer = default,
             int maxConcurrentTransactions = default,
             string ledgerName = default)
         {
@@ -106,11 +109,13 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             return builder.WithQLDBSessionConfig(amazonQldbSessionConfig)
                 .WithLedger(finalLedgerName)
+                .WithSerializer(serializer)
                 .Build();
         }
 
         public AsyncQldbDriver CreateAsyncDriver(
             AmazonQLDBSessionConfig amazonQldbSessionConfig,
+            ISerializer serializer = default,
             int maxConcurrentTransactions = default,
             string ledgerName = default)
         {
@@ -134,6 +139,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
 
             return builder.WithQLDBSessionConfig(amazonQldbSessionConfig)
                 .WithLedger(finalLedgerName)
+                .WithSerializer(serializer)
                 .Build();
         }
 
@@ -427,6 +433,35 @@ namespace Amazon.QLDB.Driver.IntegrationTests
                 return string.Format(CultureInfo.CurrentCulture, "{0} ({1})", methodInfo.Name, string.Join(",", data));
             }
             return null;
+        }
+    }
+
+    class ParameterObject
+    {
+        internal string Name
+        {
+            get
+            {
+                return Constants.SingleDocumentValue;
+            }
+        }
+
+        public override string ToString()
+        {
+            return "<ParameterObject>{ Name: " + Name + " }";
+        }
+    }
+
+    class ResultObject
+    {
+        internal string DocumentId
+        {
+            get; set;
+        }
+
+        public override string ToString()
+        {
+            return "<ResultObject>{ DocumentId: " + DocumentId + " }";
         }
     }
 }

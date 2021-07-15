@@ -49,7 +49,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
         [ExpectedException(typeof(BadRequestException))]
         public void Connect_LedgerDoesNotExist_ThrowsBadRequestException()
         {
-            using (var qldbDriver = integrationTestBase.CreateDriver(amazonQldbSessionConfig, 0, "NonExistentLedger"))
+            using (var qldbDriver = integrationTestBase.CreateDriver(amazonQldbSessionConfig, null, 0, "NonExistentLedger"))
             {
                 qldbDriver.ListTableNames();
             }
@@ -102,7 +102,7 @@ namespace Amazon.QLDB.Driver.IntegrationTests
             string TableNameQuery = "SELECT VALUE name FROM information_schema.user_tables WHERE status = 'ACTIVE'";
 
             // Create driver with session pool size = 1.
-            var qldbDriver = integrationTestBase.CreateDriver(amazonQldbSessionConfig, 1);
+            var qldbDriver = integrationTestBase.CreateDriver(amazonQldbSessionConfig, null, 1);
             qldbDriver.Execute(txn =>
             {
                 txn.Execute(TableNameQuery);

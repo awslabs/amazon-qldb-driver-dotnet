@@ -15,6 +15,7 @@ namespace Amazon.QLDB.Driver
 {
     using System.Collections.Generic;
     using Amazon.IonDotnet.Tree;
+    using Amazon.QLDBSession.Model;
     using Microsoft.Extensions.Logging;
 
     /// <summary>
@@ -57,6 +58,17 @@ namespace Amazon.QLDB.Driver
         ///
         /// <returns>QLDB hash.</returns>
         internal static QldbHash Dot(QldbHash seed, string statement, List<IIonValue> parameters)
+        {
+            QldbHash statementHash = QldbHash.ToQldbHash(statement);
+            foreach (var ionValue in parameters)
+            {
+                statementHash = statementHash.Dot(QldbHash.ToQldbHash(ionValue));
+            }
+
+            return seed.Dot(statementHash);
+        }
+
+        internal static QldbHash Dot(QldbHash seed, string statement, ValueHolder[] parameters)
         {
             QldbHash statementHash = QldbHash.ToQldbHash(statement);
             foreach (var ionValue in parameters)
