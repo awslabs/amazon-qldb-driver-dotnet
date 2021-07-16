@@ -76,12 +76,29 @@ jobs:
           # Push unsigned DLL to S3
           version_id=$( aws s3api put-object --bucket ${{ secrets.AWS_UNSIGNED_BUCKET }} --key ${{ secrets.AWS_KEY }} --body Amazon.QLDB.Driver.Serialization/bin/Release/net5.0/Amazon.QLDB.Driver.Serialization.dll  --acl bucket-owner-full-control | jq '.VersionId' )
           
-          # Wait 5 seconds for job ID tag to be populated in S3 object
-          sleep 5s
+          job_id=""
           
-          # Get job ID
-          job_id=$( aws s3api get-object-tagging --bucket ${{ secrets.AWS_UNSIGNED_BUCKET }} --key ${{ secrets.AWS_KEY }} --version-id ${version_id} | jq -r '.TagSet[0].Value' )
-                  
+          # Attempt to get Job ID from bucket tagging, will retry up to 3 times before exiting with a failure code.
+          # Will sleep for 5 seconds between retries.
+          for (( i=0; i<3; i++ ))
+          do  
+            # Get job ID
+            id=$( aws s3api get-object-tagging --bucket ${{ secrets.AWS_UNSIGNED_BUCKET }} --key ${{ secrets.AWS_KEY }} --version-id ${version_id} | jq -r '.TagSet[0].Value' )
+            if [ $id != "null" ]
+            then
+              job_id=$id
+              break
+            fi
+            
+            sleep 5s
+          done
+          
+          if [[ $job_id = "" ]]
+          then
+             echo "Exiting because unable to retrieve job ID"
+             exit 1
+          fi
+
           # Poll signed S3 bucket to see if the signed artifact is there
           aws s3api wait object-exists --bucket ${{ secrets.AWS_SIGNED_BUCKET }} --key ${{ secrets.AWS_KEY }}-${job_id}
           
