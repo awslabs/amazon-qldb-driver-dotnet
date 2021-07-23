@@ -1,10 +1,16 @@
-name: Serialization Library Release
+name: QLDB Driver Release
 
-on: workflow_dispatch
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - "v*.*.*"
       
 jobs:
   build:
     name: Build
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ${{ matrix.os }}
     strategy:
       max-parallel: 1
@@ -29,14 +35,17 @@ jobs:
       run: dotnet build --configuration Release --no-restore
     - name: Unit test
       run: dotnet test Amazon.QLDB.Driver.Tests
+    - name: Integration test
+      run: dotnet test Amazon.QLDB.Driver.IntegrationTests --no-restore --verbosity normal --settings Amazon.QLDB.Driver.IntegrationTests/.runsettings
 
   release:
     name: Release
     needs: [build]
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ ubuntu-latest ] 
+        os: [ ubuntu-latest ]
         dotnet: ['5.0.x']
       
     steps:
@@ -65,7 +74,7 @@ jobs:
           dotnet build --configuration Release
           
           # Push unsigned DLL to S3
-          version_id=$( aws s3api put-object --bucket ${{ secrets.AWS_UNSIGNED_BUCKET }} --key ${{ secrets.AWS_KEY_SERIALIZATION }} --body Amazon.QLDB.Driver.Serialization/bin/Release/net5.0/Amazon.QLDB.Driver.Serialization.dll  --acl bucket-owner-full-control | jq '.VersionId' )
+          version_id=$( aws s3api put-object --bucket ${{ secrets.AWS_UNSIGNED_BUCKET }} --key ${{ secrets.AWS_KEY_DRIVER }} --body Amazon.QLDB.Driver/bin/Release/netstandard2.0/Amazon.QLDB.Driver.dll  --acl bucket-owner-full-control | jq '.VersionId' )
           
           job_id=""
           
@@ -74,7 +83,7 @@ jobs:
           for (( i=0; i<3; i++ ))
           do  
             # Get job ID
-            id=$( aws s3api get-object-tagging --bucket ${{ secrets.AWS_UNSIGNED_BUCKET }} --key ${{ secrets.AWS_KEY_SERIALIZATION }} --version-id ${version_id} | jq -r '.TagSet[0].Value' )
+            id=$( aws s3api get-object-tagging --bucket ${{ secrets.AWS_UNSIGNED_BUCKET }} --key ${{ secrets.AWS_KEY_DRIVER }} --version-id ${version_id} | jq -r '.TagSet[0].Value' )
             if [ $id != "null" ]
             then
               job_id=$id
@@ -91,12 +100,12 @@ jobs:
           fi
 
           # Poll signed S3 bucket to see if the signed artifact is there
-          aws s3api wait object-exists --bucket ${{ secrets.AWS_SIGNED_BUCKET }} --key ${{ secrets.AWS_KEY_SERIALIZATION }}-${job_id}
+          aws s3api wait object-exists --bucket ${{ secrets.AWS_SIGNED_BUCKET }} --key ${{ secrets.AWS_KEY_DRIVER }}-${job_id}
           
           # Get signed DLL from S3
-          aws s3api get-object --bucket ${{ secrets.AWS_SIGNED_BUCKET }} --key ${{ secrets.AWS_KEY_SERIALIZATION }}-${job_id} Amazon.QLDB.Driver.Serialization/bin/Release/net5.0/Amazon.QLDB.Driver.Serialization.dll
+          aws s3api get-object --bucket ${{ secrets.AWS_SIGNED_BUCKET }} --key ${{ secrets.AWS_KEY_DRIVER }}-${job_id} Amazon.QLDB.Driver/bin/Release/netstandard2.0/Amazon.QLDB.Driver.dll
 
       - name: Publish to NuGet
         run: |
           dotnet pack --configuration Release --no-build
-          dotnet nuget push Amazon.QLDB.Driver.Serialization/bin/Release/Amazon.QLDB.Driver.Serialization.*.nupkg --api-key ${{ secrets.AWS_NUGET_KEY }} --source https://api.nuget.org/v3/index.json
+          dotnet nuget push Amazon.QLDB.Driver/bin/Release/Amazon.QLDB.Driver.*.nupkg --api-key ${{ secrets.AWS_NUGET_KEY }} --source https://api.nuget.org/v3/index.json
