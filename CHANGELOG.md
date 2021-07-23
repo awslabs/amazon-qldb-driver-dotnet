@@ -1,6 +1,6 @@
 ## Release v1.3.0
 
-v1.3 adds support for passing in parameters and retreiving rows to and from QLDB as native C# types, bypassing the need to use `IIonValue`!
+v1.3 adds support for passing in parameters and retrieving rows to and from QLDB as native C# types, bypassing the need to use `IIonValue`!
 
 See [Serialization](SERIALIZATION.md) for a quick tutorial and examples.
 
