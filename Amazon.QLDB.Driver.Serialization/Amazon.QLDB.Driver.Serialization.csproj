@@ -14,6 +14,8 @@
     <RepositoryUrl>https://github.com/awslabs/amazon-qldb-driver-dotnet</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>amazon api aws database driver ledger qldb quantum ion serializer</PackageTags>
+    <PackageIcon>product-icon_AWS_Quantum_125_squid-ink.png</PackageIcon>
+    <PackageIconUrl />
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,6 +26,10 @@
 
   <ItemGroup>
     <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+    <None Include="..\product-icon_AWS_Quantum_125_squid-ink.png">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>
