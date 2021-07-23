@@ -21,6 +21,7 @@
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\public.snk</AssemblyOriginatorKeyFile>
     <PackageIcon>product-icon_AWS_Quantum_125_squid-ink.png</PackageIcon>
+    <PackageIconUrl />
     <LangVersion>9.0</LangVersion>
     <AssemblyVersion>1.3.0.0</AssemblyVersion>
   </PropertyGroup>
