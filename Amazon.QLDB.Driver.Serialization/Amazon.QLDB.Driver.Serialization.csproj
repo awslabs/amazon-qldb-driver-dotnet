@@ -5,9 +5,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.QLDBSession" Version="3.5.2" /> 
+    <PackageReference Include="Amazon.IonObjectMapper" Version="0.1.0" />
+    <PackageReference Include="AWSSDK.QLDBSession" Version="3.5.2" />
     <ProjectReference Include="..\Amazon.QLDB.Driver\Amazon.QLDB.Driver.csproj" />
-    <ProjectReference Include="..\ion-object-mapper-dotnet\Amazon.IonObjectMapper\Amazon.IonObjectMapper.csproj" />
   </ItemGroup>
 
 </Project>
