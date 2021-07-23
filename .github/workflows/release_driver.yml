@@ -16,7 +16,6 @@ jobs:
       max-parallel: 1
       matrix:
         os: [windows-latest, macos-latest]
-        dotnet: [ '2.1.x', '3.1.x', '5.0.x' ]
 
     steps:
       - uses: aws-actions/configure-aws-credentials@v1
@@ -28,10 +27,6 @@ jobs:
 
       - name: Git checkout
         uses: actions/checkout@v2
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: ${{ matrix.dotnet }}
           
       - name: Install dependencies
         run: dotnet restore
