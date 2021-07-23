@@ -8,39 +8,36 @@ on:
       - "v*.*.*"
       
 jobs:
-  build:
-    name: Build
+  test:
+    name: Test
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ${{ matrix.os }}
     strategy:
       max-parallel: 1
       matrix:
         os: [windows-latest, macos-latest]
-        
-    steps:
-    - uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-        aws-region: us-east-2
+        dotnet: ['5.0.x']
 
-    - uses: actions/checkout@v2
-      with: 
-        submodules: recursive
-        
-    - name: Install dependencies
-      run: dotnet restore
-    - name: Build
-      run: dotnet build --configuration Release --no-restore
-    - name: Unit test
-      run: dotnet test Amazon.QLDB.Driver.Tests
-    - name: Integration test
-      run: dotnet test Amazon.QLDB.Driver.IntegrationTests --no-restore --verbosity normal --settings Amazon.QLDB.Driver.IntegrationTests/.runsettings
+    - steps:
+      - name: Git checkout
+        uses: actions/checkout@v2
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: ${{ matrix.dotnet }}
+          
+      - name: Install dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+      - name: Unit test
+        run: dotnet test Amazon.QLDB.Driver.Tests
+      - name: Integration test
+        run: dotnet test Amazon.QLDB.Driver.IntegrationTests --no-restore --verbosity normal --settings Amazon.QLDB.Driver.IntegrationTests/.runsettings
 
   release:
     name: Release
-    needs: [build]
+    needs: [test]
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ${{ matrix.os }}
     strategy:
@@ -51,8 +48,8 @@ jobs:
     steps:
       - uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_SIGNING_ACCOUNT }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_SIGNING_ACCOUNT }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-west-2
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           role-external-id: ${{ secrets.AWS_ROLE_EXTERNAL_ID }}
