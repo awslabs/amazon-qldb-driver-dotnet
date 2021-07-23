@@ -1,3 +1,8 @@
+## Release v1.3.0
+
+v1.3 adds support for passing in parameters and retreiving rows to and from QLDB as native C# types!
+See [Serialization](SERIALIZATION.md) for a quick tutorial and examples.
+
 ## Release v1.2.0
 
 v1.2 adds the asynchronous version of the driver. C# version updated to 9.0.0 minimum for development of the driver.

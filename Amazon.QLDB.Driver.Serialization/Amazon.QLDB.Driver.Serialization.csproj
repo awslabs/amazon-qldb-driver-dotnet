@@ -2,12 +2,31 @@
 
   <PropertyGroup>
     <TargetFrameworks>net5.0</TargetFrameworks>
+    <Version>0.1.0</Version>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <Company>Amazon.com, Inc.</Company>
+    <Authors>Amazon Web Services</Authors>
+    <Product>Amazon QLDB .NET Driver Ion Serializer</Product>
+    <Description>An implementation of ISerializer for the QLDB Driver.</Description>
+    <Copyright>Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.</Copyright>
+    <PackageProjectUrl>https://aws.amazon.com/qldb/</PackageProjectUrl>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <RepositoryUrl>https://github.com/awslabs/amazon-qldb-driver-dotnet</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>amazon api aws database driver ledger qldb quantum ion serializer</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Amazon.IonObjectMapper" Version="0.1.0" />
     <PackageReference Include="AWSSDK.QLDBSession" Version="3.5.2" />
     <ProjectReference Include="..\Amazon.QLDB.Driver\Amazon.QLDB.Driver.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>
