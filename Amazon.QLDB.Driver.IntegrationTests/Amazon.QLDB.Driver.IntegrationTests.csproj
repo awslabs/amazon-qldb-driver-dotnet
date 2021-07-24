@@ -21,6 +21,5 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Amazon.QLDB.Driver\Amazon.QLDB.Driver.csproj" />
-    <ProjectReference Include="..\Amazon.QLDB.Driver.Serialization\Amazon.QLDB.Driver.Serialization.csproj" />
   </ItemGroup>
 </Project>

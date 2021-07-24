@@ -25,11 +25,11 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Install dependencies
-      run: dotnet restore
+      run: dotnet restore Amazon.QLDB.Driver.sln
     - name: Install Codecov tool
       run: dotnet tool install --global Codecov.Tool --version 1.13.0
     - name: Build
-      run: dotnet build --configuration Release --no-restore
+      run: dotnet build Amazon.QLDB.Driver.sln --configuration Release --no-restore
     - name: Unit test
       run: dotnet test Amazon.QLDB.Driver.Tests /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
     - name: Integration test
