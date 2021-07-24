@@ -29,9 +29,9 @@ jobs:
         uses: actions/checkout@v2
           
       - name: Install dependencies
-        run: dotnet restore
+        run: dotnet restore Amazon.QLDB.Driver.sln
       - name: Build
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build Amazon.QLDB.Driver.sln --configuration Release --no-restore
       - name: Unit test
         run: dotnet test Amazon.QLDB.Driver.Tests
       - name: Integration test
@@ -70,7 +70,7 @@ jobs:
         
       - name: Sign
         run: |
-          dotnet build --configuration Release
+          dotnet build Amazon.QLDB.Driver.sln --configuration Release
           
           # Push unsigned DLL to S3
           version_id=$( aws s3api put-object --bucket ${{ secrets.AWS_UNSIGNED_BUCKET }} --key ${{ secrets.AWS_KEY_DRIVER }} --body Amazon.QLDB.Driver/bin/Release/netstandard2.0/Amazon.QLDB.Driver.dll  --acl bucket-owner-full-control | jq '.VersionId' )
@@ -106,5 +106,5 @@ jobs:
 
       - name: Publish to NuGet
         run: |
-          dotnet pack --configuration Release --no-build
+          dotnet pack Amazon.QLDB.Driver.sln --configuration Release --no-build
           dotnet nuget push Amazon.QLDB.Driver/bin/Release/Amazon.QLDB.Driver.*.nupkg --api-key ${{ secrets.AWS_NUGET_KEY }} --source https://api.nuget.org/v3/index.json
