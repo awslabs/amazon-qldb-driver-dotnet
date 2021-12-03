@@ -55,13 +55,9 @@ namespace Amazon.QLDB.Driver.Serialization
         /// <returns>The ValueHolder object containing the Ion binary.</returns>
         public ValueHolder Serialize(object o)
         {
-            MemoryStream memoryStream = new MemoryStream();
-            serializer.Serialize(memoryStream, o);
-            memoryStream.Flush();
-            memoryStream.Position = 0;
             return new ValueHolder
             {
-                IonBinary = memoryStream,
+                IonBinary = (MemoryStream) serializer.Serialize(o),
             };
         }
     }

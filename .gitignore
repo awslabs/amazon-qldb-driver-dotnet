@@ -4,3 +4,5 @@ bin/
 obj/
 *.ncrunchsolution
 *.user
+docs/_site.zip
+global.json
