@@ -7,7 +7,7 @@ jobs:
     name: Test
     runs-on: ${{ matrix.os }}
     strategy:
-      max-parallel: 1
+      max-parallel: 2
       matrix:
         os: [windows-latest, macos-latest]
         
@@ -19,8 +19,8 @@ jobs:
         run: dotnet restore Amazon.QLDB.Driver.Serialization.sln
       - name: Build
         run: dotnet build Amazon.QLDB.Driver.Serialization.sln --configuration Release --no-restore
-#      TODO: Add Serialization tests
-#      - name: Unit test
+      - name: Unit Test
+        run: dotnet test Amazon.QLDB.Driver.Serialization.Tests
 
   release:
     name: Release
