@@ -34,6 +34,16 @@ namespace Amazon.QLDB.Driver.Serialization
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="ObjectSerializer"/> class.
+        /// </summary>
+        ///
+        /// <param name="options">Serialization options for customizing serializer behavior.</param>
+        public ObjectSerializer(IonSerializationOptions options)
+        {
+            serializer = new IonSerializer(options);
+        }
+
+        /// <summary>
         /// Deserialize a ValueHolder object containing the Ion binary into an object of type T.
         /// </summary>
         ///
