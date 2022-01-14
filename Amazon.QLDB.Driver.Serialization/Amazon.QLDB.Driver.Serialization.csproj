@@ -19,7 +19,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Amazon.IonObjectMapper" Version="0.1.2" />
+    <PackageReference Include="Amazon.IonObjectMapper" Version="1.0.0" />
     <PackageReference Include="Amazon.QLDB.Driver" Version="1.3.0" />
     <PackageReference Include="AWSSDK.QLDBSession" Version="3.5.2" />
   </ItemGroup>
