@@ -13,6 +13,7 @@ jobs:
       max-parallel: 1
       matrix:
         os: [windows-latest, macos-latest]
+        dotnet: ['3.1.x']
 
     steps:
     - uses: aws-actions/configure-aws-credentials@v1
@@ -23,6 +24,11 @@ jobs:
         aws-region: us-east-2
 
     - uses: actions/checkout@v2
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: ${{ matrix.dotnet }}
 
     - name: Install dependencies
       run: dotnet restore Amazon.QLDB.Driver.sln
