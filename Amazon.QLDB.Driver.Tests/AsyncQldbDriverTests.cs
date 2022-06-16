@@ -234,7 +234,7 @@ namespace Amazon.QLDB.Driver.Tests
                 mockClient.QueueResponse(ex);
 
                 // OccConflictException reuses the session so no need for another start session.
-                if (ex is not OccConflictException)
+                if (!(ex is OccConflictException))
                 {
                     mockClient.QueueResponse(StartSessionResponse(TestRequestId));
                 }

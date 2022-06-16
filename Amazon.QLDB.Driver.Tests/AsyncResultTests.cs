@@ -27,35 +27,35 @@ namespace Amazon.QLDB.Driver.Tests
     {
         private static AsyncResult result;
         private static Mock<Session> mockSession;
-        private static readonly MemoryStream MemoryStream = new();
-        private static readonly ValueHolder ValueHolder = new()
+        private static readonly MemoryStream MemoryStream = new MemoryStream();
+        private static readonly ValueHolder ValueHolder = new ValueHolder
         {
             IonBinary = MemoryStream,
             IonText = "ionText"
         };
-        private static readonly List<ValueHolder> ValueHolderList = new() { ValueHolder };
+        private static readonly List<ValueHolder> ValueHolderList = new List<ValueHolder>() { ValueHolder };
 
         private static readonly long ExecuteReads = 1;
         private static readonly long ExecuteWrites = 2;
         private static readonly long ExecuteTime = 100;
-        private static readonly IOUsage ExecuteIO = new()
+        private static readonly IOUsage ExecuteIO = new IOUsage
         {
             ReadIOs = ExecuteReads,
             WriteIOs = ExecuteWrites
         };
-        private static readonly TimingInformation ExecuteTiming = new()
+        private static readonly TimingInformation ExecuteTiming = new TimingInformation
         {
             ProcessingTimeMilliseconds = ExecuteTime
         };
         private static readonly long FetchReads = 10;
         private static readonly long FetchWrites = 20;
         private static readonly long FetchTime = 1000;
-        private static readonly IOUsage FetchIO = new()
+        private static readonly IOUsage FetchIO = new IOUsage
         {
             ReadIOs = FetchReads,
             WriteIOs = FetchWrites
         };
-        private static readonly TimingInformation FetchTiming = new()
+        private static readonly TimingInformation FetchTiming = new TimingInformation
         {
             ProcessingTimeMilliseconds = FetchTime
         };
@@ -89,7 +89,7 @@ namespace Amazon.QLDB.Driver.Tests
         public async Task TestAsyncMoveNextWithOneNextPage()
         {
             var ms = new MemoryStream();
-            var valueHolderList = new List<ValueHolder> { new() { IonBinary = ms, IonText = "ionText" } };
+            var valueHolderList = new List<ValueHolder> { new ValueHolder { IonBinary = ms, IonText = "ionText" } };
             var fetchPageResult = new FetchPageResult
             {
                 Page = new Page { NextPageToken = null, Values = valueHolderList }
@@ -114,7 +114,7 @@ namespace Amazon.QLDB.Driver.Tests
         public async Task TestAsyncMoveNextWithNoNextPage()
         {
             var ms = new MemoryStream();
-            var valueHolderList = new List<ValueHolder> { new() { IonBinary = ms, IonText = "ionText" } };
+            var valueHolderList = new List<ValueHolder> { new ValueHolder { IonBinary = ms, IonText = "ionText" } };
             var executeResult = new ExecuteStatementResult
             {
                 FirstPage = new Page
