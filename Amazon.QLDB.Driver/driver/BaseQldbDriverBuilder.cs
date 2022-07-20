@@ -22,7 +22,7 @@ namespace Amazon.QLDB.Driver
     public abstract class BaseQldbDriverBuilder<TBuilder>
         where TBuilder : BaseQldbDriverBuilder<TBuilder>
     {
-        private protected const string Version = "1.3.0";
+        private protected const string Version = "1.4.0";
         private protected AmazonQLDBSessionClient sessionClient;
         private protected int maxConcurrentTransactions = 0;
         private protected bool logRetries = false;
