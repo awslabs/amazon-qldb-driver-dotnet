@@ -1,3 +1,11 @@
+## Release v1.4.0
+
+* Update the minimum version of the driver's Ion dependency to 1.2.2
+  * This dependency update includes a fix to a [JSON decimal conversion issue](https://github.com/amzn/ion-dotnet/commit/e13d44f6108fe067495cf5201fa102e9ef35fe8a)
+* Update the minimum version of the driver's Ion Hash dependency to 1.1.1
+* Update the minimum version of the driver's Ion Object Mapper dependency to 1.0.0
+* Update the minimum version of the driver's logging dependency to 6.0.0
+
 ## Release v1.3.0
 
 v1.3 adds support for passing in parameters and retrieving rows to and from QLDB as native C# types, bypassing the need to use `IIonValue`!
