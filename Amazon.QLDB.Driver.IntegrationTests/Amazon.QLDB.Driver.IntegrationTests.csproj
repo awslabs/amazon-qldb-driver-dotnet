@@ -16,7 +16,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="NLog" Version="5.0.1" />
-    <PackageReference Include="AWSSDK.QLDB" Version="3.7.3.73" />
+    <PackageReference Include="AWSSDK.QLDB" Version="3.7.3.78" />
     <PackageReference Include="AWSSDK.QLDBSession" Version="3.7.0.178" />
   </ItemGroup>
 
