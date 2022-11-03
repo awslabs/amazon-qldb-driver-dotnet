@@ -1,6 +1,10 @@
 name: QLDB Driver Release
 
 on: workflow_dispatch
+
+permissions:
+  id-token: write
+  contents: read
       
 jobs:
   test:
@@ -15,10 +19,8 @@ jobs:
     steps:
       - uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: us-east-2
+          role-to-assume: arn:aws:iam::264319671630:role/GitHubActionsOidc
 
       - name: Git checkout
         uses: actions/checkout@v2
