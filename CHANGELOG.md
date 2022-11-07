@@ -1,3 +1,8 @@
+## Release v1.4.1
+
+### :beetle: Bug Fixes:
+* Fix default backoff function for full jitter method. The backoff time between retries will sleep shorter periods of time. [PR 182](https://github.com/awslabs/amazon-qldb-driver-dotnet/pull/182)
+
 ## Release v1.4.0
 
 * Update the minimum version of the driver's Ion dependency to 1.2.2
