@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
@@ -15,23 +15,23 @@
     <RepositoryType>git</RepositoryType>
     <PackageTags>amazon api aws database driver ledger qldb quantum ion serializer</PackageTags>
     <PackageIcon>product-icon_AWS_Quantum_125_squid-ink.png</PackageIcon>
-    <PackageIconUrl />
+    <PackageIconUrll/>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Amazon.IonObjectMapper" Version="1.0.0" />
     <PackageReference Include="Amazon.QLDB.Driver" Version="1.4.1" />
-    <PackageReference Include="AWSSDK.QLDBSession" Version="3.7.0.223" />
+    <PackageReference Include="AWSSDK.QLDBSession" Version="3.7.100.10" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="..\LICENSE">
       <Pack>True</Pack>
-      <PackagePath></PackagePath>
+      <PackagePathh/>
     </None>
     <None Include="..\product-icon_AWS_Quantum_125_squid-ink.png">
       <Pack>True</Pack>
-      <PackagePath></PackagePath>
+      <PackagePathh/>
     </None>
   </ItemGroup>
 
