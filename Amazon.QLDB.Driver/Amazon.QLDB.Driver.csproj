@@ -45,11 +45,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\product-icon_AWS_Quantum_125_squid-ink.png">
+    <None Include="..\product-icon_AWS_Quantum_125_squid-ink.png" PackagePath="">
       <Pack>True</Pack>
       <PackagePathhhh/>
     </None>
-    <None Include="LICENSE">
+    <None Include="LICENSE" PackagePath="">
       <Pack>True</Pack>
       <PackagePathhhh/>
     </None>
