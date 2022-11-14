@@ -7,10 +7,10 @@ namespace Amazon.QLDB.Driver.Tests
     [TestClass]
     class ExponentBackoffStrategyTests
     {
-        [DataRow(1, 10)]
-        [DataRow(2, 100)]
-        [DataRow(3, 1000)]
-        [DataRow(4, 5000)]
+        [DataRow(1, 20)]
+        [DataRow(2, 40)]
+        [DataRow(3, 80)]
+        [DataRow(4, 160)]
         [DataTestMethod]
         public void CalculateDelay_ForGivenRetryAttempts_ReturnExpectedDelay(int retryAttempted, int expectedMax)
         {

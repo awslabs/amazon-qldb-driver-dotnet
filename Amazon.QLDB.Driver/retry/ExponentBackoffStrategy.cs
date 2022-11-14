@@ -59,7 +59,7 @@ namespace Amazon.QLDB.Driver
         public TimeSpan CalculateDelay(RetryPolicyContext retryPolicyContext)
         {
             var jitterRand = (new Random().NextDouble() * 0.5) + 0.5;
-            var exponentialBackoff = Math.Min(this.sleepCapMilliseconds, Math.Pow(this.sleepBaseMilliseconds, retryPolicyContext.RetriesAttempted));
+            var exponentialBackoff = Math.Min(this.sleepCapMilliseconds, this.sleepBaseMilliseconds * Math.Pow(2, retryPolicyContext.RetriesAttempted));
 
             return TimeSpan.FromMilliseconds(jitterRand * exponentialBackoff);
         }
