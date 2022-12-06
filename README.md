@@ -19,11 +19,7 @@ See [Accessing Amazon QLDB](https://docs.aws.amazon.com/qldb/latest/developergui
 
 The driver targets .NET Standard 2.0. Please see the link below for more information on compatibility:
 
-* [.NET Standard](https://docs.microsoft.com/en-us/dotnet/standard/net-standard)
-
-The driver targets .NET Core 2.1. Please see the link below for more information on compatibility:
-
-* [.NET Core](https://dotnet.microsoft.com/download/dotnet-core)
+* [.NET Standard](https://learn.microsoft.com/en-us/dotnet/standard/net-standard?tabs=net-standard-2-0)
 
 ## Getting Started
 
