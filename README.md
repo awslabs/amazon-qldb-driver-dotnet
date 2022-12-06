@@ -15,11 +15,9 @@ to write software that makes use of AmazonQLDB.
 
 See [Accessing Amazon QLDB](https://docs.aws.amazon.com/qldb/latest/developerguide/accessing.html) for information on connecting to AWS.
 
-### .NET
+### .NET Standard 2.0
 
-The driver targets .NET Standard 2.0. Please see the link below for more information on compatibility:
-
-* [.NET Standard](https://learn.microsoft.com/en-us/dotnet/standard/net-standard?tabs=net-standard-2-0)
+The driver targets [.NET Standard 2.0](https://learn.microsoft.com/en-us/dotnet/standard/net-standard?tabs=net-standard-2-0). 
 
 ## Getting Started
 
