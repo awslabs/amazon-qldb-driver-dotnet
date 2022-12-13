@@ -17,7 +17,7 @@
     </PackageReference>
     <PackageReference Include="NLog" Version="5.0.5" />
     <PackageReference Include="AWSSDK.QLDB" Version="3.7.100.10" />
-    <PackageReference Include="AWSSDK.QLDBSession" Version="3.7.100.10" />
+    <PackageReference Include="AWSSDK.QLDBSession" Version="3.7.100.34" />
   </ItemGroup>
 
   <ItemGroup>
