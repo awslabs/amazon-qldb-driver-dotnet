@@ -9,7 +9,7 @@
   <ItemGroup>
     <PackageReference Include="Amazon.QLDB.Driver.Serialization" Version="1.0.0" />
     <PackageReference Include="MSTest.TestAdapter" Version="2.2.10" />
-    <PackageReference Include="MSTest.TestFramework" Version="2.2.10" />
+    <PackageReference Include="MSTest.TestFramework" Version="3.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.4.0" />
     <PackageReference Include="coverlet.collector" Version="3.2.0">
       <PrivateAssets>all</PrivateAssets>
@@ -17,7 +17,7 @@
     </PackageReference>
     <PackageReference Include="NLog" Version="5.0.5" />
     <PackageReference Include="AWSSDK.QLDB" Version="3.7.100.10" />
-    <PackageReference Include="AWSSDK.QLDBSession" Version="3.7.100.10" />
+    <PackageReference Include="AWSSDK.QLDBSession" Version="3.7.100.34" />
   </ItemGroup>
 
   <ItemGroup>
