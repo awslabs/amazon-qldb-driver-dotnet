@@ -32,7 +32,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.QLDBSession" Version="3.7.100.34" />
+    <PackageReference Include="AWSSDK.QLDBSession" Version="3.7.100.80" />
     <PackageReference Include="Amazon.IonDotnet" Version="1.2.2" />
     <PackageReference Include="Amazon.IonHashDotnet" Version="1.1.1" />
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="7.0.0" />
