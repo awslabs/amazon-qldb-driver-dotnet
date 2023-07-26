@@ -21,6 +21,7 @@ jobs:
     - name: Checkout the code
       uses: actions/checkout@v2.0.0
       
-    - name: create draft release
-      run: gh release create -d ${{github.event.inputs.version}} -F 'release_description.md' -t 'Release of QLDB .Net driver ${{github.event.inputs.version}}' --target ${{github.event.inputs.target}}
+    - name: Release Drafter
+      uses: release-drafter/release-drafter@v5.21.1
+
 
