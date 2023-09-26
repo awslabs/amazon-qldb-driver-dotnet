@@ -30,6 +30,7 @@ namespace Amazon.QLDB.Driver
     internal class QldbHash
     {
         private const int HashSize = 32;
+        private static readonly HashAlgorithm Sha256Algorithm = SHA256.Create();
         private static readonly IIonHasherProvider HasherProvider = new CryptoIonHasherProvider("SHA256");
         private static readonly IValueFactory ValueFactory = new ValueFactory();
 
