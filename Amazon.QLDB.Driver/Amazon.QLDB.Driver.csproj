@@ -35,7 +35,7 @@
     <PackageReference Include="AWSSDK.QLDBSession" Version="3.7.100.84" />
     <PackageReference Include="Amazon.IonDotnet" Version="1.2.2" />
     <PackageReference Include="Amazon.IonHashDotnet" Version="1.1.1" />
-    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="7.0.0" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
       <PrivateAssets>all</PrivateAssets>
